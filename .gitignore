@@ -1,0 +1,7 @@
+
+.settings/*
+Export/*
+logs/*
+target/
+state.bin
+state.xml

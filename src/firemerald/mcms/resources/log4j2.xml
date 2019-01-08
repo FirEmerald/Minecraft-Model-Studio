@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+	<Properties>
+		<Property name="directory">logs/</Property>
+		<Property name="pattern">%d{HH:mm:ss} [%logger - %t - %level] %msg%n</Property>
+	</Properties>
+	<Appenders>
+		<Console name="STDOUT" target="SYSTEM_OUT">
+			<Filters>
+				<ThresholdFilter level="INFO" onMatch="NEUTRAL" onMismatch="DENY"/>
+				<ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
+			</Filters>
+			<PatternLayout pattern="${pattern}"/>
+		</Console>
+		<Console name="STDERR" target="SYSTEM_ERR">
+			<ThresholdFilter level="WARN"/>
+			<PatternLayout pattern="${pattern}"/>
+		</Console>
+		<RollingFile name="File" fileName="${directory}game_output.log" filePattern="${directory}log-$${date:MM-dd-yyyy}.%i.log.gz">
+			<PatternLayout pattern="${pattern}"/>
+			<Policies>
+				<OnStartupTriggeringPolicy/>
+			</Policies>
+		</RollingFile>
+	</Appenders>
+	<Loggers>
+		<Root level="all">
+			<AppenderRef ref="STDOUT"/>
+			<AppenderRef ref="STDERR"/>
+			<AppenderRef ref="File"/>
+		</Root>
+		<Logger name="STDOUT" level="all"/>
+		<Logger name="STDERR" level="all"/>
+	</Loggers>
+</Configuration>

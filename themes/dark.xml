@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<theme name="Dark Theme" parent="basic.xml">
+	<background>0xFF3F3F3F</background>
+	<outline>0xFFBFBFBF</outline>
+	<text>0xFFBFBFBF</text>
+	<fill>0xFF3F3F3F</fill>
+	<textbox>0xFF000000</textbox>
+	<scrollbar>0xFF7F7F7F</scrollbar>
+</theme>

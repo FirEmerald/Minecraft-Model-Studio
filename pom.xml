@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>firemerald</groupId>
+	<artifactId>MCAMC</artifactId>
+	<version>1.0</version>
+	<name>MCAMC</name>
+	<url>http://maven.apache.org</url>
+	
+	<repositories>
+		<repository>
+			<id>jitpack.io</id>           <!-- JitPack allows github repo to be used as a maven repo -->
+			<url>https://jitpack.io</url> <!-- For documentation: http://jitpack.io/ -->
+		</repository>
+	</repositories>
+	
+	<properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<built.by>FirEmerald</built.by>
+		<main.class>firemerald.mcamc.Main</main.class>
+		<!-- Versions -->
+        <java.version>1.8</java.version>
+        <mvn.complilerplug.version>3.6.1</mvn.complilerplug.version>
+		<mvn.jarplug.version>3.0.2</mvn.jarplug.version>
+		<lwjgl.version>3.2.0</lwjgl.version>
+    </properties>
+
+	<profiles>
+		<profile>
+			<id>lwjgl-natives-linux</id>
+			<activation>
+				<os><family>unix</family></os>
+			</activation>
+			<properties>
+				<lwjgl.natives>natives-linux</lwjgl.natives>
+			</properties>
+		</profile>
+		<profile>
+			<id>lwjgl-natives-macos</id>
+			<activation>
+				<os><family>mac</family></os>
+			</activation>
+			<properties>
+				<lwjgl.natives>natives-macos</lwjgl.natives>
+			</properties>
+		</profile>
+		<profile>
+			<id>lwjgl-natives-windows</id>
+			<activation>
+				<os><family>windows</family></os>
+			</activation>
+			<properties>
+				<lwjgl.natives>natives-windows</lwjgl.natives>
+			</properties>
+		</profile>
+	</profiles>
+	
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.github.imcdonagh</groupId>
+			<artifactId>image4j</artifactId>
+			<version>05ed5bf</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.11.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl</artifactId>
+			<version>${lwjgl.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-glfw</artifactId>
+			<version>${lwjgl.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-opengl</artifactId>
+			<version>${lwjgl.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.joml</groupId>
+			<artifactId>joml-jdk8</artifactId>
+			<version>1.9.9</version>
+		</dependency>
+    
+		
+		<!-- Natives -->
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>${lwjgl.natives}</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-glfw</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>${lwjgl.natives}</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>${lwjgl.natives}</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-opengl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>${lwjgl.natives}</classifier>
+			<scope>runtime</scope>
+		</dependency>
+	</dependencies>
+</project>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<theme class="firemerald.mcms.theme.BasicTheme" compile="false">
+	<variant name="%s, Rounded Corners" id="round" class="firemerald.mcms.theme.RoundedTheme"/>
+	<variant name="%s, Flat Corners" id="flat" class="firemerald.mcms.theme.FlatTheme"/>
+</theme>
