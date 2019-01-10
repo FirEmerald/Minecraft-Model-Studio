@@ -8,7 +8,7 @@ import java.util.Map;
 
 import firemerald.mcms.api.animation.AnimationState;
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.math.Matrix4;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.model.IEditable;
@@ -169,10 +169,10 @@ public class MultiModel implements IModel
 	}
 
 	@Override
-	public void loadFromXML(Element root)
+	public void loadFromXML(AbstractElement root)
 	{
 		base.clear();
-		for (Element el : root.getChildren())
+		for (AbstractElement el : root.getChildren())
 		{
 			Bone base;
 			switch (el.getName())

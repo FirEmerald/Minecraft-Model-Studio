@@ -3,7 +3,7 @@ package firemerald.mcms.model;
 import static org.lwjgl.opengl.GL15.*;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IModel;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentLabel;
@@ -262,7 +262,7 @@ public class ComponentBox extends ComponentMesh
 	}
 	
 	@Override
-	public void addData(Element el)
+	public void addData(AbstractElement el)
 	{
 		super.addData(el);
 		el.setFloat("lengthX", lengthX);
@@ -271,7 +271,7 @@ public class ComponentBox extends ComponentMesh
 	}
 	
 	@Override
-	public void loadFromXML(Element el)
+	public void loadFromXML(AbstractElement el)
 	{
 		super.loadFromXML(el);
 		lengthX = el.getFloat("lengthX", lengthX);

@@ -3,297 +3,377 @@ package firemerald.mcms.api.data;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
-import firemerald.mcms.api.data.attributes.*;
+import javax.xml.transform.TransformerException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.internal.LazilyParsedNumber;
+
+import firemerald.mcms.api.data.attributes.AttributeBoolean;
+import firemerald.mcms.api.data.attributes.AttributeByte;
+import firemerald.mcms.api.data.attributes.AttributeDouble;
+import firemerald.mcms.api.data.attributes.AttributeFloat;
+import firemerald.mcms.api.data.attributes.AttributeInt;
+import firemerald.mcms.api.data.attributes.AttributeLong;
+import firemerald.mcms.api.data.attributes.AttributeShort;
+import firemerald.mcms.api.data.attributes.AttributeString;
+import firemerald.mcms.api.data.attributes.IAttribute;
+import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.util.FileUtils;
 
-public abstract class Element
+public class Element extends AbstractElement
 {
-	public abstract String getName();
+	protected final String name;
+	protected String value;
+	protected final Map<String, IAttribute> attributes;
+	protected final List<Element> children;
 	
-	public abstract String getValue();
-	
-	public abstract void setValue(String value);
-	
-	public abstract Map<String, IAttribute> getAttributes();
-	
-	public abstract IAttribute getAttribute(String name);
-	
-	public abstract void setAttribute(String name, IAttribute value);
-	
-	public abstract boolean hasAttribute(String name);
-	
-	public abstract List<? extends Element> getChildren();
-	
-	public abstract Element addChild(String name);
-	
-	public void setString(String attr, String value)
+	public Element(String name)
 	{
-		setAttribute(attr, new AttributeString(value));
+		this.name = name;
+		this.value = null;
+		attributes = new LinkedHashMap<>();
+		children = new ArrayList<>();
 	}
 	
-	public String getString(String attr) throws Exception
+	public Element(String name, String value, Map<String, IAttribute> attributes, List<Element> children)
 	{
-		return getAttribute(attr).getString();
-	}
-	
-	public String getString(String attr, String def)
-	{
-		try
-		{
-			return getString(attr);
-		}
-		catch (Exception e)
-		{
-			return def;
-		}
-	}
-	
-	public void setBoolean(String attr, boolean value)
-	{
-		setAttribute(attr, new AttributeBoolean(value));
-	}
-	
-	public boolean getBoolean(String attr) throws Exception
-	{
-		return getAttribute(attr).getBoolean();
-	}
-	
-	public boolean getBoolean(String attr, boolean def)
-	{
-		try
-		{
-			return getBoolean(attr);
-		}
-		catch (Exception e)
-		{
-			return def;
-		}
-	}
-	
-	public void setByte(String attr, byte value)
-	{
-		setAttribute(attr, new AttributeByte(value));
-	}
-	
-	public byte getByte(String attr) throws Exception
-	{
-		return getAttribute(attr).getByte();
-	}
-	
-	public byte getByte(String attr, byte def)
-	{
-		try
-		{
-			return getByte(attr);
-		}
-		catch (Exception e)
-		{
-			return def;
-		}
-	}
-	
-	public void setShort(String attr, short value)
-	{
-		setAttribute(attr, new AttributeShort(value));
-	}
-	
-	public short getShort(String attr) throws Exception
-	{
-		return getAttribute(attr).getShort();
-	}
-	
-	public short getShort(String attr, short def)
-	{
-		try
-		{
-			return getShort(attr);
-		}
-		catch (Exception e)
-		{
-			return def;
-		}
-	}
-	
-	public void setInt(String attr, int value)
-	{
-		setAttribute(attr, new AttributeInt(value));
-	}
-	
-	public int getInt(String attr) throws Exception
-	{
-		return getAttribute(attr).getInt();
-	}
-	
-	public int getInt(String attr, int def)
-	{
-		try
-		{
-			return getInt(attr);
-		}
-		catch (Exception e)
-		{
-			return def;
-		}
-	}
-	
-	public void setLong(String attr, long value)
-	{
-		setAttribute(attr, new AttributeLong(value));
-	}
-	
-	public long getLong(String attr) throws Exception
-	{
-		return getAttribute(attr).getLong();
-	}
-	
-	public long getLong(String attr, long def)
-	{
-		try
-		{
-			return getLong(attr);
-		}
-		catch (Exception e)
-		{
-			return def;
-		}
-	}
-	
-	public void setFloat(String attr, float value)
-	{
-		setAttribute(attr, new AttributeFloat(value));
-	}
-	
-	public float getFloat(String attr) throws Exception
-	{
-		return getAttribute(attr).getFloat();
-	}
-	
-	public float getFloat(String attr, float def)
-	{
-		try
-		{
-			return getFloat(attr);
-		}
-		catch (Exception e)
-		{
-			return def;
-		}
-	}
-	
-	public void setDouble(String attr, double value)
-	{
-		setAttribute(attr, new AttributeDouble(value));
-	}
-	
-	public double getDouble(String attr) throws Exception
-	{
-		return getAttribute(attr).getDouble();
-	}
-	
-	public double getDouble(String attr, double def)
-	{
-		try
-		{
-			return getDouble(attr);
-		}
-		catch (Exception e)
-		{
-			return def;
-		}
-	}
-	
-	public void setEnum(String attr, Enum<?> value)
-	{
-		setString(attr, value.name());
-	}
-	
-	public <T extends Enum<?>> T getEnum(String attr, T[] values) throws Exception
-	{
-		return getAttribute(attr).getEnum(values);
-	}
-	
-	public <T extends Enum<?>> T getEnum(String attr, T[] values, T def)
-	{
-		try
-		{
-			return getEnum(attr, values);
-		}
-		catch (Exception e)
-		{
-			return def;
-		}
+		this.name = name;
+		this.value = value;
+		this.attributes = attributes;
+		this.children = children;
 	}
 	
 	@Override
-	public String toString()
+	public String getName()
 	{
-		return toString("");
+		return name;
+	}
+
+	@Override
+	public String getValue()
+	{
+		return value;
+	}
+
+	@Override
+	public void setValue(String value)
+	{
+		this.value = value;
+	}
+
+	@Override
+	public Map<String, IAttribute> getAttributes()
+	{
+		return attributes;
+	}
+
+	@Override
+	public boolean hasAttribute(String name)
+	{
+		return attributes.containsKey(name);
+	}
+
+	@Override
+	public IAttribute getAttribute(String name)
+	{
+		return attributes.get(name);
+	}
+
+	@Override
+	public void setAttribute(String name, IAttribute value)
+	{
+		attributes.put(name, value);
+	}
+
+	@Override
+	public List<? extends AbstractElement> getChildren()
+	{
+		return children;
+	}
+
+	@Override
+	public Element addChild(String name)
+	{
+		Element el = new Element(name);
+		children.add(el);
+		return el;
 	}
 	
-	public String toString(String prefix)
+	@Override
+	public Element toElement()
 	{
-		StringBuilder str = new StringBuilder(prefix);
-		str.append("<");
-		str.append(getName());
-		getAttributes().forEach((name, value) -> {
-			str.append(" ");
-			str.append(name);
-			str.append("=\"");
-			str.append(value.getString());
-			str.append("\"");
-		});
-		if (getValue() != null)
-		{
-			str.append(">");
-			String val = getValue();
-			String[] split = val.split("\n");
-			String pre;
-			if (split.length == 1) pre = "    ";
-			else 
-			{
-				pre = split[split.length - 1];
-				char[] chr = new char[pre.length()];
-				for (int i = 0; i < chr.length; i++) chr[i] = ' ';
-				pre = String.valueOf(chr);
-				val = val.substring(0, val.length() - chr.length);
-			}
-			str.append(val);
-			for (Element el: getChildren())
-			{
-				str.append(el.toString(pre));
-				str.append('\n');
-			}
-			str.append("</");
-			str.append(getName());
-			str.append(">");
-		}
-		else str.append("/>");
-		return str.toString().replaceAll("\n", "\n" + prefix);
+		return this;
 	}
 	
-	public void addToList(List<Element> list)
-	{
-		list.add(this);
-	}
-	
-	public void save(File file) throws IOException
+	public void saveBinary(File file, BinaryFormat format) throws IOException
 	{
 		OutputStream out = null;
 		try
 		{
 			out = new FileOutputStream(file);
-			save(out);
+			saveBinary(out, format);
 		}
 		catch (IOException e)
 		{
 			FileUtils.closeSafe(out);
 			throw e;
 		}
+		FileUtils.closeSafe(out);
 	}
 	
-	public abstract void save(OutputStream out) throws IOException;
+	public void saveBinary(OutputStream out, BinaryFormat format) throws IOException
+	{
+		out.write(format.id);
+		saveBinaryHeaderless(out, format);
+	}
+	
+	public static final int END = 255, VALUE = 0, ATTRIBUTES = 1, CHILDREN = 2;
+	
+	public void saveBinaryHeaderless(OutputStream out, BinaryFormat format) throws IOException
+	{
+		FileUtil.writeString(out, name, format);
+		if (value != null)
+		{
+			out.write(VALUE);
+			FileUtil.writeString(out, value, format);
+		}
+		if (!attributes.isEmpty())
+		{
+			out.write(ATTRIBUTES);
+			FileUtil.writeInt(out, attributes.size());
+			for (Map.Entry<String, IAttribute> entry : attributes.entrySet())
+			{
+				String name = entry.getKey();
+				IAttribute val = entry.getValue();
+				FileUtil.writeString(out, name, format);
+				out.write(val.getID());
+				val.write(out, format);
+			}
+		}
+		if (!children.isEmpty())
+		{
+			out.write(CHILDREN);
+			FileUtil.writeInt(out, children.size());
+			for (Element child : children) ((Element) child).saveBinaryHeaderless(out, format);
+		}
+		out.write(END);
+	}
+	
+	public static Element loadBinary(InputStream in) throws IOException
+	{
+		int id = in.read();
+		for (BinaryFormat format : BinaryFormat.values()) if (format.id == id) return loadBinaryHeaderless(in, format);
+		throw new IOException("Invalid binary header " + id);
+	}
+	
+	public static Element loadBinaryHeaderless(InputStream in, BinaryFormat format) throws IOException
+	{
+		String name = FileUtil.readString(in, format);
+		String value;
+		Map<String, IAttribute> attributes;
+		List<Element> children;
+		int id = in.read();
+		if (id == -1) throw new IOException("Unexpected end of stream " + format.charset.name());
+		if (id == VALUE)
+		{
+			value = FileUtil.readString(in, format);
+			id = in.read();
+		}
+		else value = null;
+		if (id == ATTRIBUTES)
+		{
+			int length = FileUtil.readInt(in);
+			attributes = new LinkedHashMap<>(length);
+			for (int i = 0; i < length; i++)
+			{
+				String attrName = FileUtil.readString(in, format);
+				IAttribute attr;
+				switch (id = in.read())
+				{
+				case IAttribute.ID_STRING:
+					attr = AttributeString.read(in, format);
+					break;
+				case IAttribute.ID_BOOLEAN:
+					attr = AttributeBoolean.read(in);
+					break;
+				case IAttribute.ID_BYTE:
+					attr = AttributeByte.read(in);
+					break;
+				case IAttribute.ID_SHORT:
+					attr = AttributeShort.read(in);
+					break;
+				case IAttribute.ID_INT:
+					attr = AttributeInt.read(in);
+					break;
+				case IAttribute.ID_LONG:
+					attr = AttributeLong.read(in);
+					break;
+				case IAttribute.ID_FLOAT:
+					attr = AttributeFloat.read(in);
+					break;
+				case IAttribute.ID_DOUBLE:
+					attr = AttributeDouble.read(in);
+					break;
+				default:
+					throw new IOException("Invalid attribute ID " + id);
+				}
+				attributes.put(attrName, attr);
+			}
+			id = in.read();
+		}
+		else attributes = new LinkedHashMap<>();
+		if (id == CHILDREN)
+		{
+			int length = FileUtil.readInt(in);
+			children = new ArrayList<>(length);
+			for (int i = 0; i < length; i++) children.add(loadBinaryHeaderless(in, format));
+			id = in.read();
+		}
+		else children = new ArrayList<>();
+		if (id != END) throw new IOException("Invalid data ID " + id);
+		return new Element(name, value, attributes, children);
+	}
+	
+	public void saveXML(File file) throws TransformerException, IOException
+	{
+		Document doc = FileUtil.createXML();
+		saveXML(doc);
+		FileUtil.saveXML(doc, file);
+	}
+	
+	public void saveXML(OutputStream out) throws TransformerException, IOException
+	{
+		Document doc = FileUtil.createXML();
+		saveXML(doc);
+		FileUtil.saveXML(doc, out);
+	}
+	
+	public void saveXML(Document doc)
+	{
+		setXML(doc, doc);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void setXML(Document doc, Node parent)
+	{
+		org.w3c.dom.Element element = doc.createElement(getName());
+		parent.appendChild(element);
+		element.setTextContent(getValue());
+		getAttributes().forEach((name, attribute) -> element.setAttribute(name, attribute.getString()));
+		((List<Element>) getChildren()).forEach(child -> child.setXML(doc, element));
+	}
+	
+	public static Element loadJSON(JsonElement element)
+	{
+		String name = "root";
+		if (element instanceof JsonObject)
+		{
+			JsonObject object2 = (JsonObject) element;
+			if (object2.has("#name")) name = object2.get("#name").getAsString();
+		}
+		Element el = new Element(name);
+		el.loadFromJSON(element);
+		return el;
+	}
+	
+	public void loadFromJSON(JsonElement element)
+	{
+		if (element instanceof JsonObject) loadFromJSON((JsonObject) element);
+		else if (element instanceof JsonArray) loadFromJSON((JsonArray) element);
+		else if (element instanceof JsonPrimitive) loadFromJSON((JsonPrimitive) element);
+	}
+	
+	public void loadFromJSON(JsonObject object)
+	{
+		object.entrySet().forEach(entry -> {
+			String name = entry.getKey();
+			if (name.equals("#value"))
+			{
+				this.setValue(entry.getValue().getAsString());
+			}
+			else if (!name.equals("#name"))
+			{
+				JsonElement element = entry.getValue();
+				if (element instanceof JsonPrimitive)
+				{
+					System.out.println(name);
+					setAttribute(name, (JsonPrimitive) element);
+				}
+				else
+				{
+					if (element instanceof JsonObject)
+					{
+						JsonObject object2 = (JsonObject) element;
+						if (object2.has("#name")) name = object2.get("#name").getAsString();
+					}
+					Element el = this.addChild(name);
+					el.loadFromJSON(element);
+				}
+			}
+		});
+	}
+	
+	public void loadFromJSON(JsonArray array)
+	{
+		boolean isPrimitive = true;
+		for (int i = 0; i < array.size(); i++) if (!(array.get(i) instanceof JsonPrimitive))
+		{
+			isPrimitive = false;
+			break;
+		}
+		for (int i = 0; i < array.size(); i++)
+		{
+			if (isPrimitive) setAttribute(Integer.toString(i), (JsonPrimitive) array.get(i));
+			else
+			{
+				JsonElement element2 = array.get(i);
+				Element el = this.addChild(Integer.toString(i));
+				el.loadFromJSON(element2);
+			}
+		}
+	}
+	
+	public void loadFromJSON(JsonPrimitive primitive)
+	{
+		this.setValue(primitive.getAsString());
+	}
+	
+	public void setAttribute(String name, JsonPrimitive value)
+	{
+		if (value.isString()) this.setString(name, value.getAsString());
+		else if (value.isBoolean()) this.setBoolean(name, value.getAsBoolean());
+		else if (value.isNumber())
+		{
+			Number num = value.getAsNumber();
+			if (num instanceof Byte) this.setByte(name, value.getAsByte());
+			else if (num instanceof Short) this.setShort(name, value.getAsShort());
+			else if (num instanceof Integer) this.setInt(name, value.getAsInt());
+			else if (num instanceof Long) this.setLong(name, value.getAsLong());
+			else if (num instanceof BigInteger) this.setLong(name, value.getAsBigInteger().longValueExact());
+			else if (num instanceof Float) this.setFloat(name, value.getAsFloat());
+			else if (num instanceof Double) this.setDouble(name, value.getAsDouble());
+			else if (num instanceof BigDecimal) this.setDouble(name, value.getAsBigDecimal().doubleValue());
+			else if (num instanceof LazilyParsedNumber) this.setDouble(name, ((LazilyParsedNumber) num).doubleValue());
+			else System.err.println("Invalid number type: " + num.getClass());
+			//TODO else exception
+		}
+		else System.err.println("Invalid primitive type: " + value);
+		//TODO else exception
+	}
 }

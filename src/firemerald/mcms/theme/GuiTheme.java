@@ -13,9 +13,9 @@ import java.util.List;
 import org.apache.logging.log4j.Level;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.data.MergedElement;
-import firemerald.mcms.api.util.DataUtil;
+import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.util.MathUtil;
 
@@ -64,10 +64,10 @@ public abstract class GuiTheme
 	{
 		public final String name;
 		public final String variant;
-		public final Element element;
+		public final AbstractElement element;
 		public final boolean compile;
 		
-		public ThemeElement(Element element, String parentName, String variant, boolean compile)
+		public ThemeElement(AbstractElement element, String parentName, String variant, boolean compile)
 		{
 			this.name = String.format((this.element = element).getString("name", ""), parentName);
 			this.variant = variant;
@@ -93,19 +93,19 @@ public abstract class GuiTheme
 		ThemeElement fin = null;
 		try
 		{
-			Element root = DataUtil.readFile(new File(file));
+			AbstractElement root = FileUtil.readFile(new File(file));
 			if (root.getBoolean("compile", true))
 			{
-				List<Element> files = new ArrayList<>();
+				List<AbstractElement> files = new ArrayList<>();
 				root.addToList(files);
 				addParentToList(root, files);
 				String name = "";
 				for (int i = files.size() - 1; i >= 0; i--)
 				{
-					Element el = files.get(i);
+					AbstractElement el = files.get(i);
 					if (el.hasAttribute("name")) name = String.format(el.getString("name", "null"), name);
 				}
-				Element el;
+				AbstractElement el;
 				ThemeElement t = new ThemeElement(el = new MergedElement(files), name, origin, true);
 				String prefix = file + "|";
 				boolean flag;
@@ -116,10 +116,10 @@ public abstract class GuiTheme
 					for (String id : variant)
 					{
 						flag = false;
-						for (Element child : el.getChildren()) if (child.getName().equals("variant") && child.hasAttribute("id") && child.getString("id", "null").equals(id))
+						for (AbstractElement child : el.getChildren()) if (child.getName().equals("variant") && child.hasAttribute("id") && child.getString("id", "null").equals(id))
 						{
 							flag = true;
-							Element merged = MergedElement.merge(child, t.element);
+							AbstractElement merged = MergedElement.merge(child, t.element);
 							t = new ThemeElement(merged, t.name, prefix + id, child.getBoolean("compile", true));
 							prefix += id + "|";
 							el = child;
@@ -151,18 +151,18 @@ public abstract class GuiTheme
 		}
 	}
 	
-	public static List<GuiTheme> makeTheme(Element root, String origin)
+	public static List<GuiTheme> makeTheme(AbstractElement root, String origin)
 	{
 		List<GuiTheme> themes = new ArrayList<>();
 		if (root.getBoolean("compile", true))
 		{
-			List<Element> files = new ArrayList<>();
+			List<AbstractElement> files = new ArrayList<>();
 			root.addToList(files);
 			addParentToList(root, files);
 			String name = "";
 			for (int i = files.size() - 1; i >= 0; i--)
 			{
-				Element el = files.get(i);
+				AbstractElement el = files.get(i);
 				if (el.hasAttribute("name")) name = String.format(el.getString("name", "null"), name);
 			} 
 			List<ThemeElement> list = new ArrayList<>();
@@ -178,7 +178,7 @@ public abstract class GuiTheme
 		return themes;
 	}
 	
-	public static void addParentToList(Element el, List<Element> list)
+	public static void addParentToList(AbstractElement el, List<AbstractElement> list)
 	{
 		if (el.hasAttribute("parent"))
 		{
@@ -187,7 +187,7 @@ public abstract class GuiTheme
 			{
 				try
 				{
-					Element parentEl = DataUtil.readFile(parent);
+					AbstractElement parentEl = FileUtil.readFile(parent);
 					list.add(parentEl);
 					addParentToList(parentEl, list);
 				}
@@ -200,16 +200,16 @@ public abstract class GuiTheme
 		}
 	}
 	
-	public static void addVariantsToList(Element el, ThemeElement parent, String prefix, List<ThemeElement> list)
+	public static void addVariantsToList(AbstractElement el, ThemeElement parent, String prefix, List<ThemeElement> list)
 	{
-		for (Element var : el.getChildren()) if (var.getName().equals("variant"))
+		for (AbstractElement var : el.getChildren()) if (var.getName().equals("variant"))
 		{
 			if (var.hasAttribute("id"))
 			{
 				String id = var.getString("id", "null");
 				if (!id.contains("|"))
 				{
-					Element merged = MergedElement.merge(var, parent.element);
+					AbstractElement merged = MergedElement.merge(var, parent.element);
 					ThemeElement t2;
 					list.add(t2 = new ThemeElement(merged, parent.name, prefix + id, var.getBoolean("compile", true)));
 					addVariantsToList(var, t2, prefix + id + "|", list);
@@ -225,7 +225,7 @@ public abstract class GuiTheme
 		String className = t.element.getString("class", "firemerald.mcamc.theme.BasicTheme");
 		try
 		{
-			return ((GuiTheme) Class.forName(className).getConstructor(String.class, String.class, Element.class).newInstance(t.name, t.variant, t.element));
+			return ((GuiTheme) Class.forName(className).getConstructor(String.class, String.class, AbstractElement.class).newInstance(t.name, t.variant, t.element));
 		}
 		catch (Throwable th)
 		{

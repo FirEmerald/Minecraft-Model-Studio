@@ -11,7 +11,7 @@ import java.nio.IntBuffer;
 import org.lwjgl.system.MemoryUtil;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 
 public class Mesh
 {
@@ -368,16 +368,16 @@ public class Mesh
     	});
 	}
 	
-	public void saveAsChild(Element el, String name)
+	public void saveAsChild(AbstractElement el, String name)
 	{
-		Element saveTo = el.addChild(name);
+		AbstractElement saveTo = el.addChild(name);
 		saveToXML(saveTo);
 	}
 	
-	public void saveToXML(Element saveTo)
+	public void saveToXML(AbstractElement saveTo)
 	{
 		saveTo.setEnum("mode", drawMode);
-		Element verts = saveTo.addChild("vertices");
+		AbstractElement verts = saveTo.addChild("vertices");
 		StringBuilder str = new StringBuilder();
 		for (float vert : this.verts)
 		{
@@ -385,7 +385,7 @@ public class Mesh
 			str.append(' ');
 		}
 		verts.setValue(str.toString());
-		Element texs = saveTo.addChild("texture_coordinates");
+		AbstractElement texs = saveTo.addChild("texture_coordinates");
 		str = new StringBuilder();
 		for (float tex : this.texs)
 		{
@@ -393,7 +393,7 @@ public class Mesh
 			str.append(' ');
 		}
 		texs.setValue(str.toString());
-		Element norms = saveTo.addChild("normals");
+		AbstractElement norms = saveTo.addChild("normals");
 		str = new StringBuilder();
 		for (float norm : this.norms)
 		{
@@ -401,7 +401,7 @@ public class Mesh
 			str.append(' ');
 		}
 		norms.setValue(str.toString());
-		Element inds = saveTo.addChild("indices");
+		AbstractElement inds = saveTo.addChild("indices");
 		str = new StringBuilder();
 		for (int ind : this.inds)
 		{
@@ -411,10 +411,10 @@ public class Mesh
 		inds.setValue(str.toString());
 	}
 	
-	public void loadFromXML(Element loadFrom) throws Exception
+	public void loadFromXML(AbstractElement loadFrom) throws Exception
 	{
 		String vertsStr = null, texsStr = null, normsStr = null, indsStr = null;
-		for (Element el : loadFrom.getChildren()) switch (el.getName())
+		for (AbstractElement el : loadFrom.getChildren()) switch (el.getName())
 		{
 		case "vertices":
 		{

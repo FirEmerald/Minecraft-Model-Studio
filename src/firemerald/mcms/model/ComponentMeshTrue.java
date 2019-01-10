@@ -3,7 +3,7 @@ package firemerald.mcms.model;
 import org.apache.logging.log4j.Level;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IModel;
 import firemerald.mcms.util.Textures;
 
@@ -58,14 +58,14 @@ public class ComponentMeshTrue extends ComponentMesh
 		return "mesh";
 	}
 	@Override
-	public void addData(Element el)
+	public void addData(AbstractElement el)
 	{
 		super.addData(el);
 		this.mesh().saveToXML(el);
 	}
 	
 	@Override
-	public void loadFromXML(Element el)
+	public void loadFromXML(AbstractElement el)
 	{
 		super.loadFromXML(el);
 		try

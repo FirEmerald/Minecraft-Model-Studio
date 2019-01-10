@@ -12,13 +12,13 @@ import javax.xml.transform.TransformerException;
 
 import org.w3c.dom.Document;
 
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.data.W3CElement;
 import firemerald.mcms.api.math.Matrix4;
 import firemerald.mcms.api.math.Quaternion;
 import firemerald.mcms.api.math.Vec3;
 import firemerald.mcms.api.model.Bone;
-import firemerald.mcms.api.util.DataUtil;
+import firemerald.mcms.api.util.FileUtil;
 
 import java.util.Map.Entry;
 
@@ -131,16 +131,16 @@ public class Animation implements IAnimation
 	{
 		try
 		{
-			Element root = DataUtil.readFile(file);
+			AbstractElement root = FileUtil.readFile(file);
 			float length = root.getFloat("length");
 			boolean loop = root.getBoolean("loop", false);
 			Map<String, NavigableMap<Float, Transformation>> anim = new HashMap<>();
-			for (Element frameEl : root.getChildren()) if (frameEl.getName().equals("frame"))
+			for (AbstractElement frameEl : root.getChildren()) if (frameEl.getName().equals("frame"))
 			{
 				try
 				{
 					float time = frameEl.getFloat("frameTime");
-					for (Element el : frameEl.getChildren()) if (el.getName().equals("bone"))
+					for (AbstractElement el : frameEl.getChildren()) if (el.getName().equals("bone"))
 					{
 						try
 						{
@@ -176,7 +176,7 @@ public class Animation implements IAnimation
 		}
 	}
 	
-	public void writeToXML(Element root)
+	public void writeToXML(AbstractElement root)
 	{
 		NavigableMap<Float, Map<String, Transformation>> map = new TreeMap<>();
 		for (Entry<String, NavigableMap<Float, Transformation>> entry : this.animation.entrySet())
@@ -195,11 +195,11 @@ public class Animation implements IAnimation
 		root.setBoolean("loop", loop);
 		for (Entry<Float, Map<String, Transformation>> entry : map.entrySet())
 		{
-			Element frameEl = root.addChild("frame");
+			AbstractElement frameEl = root.addChild("frame");
 			frameEl.setFloat("frameTime", entry.getKey());
 			for (Entry<String, Transformation> entry2 : entry.getValue().entrySet())
 			{
-				Element el = frameEl.addChild("bone");
+				AbstractElement el = frameEl.addChild("bone");
 				el.setString("boneName", entry2.getKey());
 				Transformation t = entry2.getValue();
 				Vec3 vec = t.translation;
@@ -217,14 +217,14 @@ public class Animation implements IAnimation
 	
 	public void saveToDocument(File toSave)
 	{
-		Document doc = DataUtil.createXML();
+		Document doc = FileUtil.createXML();
 		org.w3c.dom.Element rootEl = doc.createElement("animation");
 		doc.appendChild(rootEl);
-		Element root = new W3CElement(rootEl);
+		AbstractElement root = new W3CElement(rootEl);
 		writeToXML(root);
 		try
 		{
-			DataUtil.saveXML(doc, toSave);
+			FileUtil.saveXML(doc, toSave);
 		}
 		catch (IOException | TransformerException e)
 		{

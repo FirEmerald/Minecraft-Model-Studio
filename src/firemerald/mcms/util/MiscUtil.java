@@ -3,7 +3,7 @@ package firemerald.mcms.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IModel;
 import firemerald.mcms.texture.Color;
 
@@ -16,7 +16,7 @@ public class MiscUtil
 		return out.toArray(new String[out.size()]);
 	}
 	
-	public static Color getColor(Element el, Color def)
+	public static Color getColor(AbstractElement el, Color def)
 	{
 		try
 		{
@@ -29,7 +29,7 @@ public class MiscUtil
 		}
 	}
 	
-	public static Color getColor(Element el, String attr, Color def)
+	public static Color getColor(AbstractElement el, String attr, Color def)
 	{
 		try
 		{

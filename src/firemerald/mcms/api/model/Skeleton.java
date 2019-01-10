@@ -12,12 +12,12 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.data.W3CElement;
 import firemerald.mcms.api.math.Matrix4;
 import firemerald.mcms.api.math.Quaternion;
 import firemerald.mcms.api.math.Vec3;
-import firemerald.mcms.api.util.DataUtil;
+import firemerald.mcms.api.util.FileUtil;
 
 public class Skeleton
 {
@@ -94,7 +94,7 @@ public class Skeleton
 	
 	public Skeleton(File file) throws SAXException, IOException
 	{
-		List<Bone> base = iterate(DataUtil.readFile(file), null);
+		List<Bone> base = iterate(FileUtil.readFile(file), null);
 		setBase(base);
 	}
 	
@@ -114,15 +114,15 @@ public class Skeleton
 	
 	public Skeleton(InputStream in) throws SAXException, IOException
 	{
-		Document doc = DataUtil.readXML(in);
+		Document doc = FileUtil.readXML(in);
 		List<Bone> base = iterate(new W3CElement(doc), null);
 		setBase(base);
 	}
 	
-	private static List<Bone> iterate(Element element, Bone parent)
+	private static List<Bone> iterate(AbstractElement element, Bone parent)
 	{
 		List<Bone> bones = new ArrayList<Bone>();
-		for (Element e : element.getChildren()) if (e.getName().equals("bone"))
+		for (AbstractElement e : element.getChildren()) if (e.getName().equals("bone"))
 		{
 			try
 			{

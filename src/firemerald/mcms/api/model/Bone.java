@@ -7,7 +7,7 @@ import java.util.Map;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.math.Matrix4;
 import firemerald.mcms.api.util.MatrixHandler;
 import firemerald.mcms.api.util.RaytraceResult;
@@ -290,9 +290,9 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		this.childrenVisible = this.visible = visible;
 	}
 	
-	public void addToXML(Element addTo)
+	public void addToXML(AbstractElement addTo)
 	{
-		Element el = addTo.addChild(getXMLName());
+		AbstractElement el = addTo.addChild(getXMLName());
 		addData(el);
 		addChildrenToXML(el);
 	}
@@ -302,30 +302,30 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		return "bone";
 	}
 	
-	public void addData(Element el)
+	public void addData(AbstractElement el)
 	{
 		el.setString("name", name);
 		defaultTransform.saveAsChild(el, "default_position", true, true, false);
 	}
 	
-	public void addChildrenToXML(Element addTo)
+	public void addChildrenToXML(AbstractElement addTo)
 	{
 		for (Bone child : this.children) child.addToXML(addTo);
 	}
 	
-	public void loadFromXML(Element el)
+	public void loadFromXML(AbstractElement el)
 	{
 		defaultTransform.loadFromChild(el, "default_position");
 		loadChildrenFromXML(el);
 	}
 	
-	public void loadChildrenFromXML(Element el)
+	public void loadChildrenFromXML(AbstractElement el)
 	{
 		children.clear();
-		for (Element child : el.getChildren()) tryLoadChild(child);
+		for (AbstractElement child : el.getChildren()) tryLoadChild(child);
 	}
 	
-	public void tryLoadChild(Element el)
+	public void tryLoadChild(AbstractElement el)
 	{
 		switch (el.getName())
 		{

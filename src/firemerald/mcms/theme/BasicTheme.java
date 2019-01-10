@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 
 import org.lwjgl.system.MemoryUtil;
 
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.texture.RGB;
 import firemerald.mcms.util.MathUtil;
@@ -17,10 +17,10 @@ public class BasicTheme extends CommonGuiTheme
 	protected Color background = Color.DARK_GREY, outline = Color.BLACK, fill = Color.WHITE, textbox = Color.LIGHT_GREY, text = Color.BLACK, scrollbar = Color.LIGHT_GREY;
 	public final int outlineI, fillI, textboxI, scrollbarI;
 	
-	public BasicTheme(String name, String origin, Element root)
+	public BasicTheme(String name, String origin, AbstractElement root)
 	{
 		super(name, origin);
-		for (Element el : root.getChildren())
+		for (AbstractElement el : root.getChildren())
 		{
 			String elName = el.getName();
 			if (elName.equalsIgnoreCase("background")) background = MiscUtil.getColor(el, background);

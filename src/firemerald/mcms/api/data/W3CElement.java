@@ -17,9 +17,9 @@ import org.w3c.dom.NodeList;
 
 import firemerald.mcms.api.data.attributes.AttributeString;
 import firemerald.mcms.api.data.attributes.IAttribute;
-import firemerald.mcms.api.util.DataUtil;
+import firemerald.mcms.api.util.FileUtil;
 
-public class W3CElement extends Element
+public class W3CElement extends AbstractElement
 {
 	public final org.w3c.dom.Element element;
 	public final Document document;
@@ -259,10 +259,10 @@ public class W3CElement extends Element
 	}
 
 	@Override
-	public List<Element> getChildren()
+	public List<AbstractElement> getChildren()
 	{
 		NodeList childs = element.getChildNodes();
-		List<Element> list = new ArrayList<>();
+		List<AbstractElement> list = new ArrayList<>();
 		for (int i = 0; i < childs.getLength(); i++)
 		{
 			org.w3c.dom.Node node = childs.item(i);
@@ -272,48 +272,32 @@ public class W3CElement extends Element
 	}
 
 	@Override
-	public Element addChild(String name)
+	public AbstractElement addChild(String name)
 	{
 		org.w3c.dom.Element el = document.createElement(name);
 		element.appendChild(el);
 		return new W3CElement(el);
 	}
 
-	@Override
-	public void save(File file) throws IOException
+	public void save(File file) throws IOException, TransformerException
 	{
 		if (element != document.getDocumentElement()) throw new UnsupportedOperationException("W3C elements can only be saved if they are the root element.");
-		else try
-		{
-			DataUtil.saveXML(document, file);
-		}
-		catch (TransformerException e)
-		{
-			throw new IOException("Couldn't transform document", e);
-		}
+		FileUtil.saveXML(document, file);
 	}
 
-	@Override
-	public void save(OutputStream out) throws IOException
+	public void save(OutputStream out) throws IOException, TransformerException
 	{
 		if (element != document.getDocumentElement()) throw new UnsupportedOperationException("W3C elements can only be saved if they are the root element.");
-		else try
-		{
-			DataUtil.saveXML(document, out);
-		}
-		catch (TransformerException e)
-		{
-			throw new IOException("Couldn't transform document", e);
-		}
+		FileUtil.saveXML(document, out);
 	}
 	
-	public static W3CElement convert(Element el)
+	public static W3CElement convert(AbstractElement el)
 	{
-		Document doc = DataUtil.createXML();
+		Document doc = FileUtil.createXML();
 		return new W3CElement(convert(el, doc, doc));
 	}
 	
-	private static org.w3c.dom.Element convert(Element el, Document doc, Node parent)
+	private static org.w3c.dom.Element convert(AbstractElement el, Document doc, Node parent)
 	{
 		org.w3c.dom.Element element = doc.createElement(el.getName());
 		parent.appendChild(element);

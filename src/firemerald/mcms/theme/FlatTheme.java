@@ -4,11 +4,11 @@ import java.nio.ByteBuffer;
 
 import org.lwjgl.system.MemoryUtil;
 
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 
 public class FlatTheme extends BasicTheme
 {
-	public FlatTheme(String name, String origin, Element root)
+	public FlatTheme(String name, String origin, AbstractElement root)
 	{
 		super(name, origin, root);
 	}

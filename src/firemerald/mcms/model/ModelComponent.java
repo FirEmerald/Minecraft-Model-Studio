@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.math.Matrix3;
 import firemerald.mcms.api.math.Matrix4;
 import firemerald.mcms.api.math.Quaternion;
@@ -501,16 +501,16 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		childrenVisible = this.visible = visible;
 	}
 	
-	public void addToXML(Element addTo)
+	public void addToXML(AbstractElement addTo)
 	{
-		Element el = addTo.addChild(getXMLName());
+		AbstractElement el = addTo.addChild(getXMLName());
 		addData(el);
 		addChildrenToXML(el);
 	}
 	
 	public abstract String getXMLName();
 	
-	public void addData(Element el)
+	public void addData(AbstractElement el)
 	{
 		el.setString("name", name);
 		el.setFloat("posX", posX);
@@ -528,12 +528,12 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		el.setInt("texSizeV", texSizeV);
 	}
 	
-	public void addChildrenToXML(Element addTo)
+	public void addChildrenToXML(AbstractElement addTo)
 	{
 		for (ModelComponent child : this.children) child.addToXML(addTo);
 	}
 	
-	public void loadFromXML(Element el)
+	public void loadFromXML(AbstractElement el)
 	{
 		name = el.getString("name", "null");
 		posX = el.getFloat("posX", posX);
@@ -554,13 +554,13 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		loadChildrenFromXML(el);
 	}
 	
-	public void loadChildrenFromXML(Element el)
+	public void loadChildrenFromXML(AbstractElement el)
 	{
 		children.clear();
-		for (Element child : el.getChildren()) tryLoadChild(child);
+		for (AbstractElement child : el.getChildren()) tryLoadChild(child);
 	}
 
-	public void tryLoadChild(Element el)
+	public void tryLoadChild(AbstractElement el)
 	{
 		ModelComponent.loadComponent(this, el);
 	}
@@ -570,7 +570,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		for (ModelComponent child : children) child.copy(newParent, model);
 	}
 	
-	public static boolean loadComponent(IComponentParent parent, Element el)
+	public static boolean loadComponent(IComponentParent parent, AbstractElement el)
 	{
 		switch (el.getName())
 		{

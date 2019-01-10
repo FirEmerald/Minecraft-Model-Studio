@@ -1,6 +1,6 @@
 package firemerald.mcms.api.animation;
 
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.math.Matrix4;
 import firemerald.mcms.api.math.Quaternion;
 import firemerald.mcms.api.math.Vec3;
@@ -64,13 +64,13 @@ public class Transformation
 		}
 	}
 	
-	public static Transformation getFromChild(Element el, String name)
+	public static Transformation getFromChild(AbstractElement el, String name)
 	{
-		for (Element child : el.getChildren()) if (child.getName().equals(name)) return new Transformation(child);
+		for (AbstractElement child : el.getChildren()) if (child.getName().equals(name)) return new Transformation(child);
 		return new Transformation();
 	}
 	
-	public Transformation(Element el)
+	public Transformation(AbstractElement el)
 	{
 		SaveType type = el.getEnum("type", SaveType.values(), SaveType.NONE);
 		if (type.hasTranslation) loadTranslation(el);
@@ -90,16 +90,16 @@ public class Transformation
 		}
 	}
 	
-	public void loadFromChild(Element el, String name)
+	public void loadFromChild(AbstractElement el, String name)
 	{
-		for (Element child : el.getChildren()) if (child.getName().equals(name))
+		for (AbstractElement child : el.getChildren()) if (child.getName().equals(name))
 		{
 			load(child);
 			break;
 		}
 	}
 	
-	public void load(Element el)
+	public void load(AbstractElement el)
 	{
 		SaveType type = el.getEnum("type", SaveType.values(), SaveType.NONE);
 		if (type.hasTranslation) loadTranslation(el);
@@ -130,13 +130,13 @@ public class Transformation
 		}
 	}
 	
-	public void saveAsChild(Element el, String name, boolean hasTranslation, boolean hasEuler, boolean hasQuaternion)
+	public void saveAsChild(AbstractElement el, String name, boolean hasTranslation, boolean hasEuler, boolean hasQuaternion)
 	{
-		Element child = el.addChild(name);
+		AbstractElement child = el.addChild(name);
 		save(child, hasTranslation, hasEuler, hasQuaternion);
 	}
 	
-	public void save(Element el, boolean hasTranslation, boolean hasEuler, boolean hasQuaternion)
+	public void save(AbstractElement el, boolean hasTranslation, boolean hasEuler, boolean hasQuaternion)
 	{
 		hasTranslation &= (translation.x() != 0 || translation.y() != 0 || translation.z() != 0);
 		hasEuler &= (rX != 0 || rY != 0 || rZ != 0);
@@ -148,38 +148,38 @@ public class Transformation
 		if (hasQuaternion) saveQuaternion(el);
 	}
 	
-	public void loadTranslation(Element el)
+	public void loadTranslation(AbstractElement el)
 	{
 		translation = new Vec3(el.getFloat("x", 0), el.getFloat("y", 0), el.getFloat("z", 0));
 	}
 	
-	public void saveTranslation(Element el)
+	public void saveTranslation(AbstractElement el)
 	{
 		el.setFloat("x", translation.x());
 		el.setFloat("y", translation.y());
 		el.setFloat("z", translation.z());
 	}
 	
-	public void loadEuler(Element el)
+	public void loadEuler(AbstractElement el)
 	{
 		rX = el.getDouble("rX", 0);
 		rY = el.getDouble("rY", 0);
 		rZ = el.getDouble("rZ", 0);
 	}
 	
-	public void saveEuler(Element el)
+	public void saveEuler(AbstractElement el)
 	{
 		el.setDouble("rX", rX);
 		el.setDouble("rY", rY);
 		el.setDouble("rZ", rZ);
 	}
 	
-	public void loadQuaternion(Element el)
+	public void loadQuaternion(AbstractElement el)
 	{
 		rotation = new Quaternion(el.getDouble("qX", 0), el.getDouble("qY", 0), el.getDouble("qZ", 0), el.getDouble("qW", 1)).normalize();
 	}
 	
-	public void saveQuaternion(Element el)
+	public void saveQuaternion(AbstractElement el)
 	{
 		el.setDouble("qX", rotation.x());
 		el.setDouble("qY", rotation.y());

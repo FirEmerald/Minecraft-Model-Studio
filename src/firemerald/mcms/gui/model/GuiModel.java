@@ -4,17 +4,19 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
+import javax.xml.transform.TransformerException;
+
 import org.w3c.dom.Document;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.data.BinaryElementUTF8;
+import firemerald.mcms.api.data.BinaryFormat;
 import firemerald.mcms.api.data.Element;
-import firemerald.mcms.api.data.W3CElement;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.math.Vec3;
 import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.MultiModel;
-import firemerald.mcms.api.util.DataUtil;
+import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.gui.GuiScreen;
 import firemerald.mcms.gui.components.model.ComponentModelViewer;
 import firemerald.mcms.gui.components.model.selector.ComponentEditSelector;
@@ -86,18 +88,27 @@ public class GuiModel extends GuiScreen
 		model.setBase(test1);
 		FileUtils.saveTextFile(RenderObjectComponents.createObj(model).optimize().toString(), new File("testing.obj"), Charset.defaultCharset());
 
-		Element root, modelEl;
+		AbstractElement root, modelEl;
 		
-		Document doc = DataUtil.createXML();
+		Document doc = FileUtil.createXML();
 		org.w3c.dom.Element rootEl = doc.createElement("MCMS");
 		doc.appendChild(rootEl);
-		root = new W3CElement(rootEl);
+		root = new Element("MCMS");
 		modelEl = root.addChild("model");
 		modelEl.setString("name", "testing");
 		for (Bone bone : model.base) bone.addToXML(modelEl);
 		try
 		{
-			root.save(new File("testing.mcms"));
+			root.toElement().saveXML(new File("testing.mcms"));
+		}
+		catch (IOException | TransformerException e)
+		{
+			e.printStackTrace();
+		}
+		
+		try
+		{
+			root.toElement().saveBinary(new File("testing.mcms.bin"), BinaryFormat.UTF_8);
 		}
 		catch (IOException e)
 		{
@@ -106,17 +117,8 @@ public class GuiModel extends GuiScreen
 		
 		try
 		{
-			BinaryElementUTF8.convertToBinary(root).save(new File("testing.mcms.bin"));
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-		
-		try
-		{
-			root = DataUtil.readFile(new File("testing.mcms"));
-			for (Element child : root.getChildren()) if (child.getName().equals("model"))
+			root = FileUtil.readFile(new File("testing.mcms"));
+			for (AbstractElement child : root.getChildren()) if (child.getName().equals("model"))
 			{
 				modelEl = child;
 				model.loadFromXML(modelEl);

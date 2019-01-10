@@ -3,9 +3,9 @@ package firemerald.mcms.api.data.attributes;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 
-import firemerald.mcms.api.data.BinaryElement;
+import firemerald.mcms.api.data.BinaryFormat;
+import firemerald.mcms.api.util.FileUtil;
 
 public class AttributeString implements IAttribute
 {
@@ -80,13 +80,13 @@ public class AttributeString implements IAttribute
 	}
 
 	@Override
-	public void write(OutputStream out, Charset charset, int charsetSize) throws IOException
+	public void write(OutputStream out, BinaryFormat format) throws IOException
 	{
-		BinaryElement.writeString(out, val, charset, charsetSize);
+		FileUtil.writeString(out, val, format);
 	}
 	
-	public static AttributeString read(InputStream in, Charset charset, int charsetSize) throws IOException
+	public static AttributeString read(InputStream in, BinaryFormat format) throws IOException
 	{
-		return new AttributeString(BinaryElement.readString(in, charset, charsetSize));
+		return new AttributeString(FileUtil.readString(in, format));
 	}
 }

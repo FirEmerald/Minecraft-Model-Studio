@@ -3,11 +3,13 @@ package firemerald.mcms.util;
 import java.io.File;
 import java.io.IOException;
 
+import javax.xml.transform.TransformerException;
+
 import org.apache.logging.log4j.Level;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.data.*;
-import firemerald.mcms.api.util.DataUtil;
+import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.theme.GuiTheme;
 
 public class ApplicationState
@@ -16,14 +18,22 @@ public class ApplicationState
 	public static final File FILE2 = new File("state.xml");
 	
 	private Element root;
-	private Element window;
-	private Element theme;
+	private AbstractElement window;
+	private AbstractElement theme;
 	
 	public ApplicationState()
 	{
-		root = new BinaryElementUTF8("state");
+		root = new Element("state");
 		window = root.addChild("window");
 		theme = root.addChild("theme");
+		
+		try {
+			Element el = FileUtil.readFile(new File("state.json")).toElement();
+			el.saveXML(new File("state_out.xml"));
+		} catch (IOException | TransformerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void setPos(int x, int y)
@@ -93,10 +103,10 @@ public class ApplicationState
 	{
 		try
 		{
-			root = DataUtil.readFile(FILE);
+			root = FileUtil.readFile(FILE).toElement();
 			window = null;
 			theme = null;
-			for (Element child : root.getChildren())
+			for (AbstractElement child : root.getChildren())
 			{
 				switch (child.getName())
 				{
@@ -122,10 +132,10 @@ public class ApplicationState
 	{
 		try
 		{
-			root.save(FILE);
-			W3CElement.convert(root).save(FILE2);
+			root.saveBinary(FILE, BinaryFormat.UTF_16BE);
+			root.saveXML(FILE2);
 		}
-		catch (IOException e)
+		catch (IOException | TransformerException e)
 		{
 			Main.LOGGER.log(Level.WARN, "Failed to save application state", e);
 		}

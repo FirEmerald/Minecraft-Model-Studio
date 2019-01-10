@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.data.Element;
+import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.math.Matrix4;
 import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.IModel;
@@ -213,21 +213,21 @@ public class RenderObjectComponents extends Bone implements IComponentParent
 	}
 	
 	@Override
-	public void addChildrenToXML(Element addTo)
+	public void addChildrenToXML(AbstractElement addTo)
 	{
 		for (ModelComponent child : this.components) child.addToXML(addTo);
 		super.addChildrenToXML(addTo);
 	}
 	
 	@Override
-	public void loadChildrenFromXML(Element el)
+	public void loadChildrenFromXML(AbstractElement el)
 	{
 		components.clear();
 		super.loadChildrenFromXML(el);
 	}
 
 	@Override
-	public void tryLoadChild(Element el)
+	public void tryLoadChild(AbstractElement el)
 	{
 		if (!ModelComponent.loadComponent(this, el)) super.tryLoadChild(el);
 	}

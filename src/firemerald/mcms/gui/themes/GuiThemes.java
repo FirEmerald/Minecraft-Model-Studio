@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.api.data.Element;
-import firemerald.mcms.api.util.DataUtil;
+import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.scrolling.*;
 import firemerald.mcms.theme.GuiTheme;
@@ -33,10 +33,10 @@ public class GuiThemes extends GuiPopup
 		File[] candidates = new File("themes").listFiles((FilenameFilter) (dir, name) -> {return name.endsWith(".xml");});
 		for (File candidate : candidates)
 		{
-			Element el = null;
+			AbstractElement el = null;
 			try
 			{
-				el = DataUtil.readFile(candidate);
+				el = FileUtil.readFile(candidate);
 			}
 			catch (Exception e1)
 			{
