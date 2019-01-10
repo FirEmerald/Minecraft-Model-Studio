@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeSet;
 
 import javax.xml.transform.TransformerException;
 
@@ -329,6 +330,11 @@ public class Element extends AbstractElement
 		});
 	}
 	
+	/*
+	 * no children and all attributes have positive integer names
+	 * or
+	 * no attributes and all children have positive integer names
+	 */
 	public void loadFromJSON(JsonArray array)
 	{
 		boolean isPrimitive = true;
@@ -349,6 +355,9 @@ public class Element extends AbstractElement
 		}
 	}
 	
+	/*
+	 * value != null, no attributes, no children.
+	 */
 	public void loadFromJSON(JsonPrimitive primitive)
 	{
 		this.setValue(primitive.getAsString());
@@ -372,7 +381,7 @@ public class Element extends AbstractElement
 			else if (num instanceof LazilyParsedNumber)
 			{
 				LazilyParsedNumber l = (LazilyParsedNumber) num;
-				if (l.toString().contains(".")) this.setDouble(name, l.doubleValue());
+				if (l.toString().contains(".") || l.toString().contains("E") || l.toString().contains("e")) this.setDouble(name, l.doubleValue());
 				else this.setLong(name, l.longValue());
 			}
 			else System.err.println("Invalid number type: " + num.getClass());
@@ -380,5 +389,171 @@ public class Element extends AbstractElement
 		}
 		else System.err.println("Invalid primitive type: " + value);
 		//TODO else exception
+	}
+	
+	public static class NumberedElement implements Comparable<NumberedElement>
+	{
+		public final Element el;
+		public final int num;
+		
+		public NumberedElement(Element el, int num)
+		{
+			this.el = el;
+			this.num = num;
+		}
+		
+		@Override
+		public int compareTo(NumberedElement arg0)
+		{
+			return num - arg0.num;
+		}
+	}
+	
+	public static class NumberedAttribute implements Comparable<NumberedAttribute>
+	{
+		public final IAttribute attr;
+		public final int num;
+		
+		public NumberedAttribute(IAttribute attr, int num)
+		{
+			this.attr = attr;
+			this.num = num;
+		}
+		
+		@Override
+		public int compareTo(NumberedAttribute arg0)
+		{
+			return num - arg0.num;
+		}
+	}
+	
+	public JsonElement makeElement(boolean needsName)
+	{
+		String value = this.getValue();
+		Map<String, IAttribute> attributes = this.getAttributes();
+		@SuppressWarnings("unchecked")
+		List<Element> children = (List<Element>) this.getChildren();
+		if (attributes.isEmpty())
+		{
+			if (children.isEmpty())
+			{
+				if (value == null) return new JsonObject();
+				else return new JsonPrimitive(value);
+			}
+			else
+			{
+				if (value == null)
+				{
+					boolean flag = false;
+					TreeSet<NumberedElement> s = new TreeSet<>();
+					for (Element child : children)
+					{
+						try
+						{
+							NumberedElement el;
+							Integer i = Integer.parseInt(child.getName());
+							if (i < 0 || s.contains(el = new NumberedElement(child, i)))
+							{
+								flag = true;
+								break;
+							}
+							else s.add(el);
+						}
+						catch (NumberFormatException e)
+						{
+							flag = true;
+							break;
+						}
+					}
+					if (!flag)
+					{
+						JsonArray array = new JsonArray();
+						int targetNum = 0;
+						for (NumberedElement el : s)
+						{
+							if (el.num == targetNum)
+							{
+								array.add(el.el.makeElement(false));
+								targetNum++;
+							}
+							else
+							{
+								flag = true;
+								break;
+							}
+						}
+						if (!flag) return array;
+					}
+				}
+			}
+		}
+		else
+		{
+			if (children.isEmpty())
+			{
+				if (value == null)
+				{
+					boolean flag = false;
+					TreeSet<NumberedAttribute> s = new TreeSet<>();
+					for (Entry<String, IAttribute> entry : attributes.entrySet())
+					{
+						try
+						{
+							NumberedAttribute el;
+							Integer i = Integer.parseInt(entry.getKey());
+							if (i < 0 || s.contains(el = new NumberedAttribute(entry.getValue(), i)))
+							{
+								flag = true;
+								break;
+							}
+							else s.add(el);
+						}
+						catch (NumberFormatException e)
+						{
+							flag = true;
+							break;
+						}
+					}
+					if (!flag)
+					{
+						JsonArray array = new JsonArray();
+						int targetNum = 0;
+						for (NumberedAttribute attr : s)
+						{
+							if (attr.num == targetNum)
+							{
+								array.add(attr.attr.makeElement());
+								targetNum++;
+							}
+							else
+							{
+								flag = true;
+								break;
+							}
+						}
+						if (!flag) return array;
+					}
+				}
+			}
+		}
+		//TODO find workaround for having children with the same name as other children or attributes
+		List<String> childNames = new ArrayList<>();
+		JsonObject obj = new JsonObject();
+		if (needsName) obj.addProperty("#name", getName());
+		if (value != null) obj.addProperty("#value", value);
+		attributes.forEach((name, attr) -> {
+			childNames.add(name);
+			obj.add(name, attr.makeElement());
+		});
+		children.forEach(child -> {
+			String name = child.getName();
+			if (childNames.contains(name)) throw new IllegalArgumentException("cannot convert elements with multiple attributes/children of the same name to JSON");
+			else
+			{
+				childNames.add(name);
+				obj.add(name, child.makeElement(false));
+			}
+		});
+		return obj;
 	}
 }

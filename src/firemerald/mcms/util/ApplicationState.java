@@ -30,6 +30,7 @@ public class ApplicationState
 		try {
 			Element el = FileUtil.readFile(new File("state.json")).toElement();
 			el.saveXML(new File("state_out.xml"));
+			System.out.println(el.makeElement(true).toString());
 		} catch (IOException | TransformerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

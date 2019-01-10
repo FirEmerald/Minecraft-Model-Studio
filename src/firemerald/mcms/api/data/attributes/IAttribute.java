@@ -3,6 +3,8 @@ package firemerald.mcms.api.data.attributes;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import com.google.gson.JsonElement;
+
 import firemerald.mcms.api.data.BinaryFormat;
 
 public interface IAttribute
@@ -38,4 +40,6 @@ public interface IAttribute
 	public <T extends Enum<?>> T getEnum(T[] values) throws Exception;
 	
 	public void write(OutputStream out, BinaryFormat format) throws IOException;
+
+	public JsonElement makeElement();
 }
