@@ -369,7 +369,12 @@ public class Element extends AbstractElement
 			else if (num instanceof Float) this.setFloat(name, value.getAsFloat());
 			else if (num instanceof Double) this.setDouble(name, value.getAsDouble());
 			else if (num instanceof BigDecimal) this.setDouble(name, value.getAsBigDecimal().doubleValue());
-			else if (num instanceof LazilyParsedNumber) this.setDouble(name, ((LazilyParsedNumber) num).doubleValue());
+			else if (num instanceof LazilyParsedNumber)
+			{
+				LazilyParsedNumber l = (LazilyParsedNumber) num;
+				if (l.toString().contains(".")) this.setDouble(name, l.doubleValue());
+				else this.setLong(name, l.longValue());
+			}
 			else System.err.println("Invalid number type: " + num.getClass());
 			//TODO else exception
 		}
