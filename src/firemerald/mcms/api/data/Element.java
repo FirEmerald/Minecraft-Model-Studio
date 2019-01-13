@@ -536,7 +536,6 @@ public class Element extends AbstractElement
 				}
 			}
 		}
-		//TODO find workaround for having children with the same name as other children or attributes
 		List<String> childNames = new ArrayList<>();
 		JsonObject obj = new JsonObject();
 		if (needsName) obj.addProperty("#name", getName());
@@ -545,15 +544,23 @@ public class Element extends AbstractElement
 			childNames.add(name);
 			obj.add(name, attr.makeElement());
 		});
-		children.forEach(child -> {
+		int i = 0;
+		for (Element child : children)
+		{
 			String name = child.getName();
-			if (childNames.contains(name)) throw new IllegalArgumentException("cannot convert elements with multiple attributes/children of the same name to JSON");
+			if (childNames.contains(name))
+			{
+				while (childNames.contains(name = "duplicate_name_" + i)) i++;
+				i++;
+				childNames.add(name);
+				obj.add(name, child.makeElement(true));
+			}
 			else
 			{
 				childNames.add(name);
 				obj.add(name, child.makeElement(false));
 			}
-		});
+		}
 		return obj;
 	}
 }
