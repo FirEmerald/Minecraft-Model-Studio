@@ -550,8 +550,7 @@ public class Element extends AbstractElement
 			String name = child.getName();
 			if (childNames.contains(name))
 			{
-				while (childNames.contains(name = "duplicate_name_" + i)) i++;
-				i++;
+				while (childNames.contains(name = "duplicate_name_" + (i++))) {};
 				childNames.add(name);
 				obj.add(name, child.makeElement(true));
 			}
