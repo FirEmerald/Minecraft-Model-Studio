@@ -53,8 +53,8 @@ import firemerald.mcms.window.glfw.GLFWWindow;
 public class Main
 {
 	//public static final String VERSION = "0.0.0.0";
-	public static final String VERSION = "Alpha 3";
-	public static final String BUILD_DATE = "12/9/2019 15:33";
+	public static final String VERSION = "Alpha 4";
+	public static final String BUILD_DATE = "12/20/2019 19:18";
 	public static final Logger LOGGER;
 	public static Main instance;
 	public static final int MIN_W = 640, MIN_H = 480;

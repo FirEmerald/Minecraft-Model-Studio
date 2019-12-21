@@ -8,7 +8,6 @@ import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.api.util.FileUtil.DataType;
 import firemerald.mcms.gui.components.ButtonItem16;
-import firemerald.mcms.gui.components.IconElementButton;
 import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.components.scrolling.ScrollBar;
 import firemerald.mcms.gui.components.scrolling.ScrollBarH;
