@@ -1,6 +1,7 @@
 package firemerald.mcms.gui;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.util.GuiUpdate;
 
 public abstract class GuiPopup extends GuiScreen
 {
@@ -33,4 +34,11 @@ public abstract class GuiPopup extends GuiScreen
 	}
 	
 	public void doRender(float mx, float my, boolean canHover) {}
+	
+	@Override
+	public void onGuiUpdate(GuiUpdate reason)
+	{
+		super.onGuiUpdate(reason);
+		if (under != null) under.onGuiUpdate(reason);
+	}
 }

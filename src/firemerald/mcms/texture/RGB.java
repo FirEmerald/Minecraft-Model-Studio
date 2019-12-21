@@ -1,5 +1,7 @@
 package firemerald.mcms.texture;
 
+import firemerald.mcms.util.MathUtil;
+
 public class RGB extends ColorModel
 {
 	public static final RGB RED = new RGB(1, 0, 0);
@@ -156,5 +158,23 @@ public class RGB extends ColorModel
 		float l = (max + min) * .5f;
 		float s = d == 0 || l == 0 || l == 1 ? 0 : d / (1 - Math.abs(2 * l - 1));
 		return new HSL(h, s, l);
+	}
+
+	@Override
+	public RGB copy()
+	{
+		return new RGB(r, g, b);
+	}
+	
+	@Override
+	public int hashCode()
+	{
+		return (MathUtil.clampInt(r, 0, 255) << 16) | (MathUtil.clampInt(g, 0, 255) << 8) | MathUtil.clampInt(b, 0, 255); //assume no int has bits above index 8 due to clamping
+	}
+	
+	@Override
+	public boolean equals(Object o)
+	{
+		return o instanceof ColorModel && ((ColorModel) o).getRGB().hashCode() == hashCode();
 	}
 }

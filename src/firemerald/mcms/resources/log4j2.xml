@@ -16,7 +16,7 @@
 			<ThresholdFilter level="WARN"/>
 			<PatternLayout pattern="${pattern}"/>
 		</Console>
-		<RollingFile name="File" fileName="${directory}game_output.log" filePattern="${directory}log-$${date:MM-dd-yyyy}.%i.log.gz">
+		<RollingFile name="File" fileName="${directory}latest.log" filePattern="${directory}log-$${date:MM-dd-yyyy}.%i.log.gz">
 			<PatternLayout pattern="${pattern}"/>
 			<Policies>
 				<OnStartupTriggeringPolicy/>

@@ -5,7 +5,7 @@ public class ComponentIncrementDouble extends ComponentIncrement
 	protected double increment;
 	public final ComponentTextDouble text;
 	
-	public ComponentIncrementDouble(float x, float y, ComponentTextDouble text, double increment)
+	public ComponentIncrementDouble(int x, int y, ComponentTextDouble text, double increment)
 	{
 		super(x, y, increment < 0);
 		this.text = text;
@@ -15,7 +15,7 @@ public class ComponentIncrementDouble extends ComponentIncrement
 	public void setIncrement(double increment)
 	{
 		this.increment = increment;
-		id = increment < 0 ? DOWN : UP;
+		setIsNegative(increment < 0);
 	}
 
 	@Override

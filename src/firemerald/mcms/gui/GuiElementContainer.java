@@ -3,43 +3,68 @@ package firemerald.mcms.gui;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.lwjgl.glfw.GLFW;
-
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.IComponent;
-import firemerald.mcms.util.Cursors;
+import firemerald.mcms.theme.GuiTheme;
+import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.window.api.Cursor;
+import firemerald.mcms.window.api.Key;
+import firemerald.mcms.window.api.MouseButtons;
 
-public abstract class GuiElementContainer implements IGuiInteractable
+public abstract class GuiElementContainer implements IGuiInteractable, IGuiHolder
 {
-	protected final List<IGuiElement> guiElements = new ArrayList<>();
+	private final List<IGuiElement> guiElements = new ArrayList<>();
 	public IComponent focused;
+	public IGuiHolder holder = null;
+
+	@Override
+	public void setHolder(IGuiHolder holder)
+	{
+		this.holder = holder;
+	}
+	
+	@Override
+	public IGuiHolder getHolder()
+	{
+		return this.holder;
+	}
+	
+	public synchronized IGuiElement[] getElementsCopy()
+	{
+		return guiElements.toArray(new IGuiElement[guiElements.size()]);
+	}
 	
 	@Override
 	public void tick(float mx, float my, float deltaTime)
 	{
-		for (IGuiElement element : guiElements) element.tick(mx, my, deltaTime);
+		for (IGuiElement element : getElementsCopy()) element.tick(mx, my, deltaTime);
 	}
 	
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
-		for (IGuiElement element : guiElements) element.render(mx, my, canHover);
+		for (IGuiElement element : getElementsCopy()) element.render(mx, my, canHover);
 	}
 
 	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
-		if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || GLFW.glfwGetMouseButton(Main.instance.window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_RELEASE)
+		if (button == MouseButtons.LEFT || !Main.instance.window.isMouseDown(MouseButtons.LEFT))
 		{
 			IComponent preFocused = focused;
 			focused = null;
-			for (IGuiElement element : guiElements) if (element instanceof IComponent)
+			IGuiElement[] elements = getElementsCopy();
+			for (int i = elements.length - 1; i >= 0; i--)
 			{
-				IComponent c = (IComponent) element;
-				if (c.contains(mx, my))
+				IGuiElement element = elements[i];
+				if (element instanceof IComponent)
 				{
-					focused = c;
-					break;
+					IComponent c = (IComponent) element;
+					if (c.contains(mx, my))
+					{
+						focused = c;
+						break;
+					}
 				}
 			}
 			if (preFocused != focused)
@@ -53,10 +78,15 @@ public abstract class GuiElementContainer implements IGuiInteractable
 	
 	public IComponent getHovered(float mx, float my)
 	{
-		for (IGuiElement element : guiElements) if (element instanceof IComponent)
+		IGuiElement[] elements = getElementsCopy();
+		for (int i = elements.length - 1; i >= 0; i--)
 		{
-			IComponent c = (IComponent) element;
-			if (c.contains(mx, my)) return c;
+			IGuiElement element = elements[i];
+			if (element instanceof IComponent)
+			{
+				IComponent c = (IComponent) element;
+				if (c.contains(mx, my)) return c;
+			}
 		}
 		return null;
 	}
@@ -74,9 +104,9 @@ public abstract class GuiElementContainer implements IGuiInteractable
 	}
 
 	@Override
-	public void onDrag(float mx, float my)
+	public void onDrag(float mx, float my, int button)
 	{
-		if (focused != null) focused.onDrag(mx, my);
+		if (focused != null) focused.onDrag(mx, my, button);
 	}
 	
 	@Override
@@ -107,37 +137,46 @@ public abstract class GuiElementContainer implements IGuiInteractable
 	}
 
 	@Override
-	public void onKeyPressed(int key, int scancode, int mods)
+	public void onKeyPressed(Key key, int scancode, int mods)
 	{
 		if (focused != null) focused.onKeyPressed(key, scancode, mods);
 	}
 
 	@Override
-	public void onKeyReleased(int key, int scancode, int mods)
+	public void onKeyReleased(Key key, int scancode, int mods)
 	{
 		if (focused != null) focused.onKeyReleased(key, scancode, mods);
 	}
 
 	@Override
-	public void onKeyRepeat(int key, int scancode, int mods)
+	public void onKeyRepeat(Key key, int scancode, int mods)
 	{
 		if (focused != null) focused.onKeyRepeat(key, scancode, mods);
 	}
 	
 	@Override
-	public long getCursor(float mx, float my)
+	public Cursor getCursor(float mx, float my)
 	{
-		for (IGuiElement element : guiElements) if (element instanceof IComponent)
+		IGuiElement[] elements = this.getElementsCopy();
+		for (int i = elements.length - 1; i >= 0; i--)
 		{
-			IComponent c = (IComponent) element;
-			if (c.contains(mx, my)) return c.getCursor(mx, my);
-		}
-		return Cursors.standard;
+			IGuiElement element = elements[i];
+			if (element instanceof IComponent)
+			{
+				IComponent c = (IComponent) element;
+				if (c.contains(mx, my)) return c.getCursor(mx, my);
+			}
+		} 
+		return Cursor.STANDARD;
 	}
 	
 	public void addElement(IGuiElement element)
 	{
-		if (element != null) guiElements.add(element);
+		if (element != null)
+		{
+			guiElements.add(element);
+			element.setHolder(this);
+		}
 	}
 	
 	public void removeElement(IGuiElement element)
@@ -150,6 +189,21 @@ public abstract class GuiElementContainer implements IGuiInteractable
 				focused.onUnfocus();
 				focused = null;
 			}
+			element.setHolder(null);
 		}
+	}
+	
+	@Override
+	public void onGuiUpdate(GuiUpdate reason)
+	{
+		IGuiElement[] elements = getElementsCopy();
+		for (int i = elements.length - 1; i >= 0; i--) elements[i].onGuiUpdate(reason);
+	}
+	
+	@Override
+	public void setThemeOverride(GuiTheme theme)
+	{
+		IGuiElement[] elements = getElementsCopy();
+		for (int i = elements.length - 1; i >= 0; i--) elements[i].setThemeOverride(theme);
 	}
 }

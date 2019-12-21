@@ -2,6 +2,10 @@ package firemerald.mcms.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.xml.transform.TransformerException;
 
@@ -10,93 +14,91 @@ import org.apache.logging.log4j.Level;
 import firemerald.mcms.Main;
 import firemerald.mcms.api.data.*;
 import firemerald.mcms.api.util.FileUtil;
+import firemerald.mcms.texture.ColorModel;
+import firemerald.mcms.texture.RGB;
+import firemerald.mcms.theme.BasicTheme;
 import firemerald.mcms.theme.GuiTheme;
+import firemerald.mcms.util.hotkey.Action;
+import firemerald.mcms.util.hotkey.HotKey;
+import firemerald.mcms.window.api.Window;
 
 public class ApplicationState
 {
-	public static final File FILE = new File("state.bin");
-	public static final File FILE2 = new File("state.xml");
+	public static final File FILE = new File("state.xml");
 	
-	private Element root;
-	private AbstractElement window;
-	private AbstractElement theme;
+	private final GuiTheme basicTheme = new BasicTheme();
+	private GuiTheme theme;
+	public final Map<Action, HotKey> hotkeys = new HashMap<>(); //TODO save hotkeys
+	private boolean showNodes = false, showBones = false;
+	private final List<ColorModel> colorHistory = new ArrayList<>();
+	private static final int MAX_COLOR_HISTORY = 16;
 	
 	public ApplicationState()
 	{
-		root = new Element("state");
-		window = root.addChild("window");
-		theme = root.addChild("theme");
-		
-		try {
-			Element el = FileUtil.readFile(new File("state.json")).toElement();
-			el.saveXML(new File("state_out.xml"));
-			System.out.println(el.makeElement(true).toString());
-		} catch (IOException | TransformerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		Action.ACTIONS.values().forEach(action -> {
+			hotkeys.put(action, action.def);
+		});
+		final String defTheme = "themes/dark.xml";
+		try
+		{
+			theme = GuiTheme.parseTheme(defTheme);
+		}
+		catch (Exception e)
+		{
+			Main.LOGGER.error("Could not load default theme " + defTheme);
+			theme = basicTheme;
 		}
 	}
 	
-	public void setPos(int x, int y)
+	public ColorModel getColorHistory(int index)
 	{
-		window.setInt("x", x);
-		window.setInt("y", y);
+		return index >= 0 && index < MAX_COLOR_HISTORY && index < colorHistory.size() ? colorHistory.get(index).copy() : null;
+	}
+	
+	public void addToColorHistory(ColorModel color)
+	{
+		colorHistory.remove(color);
+		colorHistory.add(0, color.copy());
+		while (colorHistory.size() > MAX_COLOR_HISTORY) colorHistory.remove(MAX_COLOR_HISTORY);
 		saveState();
 	}
 	
-	public void setSize(int w, int h)
+	public GuiTheme getTheme()
 	{
-		window.setInt("w", w);
-		window.setInt("h", h);
+		return theme;
+	}
+	
+	public void setTheme(GuiTheme theme)
+	{
+		setThemeNoStateUpdate(theme);
 		saveState();
 	}
 	
-	public void setMaximized(boolean maximized)
+	public void setThemeNoStateUpdate(GuiTheme theme)
 	{
-		window.setBoolean("maximized", maximized);
+		this.theme = theme;
+		if (Main.instance.gui != null) Main.instance.gui.onGuiUpdate(GuiUpdate.THEME);
+	}
+
+	public boolean showNodes()
+	{
+		return showNodes;
+	}
+
+	public void setShowNodes(boolean showNodes)
+	{
+		this.showNodes = showNodes;
 		saveState();
 	}
-	
-	public boolean getMaximized()
+
+	public boolean showBones()
 	{
-		return window.getBoolean("maximized", false);
+		return showBones;
 	}
-	
-	public int getWindowW()
+
+	public void setShowBones(boolean showBones)
 	{
-		int val = window.getInt("w", 1280);
-		if (val < 640) val = 640;
-		return val;
-	}
-	
-	public int getWindowH()
-	{
-		int val = window.getInt("h", 720);
-		if (val < 480) val = 480;
-		return val;
-	}
-	
-	public int getWindowX(int displayW, int windowW)
-	{
-		int m = displayW - windowW;
-		int val = window.getInt("x", m / 2);
-		if (val < 0) val = 0;
-		else if (val > m) val = m;
-		return val;
-	}
-	
-	public int getWindowY(int displayH, int windowH)
-	{
-		int m = displayH - windowH;
-		int val = window.getInt("y", m / 2);
-		if (val < 0) val = 0;
-		else if (val > m) val = m;
-		return val;
-	}
-	
-	public void setTheme(String origin)
-	{
-		theme.setValue(origin);
+		this.showBones = showBones;
 		saveState();
 	}
 	
@@ -104,24 +106,72 @@ public class ApplicationState
 	{
 		try
 		{
-			root = FileUtil.readFile(FILE).toElement();
-			window = null;
-			theme = null;
-			for (AbstractElement child : root.getChildren())
+			AbstractElement root = FileUtil.readFile(FILE);
+			String theme = "themes/dark.xml";
+			Action.ACTIONS.values().forEach(action -> {
+				hotkeys.put(action, action.def);
+			});
+			for (AbstractElement rootChild : root.getChildren()) switch (rootChild.getName())
 			{
-				switch (child.getName())
+			case "window":
+				Window window = Main.instance.window;
+				int displayW = window.getDisplayW();
+				int displayH = window.getDisplayH();
+				boolean maximized = rootChild.getBoolean("maximized", true);
+				window.setMaximized(maximized);
+				if (!maximized)
 				{
-				case "window":
-					window = child;
-					break;
-				case "theme":
-					theme = child;
-					break;
+					int windowW = rootChild.getInt("w", 640, displayW, 1280);
+					int windowH = rootChild.getInt("h", 480, displayH, 720);
+					window.setSize(windowW, windowH);
+					int dw = displayW - window.getW();
+					int dh = displayH - window.getH();
+					int windowX = rootChild.getInt("x", 0, dw, dw / 2);
+					int windowY = rootChild.getInt("y", 0, dh, dh / 2);
+					window.setPosition(windowX, windowY);
 				}
+				break;
+			case "options":
+				for (AbstractElement optionsChild : rootChild.getChildren()) switch (optionsChild.getName())
+				{
+				case "theme":
+					theme = optionsChild.getValue();
+					break;
+				case "viewer":
+					showNodes = optionsChild.getBoolean("showNodes", false);
+					showBones = optionsChild.getBoolean("showBones", false);
+					break;
+				case "hotkeys":
+					for (AbstractElement hotkeysChild : optionsChild.getChildren())
+					{
+						String name = hotkeysChild.getName();
+						Action act = Action.ACTIONS.get(name);
+						if (act == null)
+						{
+							Main.LOGGER.warn("Couldn't load missing hotkey action " + name);
+							continue;
+						}
+						else hotkeys.put(act, new HotKey(hotkeysChild));
+					}
+				}
+				break;
+			case "color_history":
+				colorHistory.clear();
+				for (AbstractElement colorEl : rootChild.getChildren())
+				{
+					if (colorEl.getName().equals("rgb")) colorHistory.add(new RGB(colorEl.getInt("r", 0, 255, 0) / 255f, colorEl.getInt("g", 0, 255, 0) / 255f, colorEl.getInt("b", 0, 255, 0) / 255f));
+				}
+				break;
 			}
-			if (window == null) window = root.addChild("window");
-			if (theme == null) theme = root.addChild("theme");
-			if (theme.getValue() != null) Main.instance.theme = GuiTheme.parseTheme(theme.getValue());
+			try
+			{
+				setThemeNoStateUpdate(GuiTheme.parseTheme(theme));
+			}
+			catch (Exception e)
+			{
+				Main.LOGGER.error("Could not load theme " + theme);
+				setThemeNoStateUpdate(basicTheme);
+			}
 		}
 		catch (Exception e)
 		{
@@ -133,8 +183,38 @@ public class ApplicationState
 	{
 		try
 		{
-			root.saveBinary(FILE, BinaryFormat.UTF_16BE);
-			root.saveXML(FILE2);
+			Element root = new Element("state");
+			AbstractElement window = root.addChild("window");
+			Window wind = Main.instance.window;
+			boolean maximized = wind.isMaximized();
+			window.setBoolean("maximized", maximized);
+			if (!maximized)
+			{
+				window.setInt("x", wind.getX());
+				window.setInt("y", wind.getY());
+			}
+			window.setInt("w", wind.getW());
+			window.setInt("h", wind.getH());
+			AbstractElement options = root.addChild("options");
+			AbstractElement theme = options.addChild("theme");
+			theme.setValue(this.theme.origin);
+			AbstractElement viewer = options.addChild("viewer");
+			viewer.setBoolean("showNodes", showNodes);
+			viewer.setBoolean("showBones", showBones);
+			AbstractElement hotkeys = options.addChild("hotkeys");
+			this.hotkeys.forEach((action, hotkey) -> hotkey.writeToElement(hotkeys.addChild(action.id)));
+			if (!colorHistory.isEmpty())
+			{
+				AbstractElement colorHistory = root.addChild("color_history");
+				this.colorHistory.forEach(color -> {
+					RGB rgb = color.getRGB();
+					AbstractElement colorEl = colorHistory.addChild("rgb");
+					colorEl.setInt("r", (int) (rgb.r * 255));
+					colorEl.setInt("g", (int) (rgb.g * 255));
+					colorEl.setInt("b", (int) (rgb.b * 255));
+				});
+			}
+			root.saveXML(FILE);
 		}
 		catch (IOException | TransformerException e)
 		{

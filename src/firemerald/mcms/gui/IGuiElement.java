@@ -1,16 +1,63 @@
 package firemerald.mcms.gui;
 
+import firemerald.mcms.Main;
+import firemerald.mcms.theme.GuiTheme;
+import firemerald.mcms.util.GuiUpdate;
+
 public interface IGuiElement
 {
 	public abstract void tick(float mx, float my, float deltaTime);
 	
 	public abstract void render(float mx, float my, boolean canHover);
 	
-	public abstract float getX1();
+	public abstract int getX1();
 	
-	public abstract float getY1();
+	public abstract int getY1();
 	
-	public abstract float getX2();
+	public abstract int getX2();
 	
-	public abstract float getY2();
+	public abstract int getY2();
+	
+	public abstract void setHolder(IGuiHolder holder);
+	
+	public abstract IGuiHolder getHolder();
+	
+	public default int getHolderOffsetX()
+	{
+		return getHolder() == null ? 0 : getHolder().getComponentOffsetX();
+	}
+	
+	public default int getHolderOffsetY()
+	{
+		return getHolder() == null ? 0 : getHolder().getComponentOffsetY();
+	}
+	
+	public default int getTrueX1()
+	{
+		return getHolderOffsetX() + getX1();
+	}
+	
+	public default int getTrueY1()
+	{
+		return getHolderOffsetY() + getY1();
+	}
+	
+	public default int getTrueX2()
+	{
+		return getHolderOffsetX() + getX2();
+	}
+	
+	public default int getTrueY2()
+	{
+		return getHolderOffsetY() + getY2();
+	}
+	
+	default public GuiTheme getTheme()
+	{
+		return Main.instance.getTheme();
+	}
+	
+	public abstract void setThemeOverride(GuiTheme theme); //does not have to cause a change, will not update componentes
+	
+	default public void onGuiUpdate(GuiUpdate reason) {}
 }

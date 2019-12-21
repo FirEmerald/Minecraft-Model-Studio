@@ -1,24 +1,38 @@
 package firemerald.mcms.gui.colors;
 
-import org.lwjgl.glfw.GLFW;
+import java.util.function.Consumer;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.gui.GuiScreen;
-import firemerald.mcms.gui.components.text.ComponentText;
+import firemerald.mcms.gui.GuiPopup;
+import firemerald.mcms.texture.ColorModel;
+import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.window.api.Key;
 
-public class GuiColor extends GuiScreen
+public class GuiColor extends GuiPopup
 {
 	public final ComponentColorPicker picker;
 	
-	public GuiColor()
+	public GuiColor(ColorModel color, Consumer<ColorModel> onColor)
 	{
-		this.guiElements.add(picker = new ComponentColorPicker(310, 10));
-		this.guiElements.add(new ComponentText(360, 10, 640, 30, Main.instance.fontMsg, "MCAMC", title -> GLFW.glfwSetWindowTitle(Main.instance.window, title)));
+		this.addElement(picker = new ComponentColorPicker(0, 0, color, onColor));
+		onGuiUpdate(GuiUpdate.THEME);
 	}
 
 	@Override
 	public void setSize(int w, int h)
 	{
-		picker.setPosition(w - 240, 0);
+		super.setSize(w, h);
+		picker.setCenter(w / 2, h / 2);
+	}
+	
+	@Override
+	public void onKeyPressed(Key key, int scancode, int mods)
+	{
+		if (key == Key.ESCAPE)
+		{
+			Main.instance.state.addToColorHistory(picker.color);
+			this.deactivate();
+		}
+		else super.onKeyPressed(key, scancode, mods);
 	}
 }

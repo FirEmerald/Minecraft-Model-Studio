@@ -1,11 +1,14 @@
 package firemerald.mcms.util;
 
-import firemerald.mcms.api.math.Matrix4;
-import firemerald.mcms.api.math.Vec3;
-import firemerald.mcms.api.math.Vec4;
-import firemerald.mcms.model.Mesh;
+import org.joml.Matrix4d;
+import org.joml.Vector3f;
+import org.joml.Vector4d;
+import org.joml.Vector4f;
+
+import firemerald.mcms.api.math.MathUtils;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.texture.RGB;
+import firemerald.mcms.util.mesh.Mesh;
 
 public class MathUtil
 {
@@ -24,7 +27,7 @@ public class MathUtil
 		return val <= 0 ? min : val >= 1 ? max : min + Math.round(val * max);
 	}
 	
-	public static Vec4 rayTrace(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 from, Vec3 dir)
+	public static Vector4f rayTrace(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f from, Vector3f dir)
 	{
 		return rayTrace(p1.x(), p1.y(), p1.z(), p2.x(), p2.y(), p2.z(), p3.x(), p3.y(), p3.z(), from.x(), from.y(), from.z(), dir.x(), dir.y(), dir.z());
 	}
@@ -36,7 +39,7 @@ public class MathUtil
 	 * m: magnitude of vector from start to intersect, divided by magnitude of direction vector.
 	 * or null if zero area triangle or the triangle is parallel to the ray
 	 */
-	public static Vec4 rayTrace(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float fx, float fy, float fz, float dx, float dy, float dz)
+	public static Vector4f rayTrace(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float fx, float fy, float fz, float dx, float dy, float dz)
 	{
 		float yz13 = y1 * z3 - y3 * z1;
 		float yz21 = y2 * z1 - y1 * z2;
@@ -74,11 +77,11 @@ public class MathUtil
 			float a2 = (fx * nm10 + fy * nm11 + fz * nm12 + nm13) / det;
 			float a3 = (fx * nm20 + fy * nm21 + fz * nm22 + nm23) / det;
 			float m = (-(fx * nm30 + fy * nm31 + fz * nm32) + nnm33) / det;
-			return new Vec4(a1, a2, a3, m);
+			return new Vector4f(a1, a2, a3, m);
 		}
 	}
 	
-	public static Float rayTrace2(Vec3 p1, Vec3 p2, Vec3 p3, Vec3 from, Vec3 dir)
+	public static Float rayTrace2(Vector3f p1, Vector3f p2, Vector3f p3, Vector3f from, Vector3f dir)
 	{
 		return rayTrace2(p1.x(), p1.y(), p1.z(), p2.x(), p2.y(), p2.z(), p3.x(), p3.y(), p3.z(), from.x(), from.y(), from.z(), dir.x(), dir.y(), dir.z());
 	}
@@ -124,26 +127,26 @@ public class MathUtil
 		}
 	}
 	
-	public static Float rayTraceMesh(Vec3 from, Vec3 dir, Mesh mesh, Matrix4 transformation)
+	public static Float rayTraceMesh(Vector3f from, Vector3f dir, Mesh mesh, Matrix4d transformation)
 	{
 		return rayTraceMesh(from.x(), from.y(), from.z(), dir.x(), dir.y(), dir.z(), mesh, transformation);
 	}
 	
-	public static Float rayTraceMesh(float fx, float fy, float fz, float dx, float dy, float dz, Mesh mesh, Matrix4 transformation)
+	public static Float rayTraceMesh(float fx, float fy, float fz, float dx, float dy, float dz, Mesh mesh, Matrix4d transformation)
 	{
 		if (mesh.drawMode == Mesh.DrawMode.TRIANGLES)
 		{
 			Float res = null;
 			float[] vertices = mesh.getVerticies();
-			Vec4[] verts = new Vec4[vertices.length / 3];
+			Vector4f[] verts = new Vector4f[vertices.length / 3];
 			int vInd = 0;
-			for (int i = 0; i < verts.length; i++) verts[i] = transformation.mul(new Vec4(vertices[vInd++], vertices[vInd++], vertices[vInd++], 1));
+			for (int i = 0; i < verts.length; i++) verts[i] = MathUtils.toVector4f(transformation.transform(new Vector4d(vertices[vInd++], vertices[vInd++], vertices[vInd++], 1)));
 			int[] inds = mesh.getIndicies();
 			for (int i = 0; i < inds.length; i += 3)
 			{
-				Vec4 vert1 = verts[inds[i]];
-				Vec4 vert2 = verts[inds[i + 1]];
-				Vec4 vert3 = verts[inds[i + 2]];
+				Vector4f vert1 = verts[inds[i]];
+				Vector4f vert2 = verts[inds[i + 1]];
+				Vector4f vert3 = verts[inds[i + 2]];
 				Float r = rayTrace2(vert1.x(), vert1.y(), vert1.z(), vert2.x(), vert2.y(), vert2.z(), vert3.x(), vert3.y(), vert3.z(), fx, fy, fz, dx, dy, dz);
 				if (r != null && r >= 0 && (res == null || r < res)) res = r;
 			}
@@ -153,22 +156,100 @@ public class MathUtil
 		{
 			Float res = null;
 			float[] vertices = mesh.getVerticies();
-			Vec4[] verts = new Vec4[vertices.length / 3];
+			Vector4f[] verts = new Vector4f[vertices.length / 3];
 			int vInd = 0;
-			for (int i = 0; i < verts.length; i++) verts[i] = transformation.mul(new Vec4(vertices[vInd++], vertices[vInd++], vertices[vInd++], 1));
+			for (int i = 0; i < verts.length; i++) verts[i] = MathUtils.toVector4f(transformation.transform(new Vector4d(vertices[vInd++], vertices[vInd++], vertices[vInd++], 1)));
 			int[] inds = mesh.getIndicies();
 			for (int i = 0; i < inds.length; i += 4)
 			{
-				Vec4 vert1 = verts[inds[i]];
-				Vec4 vert2 = verts[inds[i + 1]];
-				Vec4 vert3 = verts[inds[i + 2]];
-				Vec4 vert4 = verts[inds[i + 3]];
+				Vector4f vert1 = verts[inds[i]];
+				Vector4f vert2 = verts[inds[i + 1]];
+				Vector4f vert3 = verts[inds[i + 2]];
+				Vector4f vert4 = verts[inds[i + 3]];
 				Float r = rayTrace2(vert1.x(), vert1.y(), vert1.z(), vert2.x(), vert2.y(), vert2.z(), vert3.x(), vert3.y(), vert3.z(), fx, fy, fz, dx, dy, dz);
 				if (r != null && r >= 0 && (res == null || r < res)) res = r;
 				r = rayTrace2(vert3.x(), vert3.y(), vert3.z(), vert4.x(), vert4.y(), vert4.z(), vert1.x(), vert1.y(), vert1.z(), fx, fy, fz, dx, dy, dz);
 				if (r != null && r >= 0 && (res == null || r < res)) res = r;
 			}
 			return res;
+		}
+		else return null;
+	}
+	
+	public static Vector3f rayTraceMeshUV(Vector3f from, Vector3f dir, Mesh mesh, Matrix4d transformation)
+	{
+		return rayTraceMeshUV(from.x(), from.y(), from.z(), dir.x(), dir.y(), dir.z(), mesh, transformation);
+	}
+	
+	/** {dis,u,v} **/
+	public static Vector3f rayTraceMeshUV(float fx, float fy, float fz, float dx, float dy, float dz, Mesh mesh, Matrix4d transformation)
+	{
+		if (mesh.drawMode == Mesh.DrawMode.TRIANGLES)
+		{
+			Float res = null;
+			float u = 0;
+			float v = 0;
+			float[] vertices = mesh.getVerticies();
+			float[] uvs = mesh.getTexs();
+			Vector4f[] verts = new Vector4f[vertices.length / 3];
+			int vInd = 0;
+			for (int i = 0; i < verts.length; i++) verts[i] = MathUtils.toVector4f(transformation.transform(new Vector4d(vertices[vInd++], vertices[vInd++], vertices[vInd++], 1)));
+			int[] inds = mesh.getIndicies();
+			for (int i = 0; i < inds.length; i += 3)
+			{
+				int ind1 = inds[i];
+				int ind2 = inds[i + 1];
+				int ind3 = inds[i + 2];
+				Vector4f vert1 = verts[ind1];
+				Vector4f vert2 = verts[ind2];
+				Vector4f vert3 = verts[ind3];
+				Vector4f trace = rayTrace(vert1.x(), vert1.y(), vert1.z(), vert2.x(), vert2.y(), vert2.z(), vert3.x(), vert3.y(), vert3.z(), fx, fy, fz, dx, dy, dz);
+				if (trace != null && trace.w() >= 0 && (res == null || trace.w() < res) && trace.x() >= 0 && trace.x() <= 1 && trace.y() >= 0 && trace.y() <= 1 && trace.z() >= 0 && trace.z() <= 1)
+				{
+					res = trace.w();
+					u = uvs[ind1 * 2] * trace.x() + uvs[ind2 * 2] * trace.y() + uvs[ind3 * 2] * trace.z();
+					v = uvs[ind1 * 2 + 1] * trace.x() + uvs[ind2 * 2 + 1] * trace.y() + uvs[ind3 * 2 + 1] * trace.z();
+				}
+			}
+			return res == null ? null : new Vector3f(res, u, v);
+		}
+		else if (mesh.drawMode == Mesh.DrawMode.QUADS)
+		{
+			Float res = null;
+			float u = 0;
+			float v = 0;
+			float[] vertices = mesh.getVerticies();
+			float[] uvs = mesh.getTexs();
+			Vector4f[] verts = new Vector4f[vertices.length / 3];
+			int vInd = 0;
+			for (int i = 0; i < verts.length; i++) verts[i] = MathUtils.toVector4f(transformation.transform(new Vector4d(vertices[vInd++], vertices[vInd++], vertices[vInd++], 1)));
+			int[] inds = mesh.getIndicies();
+			for (int i = 0; i < inds.length; i += 4)
+			{
+				int ind1 = inds[i];
+				int ind2 = inds[i + 1];
+				int ind3 = inds[i + 2];
+				int ind4 = inds[i + 3];
+				Vector4f vert1 = verts[ind1];
+				Vector4f vert2 = verts[ind2];
+				Vector4f vert3 = verts[ind3];
+				Vector4f vert4 = verts[ind4];
+				Vector4f trace = rayTrace(vert1.x(), vert1.y(), vert1.z(), vert2.x(), vert2.y(), vert2.z(), vert3.x(), vert3.y(), vert3.z(), fx, fy, fz, dx, dy, dz);
+				if (trace != null && trace.w() >= 0 && (res == null || trace.w() < res) && trace.x() >= 0 && trace.x() <= 1 && trace.y() >= 0 && trace.y() <= 1 && trace.z() >= 0 && trace.z() <= 1)
+				{
+					res = trace.w();
+					u = uvs[ind1 * 2] * trace.x() + uvs[ind2 * 2] * trace.y() + uvs[ind3 * 2] * trace.z();
+					v = uvs[ind1 * 2 + 1] * trace.x() + uvs[ind2 * 2 + 1] * trace.y() + uvs[ind3 * 2 + 1] * trace.z();
+				}
+				trace = rayTrace(vert3.x(), vert3.y(), vert3.z(), vert4.x(), vert4.y(), vert4.z(), vert1.x(), vert1.y(), vert1.z(), fx, fy, fz, dx, dy, dz);
+				if (trace != null && trace.w() >= 0 && (res == null || trace.w() < res) && trace.x() >= 0 && trace.x() <= 1 && trace.y() >= 0 && trace.y() <= 1 && trace.z() >= 0 && trace.z() <= 1)
+				{
+					res = trace.w();
+					u = uvs[ind3 * 2] * trace.x() + uvs[ind4 * 2] * trace.y() + uvs[ind1 * 2] * trace.z();
+					v = uvs[ind3 * 2 + 1] * trace.x() + uvs[ind4 * 2 + 1] * trace.y() + uvs[ind1 * 2 + 1] * trace.z();
+				}
+			}
+			return res == null ? null : new Vector3f(res, u, v);
 		}
 		else return null;
 	}
@@ -219,6 +300,26 @@ public class MathUtil
 		float g = desRGB.g + (srcRGB.g - desRGB.g) * srcA;
 		float b = desRGB.b + (srcRGB.b - desRGB.b) * srcA;
 		return new Color(r, g, b, a);
+	}
+	
+	public static float getDistanceFrom(float x, float y, float x1, float y1, float x2, float y2)
+	{
+		x -= x1;
+		y -= y1;
+		if (x1 == x2 && y1 == y2) return (float) Math.sqrt(x * x + y * y);
+		x2 -= x1;
+		y2 -= y1;
+		float ds = x2 * x2 + y2 * y2;
+		float m = (float) (1 / Math.sqrt(ds));
+		float nx = (x * x2 + y * y2);
+		if (nx >= 0 && nx <= ds) nx = 0;
+		else
+		{
+			if (nx > 0) nx = (nx - ds) * m;
+			else nx = nx * m;
+		}
+		float ny = (y * x2 - x * y2) * m;
+		return (float) Math.sqrt(nx * nx + ny * ny);
 	}
 	
 	public static float[] getDistancesFrom(float x, float y, float x1, float y1, float x2, float y2)

@@ -114,11 +114,22 @@ public class Color
 	{
 		this(col.c, col.a);
 	}
+	
+	public Color(Color col, float a)
+	{
+		this(col.c, col.a * a);
+	}
 
 	public int toARGB()
 	{
 		RGB rgb = c.getRGB();
 		return (MathUtil.clampInt(a, 0, 255) << 24) | (MathUtil.clampInt(rgb.r, 0, 255) << 16) | (MathUtil.clampInt(rgb.g, 0, 255) << 8) | MathUtil.clampInt(rgb.b, 0, 255); //assume no int has bits above index 8 due to clamping
+	}
+	
+	@Override
+	public int hashCode()
+	{
+		return (MathUtil.clampInt(a,  0,  255) << 24) | c.hashCode();
 	}
 
 	public Color clamp()

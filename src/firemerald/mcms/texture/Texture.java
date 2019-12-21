@@ -1,10 +1,10 @@
 package firemerald.mcms.texture;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.*;
 import static org.lwjgl.opengl.GL30.*;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -12,11 +12,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
+import org.apache.logging.log4j.Level;
+import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
 import org.lwjgl.system.MemoryUtil;
 
+import firemerald.mcms.Main;
+import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.util.FileUtils;
 
 public class Texture
@@ -35,8 +42,26 @@ public class Texture
 	{
 		this();
 		data = MemoryUtil.memAlloc((this.w = w) * (this.h = h) * 4);
-		for (int i = 0; i < data.capacity(); i++) data.put(i, (byte) -1);
+		for (int i = 0; i < data.capacity(); i++) data.put(i, (byte) 0);
 		needsSet = true;
+	}
+	
+	public int getU(float u)
+	{
+		return (int) (u * w) % w;
+	}
+	
+	public int getV(float v)
+	{
+		return (int) (v * h) % h;
+	}
+	
+	/** this clears the texture! **/
+	public void setSize(int w, int h)
+	{
+		if (data != null) MemoryUtil.memFree(data);
+		data = MemoryUtil.memAlloc((this.w  = w) * (this.h = h) * 4);
+		for (int i = 0; i < data.capacity(); i++) data.put(i, (byte) 0);
 	}
 	
 	public void bind()
@@ -45,6 +70,7 @@ public class Texture
 		if (needsSet)
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+			glTexParameterf(GL_TEXTURE_2D, EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
 	    	glGenerateMipmap(GL_TEXTURE_2D);
 	    	needsSet = false;
 		}
@@ -63,7 +89,7 @@ public class Texture
 	public void setPixel(int x, int y, int argb)
 	{
 		if (x < 0 || x >= w) throw new IllegalArgumentException("invalid x coordinate: " + x);
-		if (y < 0 || y >= w) throw new IllegalArgumentException("invalid y coordinate: " + y);
+		if (y < 0 || y >= h) throw new IllegalArgumentException("invalid y coordinate: " + y);
 		data.putInt((x + (y * w)) * 4, argb);
 		needsSet = true;
 	}
@@ -76,7 +102,7 @@ public class Texture
 	public void setPixel(int x, int y, float r, float g, float b, float a)
 	{
 		if (x < 0 || x >= w) throw new IllegalArgumentException("invalid x coordinate: " + x);
-		if (y < 0 || y >= w) throw new IllegalArgumentException("invalid y coordinate: " + y);
+		if (y < 0 || y >= h) throw new IllegalArgumentException("invalid y coordinate: " + y);
 		byte rb = r <= 0 ? 0 : r >= 1 ? -1 : (byte) Math.round(r * 255);
 		byte gb = g <= 0 ? 0 : g >= 1 ? -1 : (byte) Math.round(g * 255);
 		byte bb = b <= 0 ? 0 : b >= 1 ? -1 : (byte) Math.round(b * 255);
@@ -92,7 +118,7 @@ public class Texture
 	public Color getPixel(int x, int y)
 	{
 		if (x < 0 || x >= w) throw new IllegalArgumentException("invalid x coordinate: " + x);
-		if (y < 0 || y >= w) throw new IllegalArgumentException("invalid y coordinate: " + y);
+		if (y < 0 || y >= h) throw new IllegalArgumentException("invalid y coordinate: " + y);
 		return new Color(data.getInt((x + (y * w)) * 4));
 	}
 	
@@ -122,10 +148,10 @@ public class Texture
 	
 	public void setRegion(int x1, int y1, int x2, int y2, Color[][] pixels)
 	{
-		if (x1 >= x2) throw new IllegalArgumentException("x2 must be greater than x1!");
+		if (x1 > x2) throw new IllegalArgumentException("x2 must be greater than x1!");
 		if (x1 < 0) throw new IllegalArgumentException("invalid x1 coordinate: " + x1);
 		if (x2 >= w) throw new IllegalArgumentException("invalid x2 coordinate: " + x2);
-		if (y1 >= y2) throw new IllegalArgumentException("y2 must be greater than y1!");
+		if (y1 > y2) throw new IllegalArgumentException("y2 must be greater than y1!");
 		if (y1 < 0) throw new IllegalArgumentException("invalid y1 coordinate: " + y1);
 		if (y2 >= h) throw new IllegalArgumentException("invalid y2 coordinate: " + y2);
 		if (pixels.length != x2 - x1) throw new IllegalArgumentException("region width does not match supplied pixel array");
@@ -144,6 +170,29 @@ public class Texture
 		}
 	}
 	
+	public void setRegion(int x1, int y1, int x2, int y2, int color)
+	{
+		if (x1 >= x2) throw new IllegalArgumentException("x2 must be greater than x1!");
+		if (x1 < 0) throw new IllegalArgumentException("invalid x1 coordinate: " + x1);
+		if (x2 > w) throw new IllegalArgumentException("invalid x2 coordinate: " + x2);
+		if (y1 >= y2) throw new IllegalArgumentException("y2 must be greater than y1!");
+		if (y1 < 0) throw new IllegalArgumentException("invalid y1 coordinate: " + y1);
+		if (y2 > h) throw new IllegalArgumentException("invalid y2 coordinate: " + y2);
+		for (int x = x1; x < x2; x++)
+		{
+			for (int y = 0; y < y2; y++)
+			{
+				setPixel(x, y, color);
+			}
+		}
+	}
+	
+	public void clearTexture()
+	{
+		for (int i = 0; i < data.capacity(); i++) data.put(i, (byte) 0);
+		needsSet = true;
+	}
+	
 	public static Texture loadTexture(File img)
 	{
 		InputStream in = null;
@@ -155,9 +204,9 @@ public class Texture
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			Main.LOGGER.log(Level.WARN, "Failed to load texure from " + img, e);
 		}
-		FileUtils.closeSafe(in);
+		FileUtil.closeSafe(in);
 		return tex;
 	}
 	
@@ -189,17 +238,132 @@ public class Texture
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			Main.LOGGER.log(Level.WARN, e);
 		}
-		FileUtils.closeSafe(out);
+		FileUtil.closeSafe(out);
 	}
 	
 	public void saveTexture(OutputStream out) throws IOException
 	{
 		BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-		int[] pixels = new int[data.remaining()];
+		int[] pixels = new int[data.remaining() / 4];
 		data.asIntBuffer().get(pixels).flip();
 		img.setRGB(0, 0, w, h, pixels, 0, w);
 		ImageIO.write(img, "png", out);
+	}
+	
+	public void load(File file)
+	{
+		InputStream in = null;
+		try
+		{
+			loadTexture(in = new FileInputStream(file));
+		}
+		catch (IOException e)
+		{
+			Main.LOGGER.log(Level.WARN, e);
+		}
+		FileUtil.closeSafe(in);
+	}
+	
+	public void load(InputStream in) throws IOException
+	{
+		BufferedImage img = ImageIO.read(in);
+    	setSize(img.getWidth(), img.getHeight());
+    	int[] pixels = new int[w * h];
+    	img.getRGB(0, 0, w, h, pixels, 0, w);
+    	if (data != null) MemoryUtil.memFree(data);
+		data = MemoryUtil.memAlloc(w * h * 4);
+    	int ind = 0;
+    	for (int i = 0; i < pixels.length; i++)
+    	{
+    		int p = pixels[i];
+    		data.putInt(ind, p); //ARGB -> BGRA is automatic due to endiness
+    		ind += 4;
+    	}
+		needsSet = true;
+	}
+	
+	public byte[] getBytes()
+	{
+		List<Byte> bytes = new ArrayList<>();
+		OutputStream out = new OutputStream() {
+			@Override
+			public void write(int arg0) throws IOException
+			{
+				bytes.add(Byte.valueOf((byte) arg0));
+			}
+		};
+		try {
+			saveTexture(out);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		byte[] array = new byte[bytes.size()];
+		for (int i = 0; i < array.length; i++) array[i] = bytes.get(i);
+		return array;
+	}
+	
+	public void save(AbstractElement el)
+	{
+		el.setValue(this.getBase64());
+	}
+	
+	public String getBase64()
+	{
+		ByteArrayOutputStream texOut = null;
+		String base64 = null;
+		try
+		{
+			texOut = new ByteArrayOutputStream();
+			saveTexture(texOut);
+			base64 = FileUtils.encode64(texOut.toByteArray());
+		}
+		catch (IOException e)
+		{
+			Main.LOGGER.warn("Couldn't save texture as base64 data", e);
+		}
+		FileUtil.closeSafe(texOut);
+		return base64;
+	}
+	
+	public static Texture load(AbstractElement el)
+	{
+		if (el.hasAttribute("file"))
+		{
+			String fileName = el.getString("file", null);
+			if (fileName != null)
+			{
+				File file = new File(fileName);
+				if (file.exists()) try
+				{
+					return new ReloadingTexture(file);
+				}
+				catch (IOException e)
+				{
+					Main.LOGGER.warn("Couldn't reload texture from " + fileName, e);
+				}
+			}
+		}
+		return loadBase64(el.getValue());
+	}
+	
+	public static Texture loadBase64(String base64)
+	{
+		ByteArrayInputStream texIn = null;
+		Texture texture = null;
+		try
+		{
+			byte[] data = FileUtils.decode64(base64);
+			texIn = new ByteArrayInputStream(data);
+			texture = Texture.loadTexture(texIn);
+		}
+		catch (Exception e)
+		{
+			Main.LOGGER.warn("Couldn't load texture from base64 data: " + base64, e);
+		}
+		FileUtil.closeSafe(texIn);
+		return texture;
 	}
 }

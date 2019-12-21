@@ -5,28 +5,31 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.joml.Matrix4d;
+
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
-import firemerald.mcms.api.math.Matrix4;
-import firemerald.mcms.api.util.MatrixHandler;
+import firemerald.mcms.api.math.EulerZYXRotation;
+import firemerald.mcms.api.math.IRotation;
+import firemerald.mcms.api.math.QuaternionRotation;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.gui.GuiElementContainer;
-import firemerald.mcms.gui.components.ComponentLabel;
-import firemerald.mcms.gui.components.text.ComponentIncrementDouble;
+import firemerald.mcms.gui.components.ComponentFloatingLabel;
+import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
 import firemerald.mcms.gui.components.text.ComponentText;
-import firemerald.mcms.gui.components.text.ComponentTextDouble;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.model.IEditable;
+import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.model.IEditableParent;
 import firemerald.mcms.model.ITransformed;
 import firemerald.mcms.model.RenderObjectComponents;
+import firemerald.mcms.shader.Shader;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
 
-public class Bone implements IRaytraceTarget, IEditable, ITransformed
+public class Bone implements IRaytraceTarget, IModelEditable, ITransformed
 {
 	public String name;
 	public final Transformation defaultTransform;
@@ -50,19 +53,21 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		else (this.parent = parent).children.add(this);
 	}
 	
-	public void setDefTransform(Map<String, Matrix4> map)
+	public void setDefTransform(Map<String, Matrix4d> map)
 	{
 		map.put(this.name, defaultTransform.getTransformation());
 		for (Bone bone : this.children) bone.setDefTransform(map);
 	}
 	
-	public void render(Map<String, Matrix4> transformations)
+	public void render(Map<String, Matrix4d> transformations)
 	{
-		MatrixHandler.instance.push();
-		MatrixHandler.instance.multMatrix(transformations.get(this.name));
+		Shader.MODEL.push();
+		Shader.MODEL.matrix().mul(transformations.get(this.name));
+		Main.instance.shader.updateModel();
 		if (visible) doRender();
 		if (childrenVisible) for (Bone child : children) child.render(transformations);
-		MatrixHandler.instance.pop();
+		Shader.MODEL.pop();
+		Main.instance.shader.updateModel();
 	}
 	
 	public void cleanUp()
@@ -75,14 +80,14 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 	
 	public void doCleanUp() {}
 	
-	public RaytraceResult raytrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4> transformations, Matrix4 transformation)
+	public RaytraceResult raytrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> transformations, Matrix4d transformation)
 	{
 		RaytraceResult result = null;
 		if (childrenVisible) for (Bone child : children)
 		{
-			Matrix4 transform = transformations.get(child.name);
-			if (transform == null) transform = new Matrix4(transformation);
-			else transform = transformation.mul(transform, new Matrix4());
+			Matrix4d transform = transformations.get(child.name);
+			if (transform == null) transform = new Matrix4d(transformation);
+			else transform = transformation.mul(transform, new Matrix4d());
 			RaytraceResult res = child.raytrace(fx, fy, fz, dx, dy, dz, transformations, transform);
 			if (res != null && (result == null || res.m < result.m)) result = res;
 		}
@@ -95,53 +100,107 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		return name + ":" + this.getClass().toString();
 	}
 
-	private ComponentText labelName;
-	private ComponentLabel labelPos;
+	private ComponentFloatingLabel labelName;
+	private ComponentText textName;
+	private ComponentFloatingLabel labelPos;
 	private ComponentTextFloat posXT;
 	private ComponentIncrementFloat posXP, posXS;
 	private ComponentTextFloat posYT;
 	private ComponentIncrementFloat posYP, posYS;
 	private ComponentTextFloat posZT;
 	private ComponentIncrementFloat posZP, posZS;
-	private ComponentLabel labelRot;
-	private ComponentTextDouble rotXT;
-	private ComponentIncrementDouble rotXP, rotXS;
-	private ComponentTextDouble rotYT;
-	private ComponentIncrementDouble rotYP, rotYS;
-	private ComponentTextDouble rotZT;
-	private ComponentIncrementDouble rotZP, rotZS;
+	private SelectorButton rotMode;
+	
+	public float tX()
+	{
+		return defaultTransform.translation.x();
+	}
+	
+	public void tX(float x)
+	{
+		defaultTransform.translation.x = x;
+	}
+	
+	public float tY()
+	{
+		return defaultTransform.translation.y();
+	}
+	
+	public void tY(float y)
+	{
+		defaultTransform.translation.y = y;
+	}
+	
+	public float tZ()
+	{
+		return defaultTransform.translation.z();
+	}
+	
+	public void tZ(float z)
+	{
+		defaultTransform.translation.z = z;
+	}
 	
 	@Override
-	public void onSelect(EditorPanes editorPanes)
+	public int onSelect(EditorPanes editorPanes, int editorY)
 	{
+		final int origY = editorY;
 		editorPanes.addBone.setBone(this);
 		editorPanes.copy.setEditable(parent, this);
 		editorPanes.remove.setEditable(parent, this);
-		
-		GuiElementContainer editor = editorPanes.editor;
-		float editorX = editorPanes.editorX;
-		float editorY = editorPanes.editorY;
-		editor.addElement(labelName = new ComponentText(           editorX      , editorY      , editorX + 300, editorY + 20 , Main.instance.fontMsg, name, string -> this.name = string));
-		editor.addElement(labelPos  = new ComponentLabel(          editorX      , editorY + 20 , editorX + 300, editorY + 40 , Main.instance.fontMsg, "Position"));
-		editor.addElement(posXT     = new ComponentTextFloat(      editorX      , editorY + 40 , editorX + 90 , editorY + 60 , Main.instance.fontMsg, defaultTransform.translation.x(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> defaultTransform.translation.x(value)));
-		editor.addElement(posXP     = new ComponentIncrementFloat( editorX + 90 , editorY + 40                   , posXT, 1));
-		editor.addElement(posXS     = new ComponentIncrementFloat( editorX + 90 , editorY + 50                   , posXT, -1));
-		editor.addElement(posYT     = new ComponentTextFloat(      editorX + 100, editorY + 40 , editorX + 190, editorY + 60 , Main.instance.fontMsg, defaultTransform.translation.y(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> defaultTransform.translation.y(value)));
-		editor.addElement(posYP     = new ComponentIncrementFloat( editorX + 190, editorY + 40                   , posYT, 1));
-		editor.addElement(posYS     = new ComponentIncrementFloat( editorX + 190, editorY + 50                   , posYT, -1));
-		editor.addElement(posZT     = new ComponentTextFloat(      editorX + 200, editorY + 40 , editorX + 290, editorY + 60 , Main.instance.fontMsg, defaultTransform.translation.z(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> defaultTransform.translation.z(value)));
-		editor.addElement(posZP     = new ComponentIncrementFloat( editorX + 290, editorY + 40                   , posZT, 1));
-		editor.addElement(posZS     = new ComponentIncrementFloat( editorX + 290, editorY + 50                   , posZT, -1));
-		editor.addElement(labelRot  = new ComponentLabel(          editorX      , editorY + 60 , editorX + 300, editorY + 80 , Main.instance.fontMsg, "Rotation"));
-		editor.addElement(rotXT     = new ComponentTextDouble(     editorX      , editorY + 80 , editorX + 90 , editorY + 100, Main.instance.fontMsg, defaultTransform.rX, -180, 180, value -> this.defaultTransform.setRX(value)));
-		editor.addElement(rotXP     = new ComponentIncrementDouble(editorX + 90 , editorY + 80                   , rotXT, 1));
-		editor.addElement(rotXS     = new ComponentIncrementDouble(editorX + 90 , editorY + 90                   , rotXT, -1));
-		editor.addElement(rotYT     = new ComponentTextDouble(     editorX + 100, editorY + 80 , editorX + 190, editorY + 100, Main.instance.fontMsg, defaultTransform.rY, -180, 180, value -> this.defaultTransform.setRY(value)));
-		editor.addElement(rotYP     = new ComponentIncrementDouble(editorX + 190, editorY + 80                   , rotYT, 1));
-		editor.addElement(rotYS     = new ComponentIncrementDouble(editorX + 190, editorY + 90                   , rotYT, -1));
-		editor.addElement(rotZT     = new ComponentTextDouble(     editorX + 200, editorY + 80 , editorX + 290, editorY + 100, Main.instance.fontMsg, defaultTransform.rZ, -180, 180, value -> this.defaultTransform.setRZ(value)));
-		editor.addElement(rotZP     = new ComponentIncrementDouble(editorX + 290, editorY + 80                   , rotZT, 1));
-		editor.addElement(rotZS     = new ComponentIncrementDouble(editorX + 290, editorY + 90                   , rotZT, -1));
+
+		GuiElementContainer editor = editorPanes.editor.container;
+		int editorX = editorPanes.editor.minX;
+		editor.addElement(labelName = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20 , Main.instance.fontMsg, "Bone name"));
+		editorY += 20;
+		editor.addElement(textName  = new ComponentText(          editorX      , editorY, editorX + 300, editorY + 20 , Main.instance.fontMsg, name, string -> this.name = string));
+		editorY += 20;
+		editor.addElement(labelPos  = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20 , Main.instance.fontMsg, "Position"));
+		editorY += 20;
+		editor.addElement(posXT     = new ComponentTextFloat(     editorX      , editorY, editorX + 90 , editorY + 20 , Main.instance.fontMsg, tX(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> tX(value)));
+		editor.addElement(posXP     = new ComponentIncrementFloat(editorX + 90 , editorY                              , posXT, 1));
+		editor.addElement(posXS     = new ComponentIncrementFloat(editorX + 90 , editorY + 10                         , posXT, -1));
+		editor.addElement(posYT     = new ComponentTextFloat(     editorX + 100, editorY , editorX + 190, editorY + 20, Main.instance.fontMsg, tY(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> tY(value)));
+		editor.addElement(posYP     = new ComponentIncrementFloat(editorX + 190, editorY                              , posYT, 1));
+		editor.addElement(posYS     = new ComponentIncrementFloat(editorX + 190, editorY + 10                         , posYT, -1));
+		editor.addElement(posZT     = new ComponentTextFloat(     editorX + 200, editorY , editorX + 290, editorY + 20, Main.instance.fontMsg, tZ(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> tZ(value)));
+		editor.addElement(posZP     = new ComponentIncrementFloat(editorX + 290, editorY                              , posZT, 1));
+		editor.addElement(posZS     = new ComponentIncrementFloat(editorX + 290, editorY + 10                         , posZT, -1));
+		editorY += 20;
+
+		String[] names = new String[] {
+				"No rotation",
+				"Euler ZYX rotation",
+				//"Euler XYZ rotation",
+				"Quaternion rotation"
+		};
+		editor.addElement(rotMode = new SelectorButton(editorX, editorY, editorX + 300, editorY + 20, 
+				this.defaultTransform.rotation == IRotation.NONE ? names[0] :  
+				this.defaultTransform.rotation instanceof EulerZYXRotation ? names[1] :  
+				//this.defaultTransform.rotation instanceof EulerXYZRotation ? names[2] :  
+				this.defaultTransform.rotation instanceof QuaternionRotation ? names[2] : "Unknown rotation"
+				, names, (ind, str) -> {
+					this.onDeselect(editorPanes);
+					IRotation old = defaultTransform.rotation;
+					switch (ind)
+					{
+					case 0:
+						defaultTransform.rotation = IRotation.NONE;
+						break;
+					case 1:
+						(defaultTransform.rotation = new EulerZYXRotation()).setFromQuaternion(old.getQuaternion());
+						break;
+					//case 2:
+					//	(defaultTransform.rotation = new EulerXYZRotation()).setFromQuaternion(old.getQuaternion());
+					//	break;
+					case 2:
+						(defaultTransform.rotation = new QuaternionRotation()).setFromQuaternion(old.getQuaternion());
+						break;
+					}
+					this.onSelect(editorPanes, origY);
+				}));
+		editorY += 20;
+		return this.defaultTransform.rotation.onSelect(editorPanes, editorY, () -> {});
 	}
 
 	@Override
@@ -150,8 +209,9 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		editorPanes.addBone.setBone(null);
 		editorPanes.copy.setEditable(null, null);
 		editorPanes.remove.setEditable(null, null);
-		GuiElementContainer editor = editorPanes.editor;
+		GuiElementContainer editor = editorPanes.editor.container;
 		editor.removeElement(labelName);
+		editor.removeElement(textName);
 		editor.removeElement(labelPos);
 		editor.removeElement(posXT);
 		editor.removeElement(posXP);
@@ -162,16 +222,7 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		editor.removeElement(posZT);
 		editor.removeElement(posZP);
 		editor.removeElement(posZS);
-		editor.removeElement(labelRot);
-		editor.removeElement(rotXT);
-		editor.removeElement(rotXP);
-		editor.removeElement(rotXS);
-		editor.removeElement(rotYT);
-		editor.removeElement(rotYP);
-		editor.removeElement(rotYS);
-		editor.removeElement(rotZT);
-		editor.removeElement(rotZP);
-		editor.removeElement(rotZS);
+		editor.removeElement(rotMode);
 		labelName = null;
 		labelPos  = null;
 		posXT     = null;
@@ -183,22 +234,14 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		posZT     = null;
 		posZP     = null;
 		posZS     = null;
-		labelRot  = null;
-		rotXT     = null;
-		rotXP     = null;
-		rotXS     = null;
-		rotYT     = null;
-		rotYP     = null;
-		rotYS     = null;
-		rotZT     = null;
-		rotZP     = null;
-		rotZS     = null;
+		rotMode   = null;
+		this.defaultTransform.rotation.onDeselect(editorPanes);
 	}
 
 	@Override
 	public String getDisplayIcon()
 	{
-		return Textures.EDITABLE_ICON_BONE;
+		return Textures.MODEL_ICON_BONE;
 	}
 
 	@Override
@@ -208,7 +251,7 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 	}
 
 	@Override
-	public Collection<? extends IEditable> getChildren()
+	public Collection<? extends IModelEditable> getChildren()
 	{
 		return children;
 	}
@@ -220,19 +263,19 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 	}
 
 	@Override
-	public boolean canBeChild(IEditable candidate)
+	public boolean canBeChild(IModelEditable candidate)
 	{
 		return candidate instanceof Bone;
 	}
 
 	@Override
-	public void addChild(IEditable child)
+	public void addChild(IModelEditable child)
 	{
 		if (child instanceof Bone && !this.children.contains(child)) this.children.add((Bone) child);
 	}
 
 	@Override
-	public void addChildBefore(IEditable child, IEditable position)
+	public void addChildBefore(IModelEditable child, IModelEditable position)
 	{
 		if (child instanceof Bone && !this.children.contains(child))
 		{
@@ -243,7 +286,7 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 	}
 
 	@Override
-	public void addChildAfter(IEditable child, IEditable position)
+	public void addChildAfter(IModelEditable child, IModelEditable position)
 	{
 		if (child instanceof Bone && !this.children.contains(child))
 		{
@@ -254,7 +297,7 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 	}
 
 	@Override
-	public void removeChild(IEditable child)
+	public void removeChild(IModelEditable child)
 	{
 		if (child instanceof Bone) this.children.remove(child);
 	}
@@ -263,17 +306,17 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 	public void movedTo(IEditableParent oldParent, IEditableParent newParent)
 	{
 		this.parent = oldParent instanceof Bone ? (Bone) oldParent : null;
-		Matrix4 targetTransform = getTransformation();
+		Matrix4d targetTransform = getTransformation();
 		this.parent = newParent instanceof Bone ? (Bone) newParent : null;
-		Matrix4 parentTransform = parent == null ? new Matrix4() : parent.getTransformation();
-		Matrix4 newTransform = parentTransform.invert().mul(targetTransform);
+		Matrix4d parentTransform = parent == null ? new Matrix4d() : parent.getTransformation();
+		Matrix4d newTransform = parentTransform.invert().mul(targetTransform);
 		this.defaultTransform.setFromMatrix(newTransform);
 	}
 
 	@Override
-	public Matrix4 getTransformation()
+	public Matrix4d getTransformation()
 	{
-		Matrix4 mat = defaultTransform.getTransformation();
+		Matrix4d mat = defaultTransform.getTransformation();
 		if (parent != null) parent.getTransformation().mul(mat, mat);
 		return mat;
 	}
@@ -293,8 +336,15 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 	public void addToXML(AbstractElement addTo)
 	{
 		AbstractElement el = addTo.addChild(getXMLName());
-		addData(el);
+		addDataToXML(el);
 		addChildrenToXML(el);
+	}
+	
+	public void addToSkeleton(AbstractElement addTo, float scale)
+	{
+		AbstractElement el = addTo.addChild(getSkeletonName());
+		addDataToSkeleton(el, scale);
+		addChildrenToSkeleton(el, scale);
 	}
 	
 	public String getXMLName()
@@ -302,10 +352,21 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		return "bone";
 	}
 	
-	public void addData(AbstractElement el)
+	public String getSkeletonName()
+	{
+		return "bone";
+	}
+	
+	public void addDataToXML(AbstractElement el)
 	{
 		el.setString("name", name);
-		defaultTransform.saveAsChild(el, "default_position", true, true, false);
+		defaultTransform.save(el);
+	}
+	
+	public void addDataToSkeleton(AbstractElement el, float scale)
+	{
+		el.setString("name", name);
+		defaultTransform.save(el);
 	}
 	
 	public void addChildrenToXML(AbstractElement addTo)
@@ -313,16 +374,32 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		for (Bone child : this.children) child.addToXML(addTo);
 	}
 	
+	public void addChildrenToSkeleton(AbstractElement addTo, float scale)
+	{
+		for (Bone child : this.children) child.addToSkeleton(addTo, scale);
+	}
+	
 	public void loadFromXML(AbstractElement el)
 	{
-		defaultTransform.loadFromChild(el, "default_position");
+		defaultTransform.load(el);
 		loadChildrenFromXML(el);
+	}
+	
+	public void loadFromSkeleton(AbstractElement el)
+	{
+		defaultTransform.load(el);
+		loadChildrenFromSkeleton(el);
 	}
 	
 	public void loadChildrenFromXML(AbstractElement el)
 	{
 		children.clear();
 		for (AbstractElement child : el.getChildren()) tryLoadChild(child);
+	}
+	
+	public void loadChildrenFromSkeleton(AbstractElement el)
+	{
+		for (AbstractElement child : el.getChildren()) tryLoadChildSkeleton(child);
 	}
 	
 	public void tryLoadChild(AbstractElement el)
@@ -343,9 +420,32 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		}
 		}
 	}
+	
+	public void tryLoadChildSkeleton(AbstractElement el)
+	{
+		switch (el.getName())
+		{
+		case "bone":
+		{
+			String name = el.getString("name", "unnamed bone");
+			boolean flag = true;
+			for (Bone child : children) if (child.name.equals(name))
+			{
+				child.loadFromSkeleton(el);
+				flag = false;
+			}
+			if (flag)
+			{
+				RenderObjectComponents bone = new RenderObjectComponents(name, new Transformation(), this);
+				bone.loadFromXML(el);
+				break;
+			}
+		}
+		}
+	}
 
 	@Override
-	public IEditable copy(IEditableParent newParent, IModel model)
+	public IModelEditable copy(IEditableParent newParent, IModel model)
 	{
 		Bone bone = null;
 		if (newParent instanceof Bone)
@@ -367,9 +467,42 @@ public class Bone implements IRaytraceTarget, IEditable, ITransformed
 		for (Bone child : children) child.copy(newParent, model);
 	}
 	
+	public void setTransforms(Bone ref)
+	{
+		this.defaultTransform.rotation = ref.defaultTransform.rotation;
+		this.defaultTransform.translation.set(ref.defaultTransform.translation);
+		Bone[] roots = this.children.toArray(new Bone[this.children.size()]);
+		ref.children.forEach(bone -> {
+			boolean flag = true;
+			for (Bone root : roots) if (root.name.equals(bone.name))
+			{
+				root.setTransforms(bone);
+				flag = false;
+				break;
+			}
+			if (flag)
+			{
+				Bone root = new Bone(bone.name, new Transformation(), this);
+				this.addChild(root);
+				root.setTransforms(bone);
+			}
+		});
+	}
+	
 	@Override
 	public int hashCode()
 	{
 		return name.hashCode();
+	}
+	
+	public void updateTex()
+	{
+		children.forEach(child -> child.updateTex());
+	}
+
+	@Override
+	public Transformation getDefaultTransformation()
+	{
+		return this.defaultTransform;
 	}
 }

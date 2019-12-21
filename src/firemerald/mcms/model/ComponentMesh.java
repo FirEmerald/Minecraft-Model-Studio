@@ -1,11 +1,14 @@
 package firemerald.mcms.model;
 
 import org.apache.logging.log4j.Level;
+import org.joml.Matrix4d;
+import org.joml.Vector3f;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.api.math.Matrix4;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.util.MathUtil;
+import firemerald.mcms.util.TextureRaytraceResult;
+import firemerald.mcms.util.mesh.Mesh;
 
 public abstract class ComponentMesh extends ModelComponent
 {
@@ -81,13 +84,13 @@ public abstract class ComponentMesh extends ModelComponent
 	}
 	
 	@Override
-	protected RaytraceResult doRaytrace(float fx, float fy, float fz, float dx, float dy, float dz, Matrix4 transformation)
+	protected RaytraceResult doRaytrace(float fx, float fy, float fz, float dx, float dy, float dz, Matrix4d transformation)
 	{
 		RaytraceResult result = null;
 		if (mesh instanceof Mesh)
 		{
-			Float res = MathUtil.rayTraceMesh(fx, fy, fz, dx, dy, dz, mesh, transformation);
-			if (res != null && (result == null || res < result.m)) result = new RaytraceResult(this, res);
+			Vector3f res = MathUtil.rayTraceMeshUV(fx, fy, fz, dx, dy, dz, mesh, transformation);
+			if (res != null && (result == null || res.x() < result.m)) result = new TextureRaytraceResult(this, res.x(), Main.instance.project.getTexture(), res.y(), res.z()); //TODO texture
 		}
 		return result;
 	}

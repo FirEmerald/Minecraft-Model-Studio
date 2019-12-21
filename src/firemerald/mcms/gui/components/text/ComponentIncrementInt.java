@@ -5,7 +5,7 @@ public class ComponentIncrementInt extends ComponentIncrement
 	protected int increment;
 	public final ComponentTextInt text;
 	
-	public ComponentIncrementInt(float x, float y, ComponentTextInt text, int increment)
+	public ComponentIncrementInt(int x, int y, ComponentTextInt text, int increment)
 	{
 		super(x, y, increment < 0);
 		this.text = text;
@@ -15,7 +15,7 @@ public class ComponentIncrementInt extends ComponentIncrement
 	public void setIncrement(int increment)
 	{
 		this.increment = increment;
-		id = increment < 0 ? DOWN : UP;
+		setIsNegative(increment < 0);
 	}
 
 	@Override

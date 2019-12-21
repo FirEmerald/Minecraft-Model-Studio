@@ -1,77 +1,184 @@
 package firemerald.mcms.api.animation;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-import javax.xml.transform.TransformerException;
+import org.apache.logging.log4j.Level;
+import org.joml.Matrix4d;
 
-import org.w3c.dom.Document;
-
+import firemerald.mcms.Main;
+import firemerald.mcms.Project;
+import firemerald.mcms.api.API;
 import firemerald.mcms.api.data.AbstractElement;
-import firemerald.mcms.api.data.W3CElement;
-import firemerald.mcms.api.math.Matrix4;
-import firemerald.mcms.api.math.Quaternion;
-import firemerald.mcms.api.math.Vec3;
 import firemerald.mcms.api.model.Bone;
-import firemerald.mcms.api.util.FileUtil;
+import firemerald.mcms.api.model.ITransformsProvider;
+import firemerald.mcms.gui.main.components.animation.ComponentKeyFrame;
+import firemerald.mcms.util.GuiUpdate;
 
 import java.util.Map.Entry;
 
 public class Animation implements IAnimation
 {
 	public final Map<String, NavigableMap<Float, Transformation>> animation;
-	public final float length;
-	public final boolean loop;
+	protected float length;
+	public boolean loop;
+	protected boolean relative;
 	
-	public Animation(Map<String, NavigableMap<Float, Transformation>> animation, float length, boolean loop)
+	public Animation(float length, boolean loop, boolean relative)
+	{
+		this(new HashMap<>(), length, loop, relative);
+	}
+	
+	public Animation(Map<String, NavigableMap<Float, Transformation>> animation, float length, boolean loop, boolean relative)
 	{
 		this.animation = animation;
 		this.length = length;
 		this.loop = loop;
+		this.relative = relative;
 	}
 	
 	public Animation(Map<String, NavigableMap<Float, Transformation>> animation, float length)
 	{
-		this(animation, length, false);
+		this(animation, length, true, false);
+	}
+	
+	public Animation(AbstractElement el)
+	{
+		this(new HashMap<>(), 1);
+		load(el);
 	}
 	
 	@Override
-	public Map<String, Matrix4> getBones(Map<String, Matrix4> map, float frame, List<Bone> bones)
+	public float getLength()
 	{
-		if (frame > length)
-		{
-			if (loop) frame %= length;
-			else return map;
-		}
-		for (Bone bone : bones)
-		{
-			Transformation def = Transformation.NONE;
-			NavigableMap<Float, Transformation> anim = animation.get(bone.name);
-			if (anim != null)
+		return length;
+	}
+	
+	public void setLength(float length, Collection<Bone> bones)
+	{
+		this.length = length;
+		animation.forEach((name, anim) -> {
+			Transformation def;
+			if (relative)
 			{
-				Quaternion q;
-				Vec3 vec;
-				Transformation tran = anim.get(frame);
-				if (tran != null)
+				def = new Transformation();
+			}
+			else
+			{
+				Bone bone = null;
+				for (Bone b : bones) if (b.name.equals(name))
 				{
-					q = tran.rotation;
-					vec = tran.translation;
+					bone = b;
+					break;
+				}
+				def = bone == null ? new Transformation() : bone.defaultTransform;
+			}
+			Transformation tran = anim.get(length);
+			Transformation res;
+			if (tran != null) //exact keyframe
+			{
+				res = tran.copy();
+			}
+			else
+			{
+				Entry<Float, Transformation> lower = anim.lowerEntry(length);
+				Entry<Float, Transformation> higher = anim.higherEntry(length);
+				if (lower == null)
+				{
+					if (higher == null) //no animation at all
+					{
+						return;
+					}
+					else //assume start to be the default
+					{
+						Transformation lowerTrans = def;
+						float higherFrame = higher.getKey();
+						Transformation higherTrans = higher.getValue();
+						float part = length / higherFrame;
+						res = Transformation.tween(lowerTrans, higherTrans, part);
+					}
 				}
 				else
 				{
+					if (higher == null)
+					{
+						res = lower.getValue().copy();
+						/*
+						if (!loop) //end of animation
+						{
+							Transformation trans = lower.getValue();
+							q = trans.rotation.getQuaternion();
+							vec = trans.translation;
+						}
+						else
+						{
+							Transformation higherTrans = anim.get(0f); //interpolate between lower and start
+							if (higherTrans == null) higherTrans = def;
+							float lowerFrame = lower.getKey();
+							Transformation lowerTrans = lower.getValue();
+							float part = (length - lowerFrame) / (length - lowerFrame);
+							q = lowerTrans.rotation.getQuaternion().slerp(higherTrans.rotation.getQuaternion(), part);
+							Vector3f last = lowerTrans.translation, next = higherTrans.translation;
+							vec = new Vector3f(last.x() + (next.x() - last.x()) * part, last.y() + (next.y() - last.y()) * part, last.z() + (next.z() - last.z()) * part);
+						}
+						*/
+					}
+					else //interpolate between frames
+					{
+						float lowerFrame = lower.getKey();
+						Transformation lowerTrans = lower.getValue();
+						float higherFrame = higher.getKey();
+						Transformation higherTrans = higher.getValue();
+						float part = (length - lowerFrame) / (higherFrame - lowerFrame);
+						res = Transformation.tween(lowerTrans, higherTrans, part);
+					}
+				}
+			}
+			anim.put(length, res);
+			Float key;
+			while ((key = anim.higherKey(length)) != null) anim.remove(key); //remove all higher keys
+		});
+	}
+	
+	public void scaleTo(float length)
+	{
+		float mul = length / this.length;
+		this.length = length;
+		this.animation.forEach((bone, anim) -> {
+			NavigableMap<Float, Transformation> newMap = new TreeMap<>();
+			animation.put(bone, newMap);
+			anim.forEach((time, transform) -> newMap.put(time * mul, transform));
+		});
+	}
+	
+	@Override
+	public Map<String, Matrix4d> getBones(Map<String, Matrix4d> map, float frame, Collection<Bone> bones)
+	{
+		if (frame > length && loop) frame %= length;
+		for (Bone bone : bones)
+		{
+			NavigableMap<Float, Transformation> anim = animation.get(bone.name);
+			if (anim != null)
+			{
+				Transformation tran = anim.get(frame);
+				Transformation res;
+				if (tran != null)
+				{
+					res = tran.copy();
+				}
+				else
+				{
+					Transformation def = relative ? new Transformation() : bone.defaultTransform;
 					Entry<Float, Transformation> lower = anim.lowerEntry(frame);
 					Entry<Float, Transformation> higher = anim.higherEntry(frame);
 					if (lower == null)
 					{
 						if (higher == null) //no animation at all
 						{
-							q = def.rotation;
-							vec = def.translation;
+							break;
 						}
 						else //assume start to be the default
 						{
@@ -79,32 +186,33 @@ public class Animation implements IAnimation
 							float higherFrame = higher.getKey();
 							Transformation higherTrans = higher.getValue();
 							float part = frame / higherFrame;
-							q = Quaternion.slerp(lowerTrans.rotation, higherTrans.rotation, part);
-							Vec3 last = lowerTrans.translation, next = higherTrans.translation;
-							vec = new Vec3(last.x() + (next.x() - last.x()) * part, last.y() + (next.y() - last.y()) * part, last.z() + (next.z() - last.z()) * part);
+							res = Transformation.tween(lowerTrans, higherTrans, part);
 						}
 					}
 					else
 					{
 						if (higher == null)
 						{
+							res = lower.getValue().copy();
+							/*
 							if (!loop) //end of animation
 							{
 								Transformation trans = lower.getValue();
-								q = trans.rotation;
+								q = trans.rotation.getQuaternion();
 								vec = trans.translation;
 							}
 							else
 							{
 								Transformation higherTrans = anim.get(0f); //interpolate between lower and start
-								if (higherTrans == null) higherTrans = def;
+								if (higherTrans == null) higherTrans = bone.defaultTransform;
 								float lowerFrame = lower.getKey();
 								Transformation lowerTrans = lower.getValue();
 								float part = (frame - lowerFrame) / (length - lowerFrame);
-								q = Quaternion.slerp(lowerTrans.rotation, higherTrans.rotation, part);
-								Vec3 last = lowerTrans.translation, next = higherTrans.translation;
-								vec = new Vec3(last.x() + (next.x() - last.x()) * part, last.y() + (next.y() - last.y()) * part, last.z() + (next.z() - last.z()) * part);
+								q = lowerTrans.rotation.getQuaternion().slerp(higherTrans.rotation.getQuaternion(), part);
+								Vector3f last = lowerTrans.translation, next = higherTrans.translation;
+								vec = new Vector3f(last.x() + (next.x() - last.x()) * part, last.y() + (next.y() - last.y()) * part, last.z() + (next.z() - last.z()) * part);
 							}
+							*/
 						}
 						else //interpolate between frames
 						{
@@ -113,70 +221,55 @@ public class Animation implements IAnimation
 							float higherFrame = higher.getKey();
 							Transformation higherTrans = higher.getValue();
 							float part = (frame - lowerFrame) / (higherFrame - lowerFrame);
-							q = Quaternion.slerp(lowerTrans.rotation, higherTrans.rotation, part);
-							Vec3 last = lowerTrans.translation, next = higherTrans.translation;
-							vec = new Vec3(last.x() + (next.x() - last.x()) * part, last.y() + (next.y() - last.y()) * part, last.z() + (next.z() - last.z()) * part);
+							res = Transformation.tween(lowerTrans, higherTrans, part);
 						}
 					}
 				}
-				Matrix4 mat = new Matrix4().translate(vec);
-				mat.mul(q.getMatrix4());
-				map.get(bone.name).mul(mat);
+				Matrix4d mat = new Matrix4d().translate(res.translation);
+				mat.mul(res.rotation.getQuaternion().get(new Matrix4d()));
+				if (relative) map.get(bone.name).mul(mat);
+				else map.put(bone.name, mat);
 			}
 		}
 		return map;
 	}
-	
-	public static Animation loadAnim(File file)
+
+	@Override
+	public void load(AbstractElement root)
 	{
-		try
+		length = root.getFloat("length", 1);
+		loop = root.getBoolean("loop", true);
+		relative = root.getBoolean("relative", false);
+		animation.clear();
+		for (AbstractElement frameEl : root.getChildren()) if (frameEl.getName().equals("frame"))
 		{
-			AbstractElement root = FileUtil.readFile(file);
-			float length = root.getFloat("length");
-			boolean loop = root.getBoolean("loop", false);
-			Map<String, NavigableMap<Float, Transformation>> anim = new HashMap<>();
-			for (AbstractElement frameEl : root.getChildren()) if (frameEl.getName().equals("frame"))
+			try
 			{
-				try
+				float time = frameEl.getFloat("frameTime", 0);
+				for (AbstractElement el : frameEl.getChildren()) if (el.getName().equals("bone"))
 				{
-					float time = frameEl.getFloat("frameTime");
-					for (AbstractElement el : frameEl.getChildren()) if (el.getName().equals("bone"))
+					try
 					{
-						try
-						{
-							String boneName = el.getString("boneName");
-							float x = el.getFloat("x");
-							float y = el.getFloat("y");
-							float z = el.getFloat("z");
-							double qX = el.getDouble("qZ");
-							double qY = el.getDouble("qY");
-							double qZ = el.getDouble("qZ");
-							double qW = el.getDouble("qW");
-							NavigableMap<Float, Transformation> boneMap = anim.get(boneName);
-							if (boneMap == null) anim.put(boneName, boneMap = new TreeMap<>());
-							boneMap.put(time, new Transformation(new Quaternion(qX, qY, qZ, qW), new Vec3(x, y, z)));
-						}
-						catch (Exception e)
-						{
-							e.printStackTrace();
-						}
+						String boneName = el.getString("boneName");
+						NavigableMap<Float, Transformation> boneMap = animation.get(boneName);
+						if (boneMap == null) animation.put(boneName, boneMap = new TreeMap<>());
+						boneMap.put(time, new Transformation(el));
+					}
+					catch (Exception e)
+					{
+						API.LOGGER.log(Level.WARN, "Couldn't parse bone", e);
 					}
 				}
-				catch (NumberFormatException e)
-				{
-					e.printStackTrace();
-				}
 			}
-			return new Animation(anim, length, loop);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-			return null;
+			catch (NumberFormatException e)
+			{
+				API.LOGGER.log(Level.WARN, "Couldn't parse frame time", e);
+			}
 		}
 	}
-	
-	public void writeToXML(AbstractElement root)
+
+	@Override
+	public void save(AbstractElement root)
 	{
 		NavigableMap<Float, Map<String, Transformation>> map = new TreeMap<>();
 		for (Entry<String, NavigableMap<Float, Transformation>> entry : this.animation.entrySet())
@@ -191,8 +284,9 @@ public class Animation implements IAnimation
 				map2.put(bone, trans);
 			}
 		}
-		root.setFloat("length", length);
+		root.setDouble("length", length);
 		root.setBoolean("loop", loop);
+		root.setBoolean("relative", relative);
 		for (Entry<Float, Map<String, Transformation>> entry : map.entrySet())
 		{
 			AbstractElement frameEl = root.addChild("frame");
@@ -202,33 +296,48 @@ public class Animation implements IAnimation
 				AbstractElement el = frameEl.addChild("bone");
 				el.setString("boneName", entry2.getKey());
 				Transformation t = entry2.getValue();
-				Vec3 vec = t.translation;
-				Quaternion q = t.rotation;
-				el.setFloat("x", vec.x());
-				el.setFloat("y", vec.y());
-				el.setFloat("z", vec.z());
-				el.setDouble("qX", q.x());
-				el.setDouble("qY", q.y());
-				el.setDouble("qZ", q.z());
-				el.setDouble("qW", q.w());
+				t.save(el);
 			}
 		}
 	}
-	
-	public void saveToDocument(File toSave)
+
+	@Override
+	public String getElementName()
 	{
-		Document doc = FileUtil.createXML();
-		org.w3c.dom.Element rootEl = doc.createElement("animation");
-		doc.appendChild(rootEl);
-		AbstractElement root = new W3CElement(rootEl);
-		writeToXML(root);
-		try
+		return "animation";
+	}
+	
+	public boolean isRelative()
+	{
+		return relative;
+	}
+	
+	public void setRelative(boolean relative)
+	{
+		if (relative != this.relative)
 		{
-			FileUtil.saveXML(doc, toSave);
-		}
-		catch (IOException | TransformerException e)
-		{
-			e.printStackTrace();
+			this.relative = relative;
+			Main main = Main.instance;
+			Project project = main.project;
+			final ITransformsProvider transforms;
+			if (project.useBackingSkeleton()) transforms = project.getSkeleton();
+			else
+			{
+				if (project.getRig() != null) transforms = project.getRig();
+				else transforms = ITransformsProvider.NONE;
+			}
+			animation.forEach((name, map) -> {
+				Transformation orig = transforms.get(name);
+				final Matrix4d mul = orig.getTransformation();
+				if (relative) mul.invert();
+				map.values().forEach(transform -> {
+					Matrix4d cur = transform.getTransformation();
+					cur = mul.mul(cur, cur);
+					transform.setFromMatrix(cur);
+				});
+			});
+			main.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+			if (main.getEditing() instanceof ComponentKeyFrame) main.setEditing(main.getEditing());
 		}
 	}
 }

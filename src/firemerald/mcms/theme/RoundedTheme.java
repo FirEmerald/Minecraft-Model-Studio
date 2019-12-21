@@ -15,94 +15,38 @@ public class RoundedTheme extends BasicTheme
 	}
 
 	@Override
-	public void generateRoundedBox(RoundedBoxFormat box)
+	public void genRoundedBox(int w, int h, int outline, int radius, int tex)
 	{
-		int w = box.w;
-		int h = box.h;
-		int outline = box.outline;
-		ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
-		setBaseRectangle(w, h, outline, box.radius, this.outline, this.fill, data);
-		int t = GuiTheme.makeTexture(data, w, h);
-		boxes.put(box, t);
-    	MemoryUtil.memFree(data);
-	}
-	
-	public void setBaseRectangle(int w, int h, int outline, int radius, Color outlineC, Color innerC, ByteBuffer data)
-	{
-		int outlineI = outlineC.toARGB();
-		int innerI = innerC.toARGB();
-		if (radius <= 0) setBaseRectangle(w, h, outline, outlineI, innerI, data);
+		if (radius <= 0) super.genRoundedBox(w, h, outline, radius, tex);
 		else
 		{
-			int rI = radius - outline;
-	    	int ind = 0;
-	    	int ry = radius;
-	    	for (int y = 0; y < (h / 2) && y < radius; y++) //top round
-	    	{
-	    		boolean isOutline = (y < outline) || (y >= (h - outline));
-	        	int rx = radius;
-	    		for (int x = 0; x < (w / 2) && x < radius; x++) //top-left round
-	    		{
-	    			data.putInt(ind, getColor(x, y, rx, ry, radius, rI, outlineC, innerC).toARGB());
-	    			ind += 4;
-	    		}
-	    		
-	    		for (int x = radius; x < (w - radius); x++) //top
-	    		{
-	    			data.putInt(ind, isOutline || (x < outline) || (x >= (w - outline)) ? outlineI : innerI);
-	    			ind += 4;
-	    		}
-
-	        	rx = w - radius - 1;
-	    		for (int x = radius > (w / 2) ? w / 2 : w - radius; x < w; x++) //top-right round
-	    		{
-	    			data.putInt(ind, getColor(x, y, rx, ry, radius, rI, outlineC, innerC).toARGB());
-	    			ind += 4;
-	    		}
-	    	}
-
-	    	for (int y = radius; y < (h - radius); y++)
-	    	{
-	    		boolean isOutline = (y < outline) || (y >= (h - outline));
-	    		for (int x = 0; x < w; x++)
-	    		{
-	    			data.putInt(ind, isOutline || (x < outline) || (x >= (w - outline)) ? outlineI : innerI);
-	    			ind += 4;
-	    		}
-	    	}
-
-	    	ry = h - radius - 1;
-	    	for (int y = radius > (h / 2) ? (h / 2) : h - radius; y < h; y++) //top round
-	    	{
-	    		boolean isOutline = (y < outline) || (y >= (h - outline));
-	        	int rx = radius;
-	    		for (int x = 0; x < (w / 2) && x < radius; x++) //top-left round
-	    		{
-	    			data.putInt(ind, getColor(x, y, rx, ry, radius, rI, outlineC, innerC).toARGB());
-	    			ind += 4;
-	    		}
-	    		
-	    		for (int x = radius; x < (w - radius); x++) //top
-	    		{
-	    			data.putInt(ind, isOutline || (x < outline) || (x >= (w - outline)) ? outlineI : innerI);
-	    			ind += 4;
-	    		}
-
-	        	rx = w - radius - 1;
-	    		for (int x = radius > (w / 2) ? w / 2 : w - radius; x < w; x++) //top-right round
-	    		{
-	    			data.putInt(ind, getColor(x, y, rx, ry, radius, rI, outlineC, innerC).toARGB());
-	    			ind += 4;
-	    		}
-	    	}
+			ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
+			setRegionCurved(radius, radius, 0, 0, radius, radius, radius, radius - outline, this.outline, this.fill, CoordinateRotator._0, w, h, data);
+			setRegionCurved(w - radius, radius, w - radius, 0, w, radius, radius, radius - outline, this.outline, this.fill, CoordinateRotator._0, w, h, data);
+			setRegionCurved(w - radius, h - radius, w - radius, h - radius, w, h, radius, radius - outline, this.outline, this.fill, CoordinateRotator._0, w, h, data);
+			setRegionCurved(radius, h - radius, 0, h - radius, radius, h, radius, radius - outline, this.outline, this.fill, CoordinateRotator._0, w, h, data);
+			setRegion(radius, 0, w - radius, outline, outlineI, CoordinateRotator._0, w, h, data);
+			setRegion(radius, h - outline, w - radius, h, outlineI, CoordinateRotator._0, w, h, data);
+			setRegion(0, radius, outline, h - radius, outlineI, CoordinateRotator._0, w, h, data);
+			setRegion(w - outline, radius, w, h - radius, outlineI, CoordinateRotator._0, w, h, data);
+			setRegion(radius, outline, w - radius, radius, fillI, CoordinateRotator._0, w, h, data);
+			setRegion(outline, radius, w - outline, h - radius, fillI, CoordinateRotator._0, w, h, data);
+			setRegion(radius, h - radius, w - radius, h - outline, fillI, CoordinateRotator._0, w, h, data);
+			GuiTheme.makeTexture(tex, data, w, h);
+			MemoryUtil.memFree(data);
 		}
 	}
 	
 	public Color getColor(int x, int y, int rx, int ry, int rO, int rI, Color outlineC, Color innerC)
 	{
-		int dy = y - ry;
-		int dx = x - rx;
-		float r = (float) Math.sqrt(dx * dx + dy * dy);
+		return getColor(x, y, rx, ry, rO, rI, outlineC, innerC, new Color(outlineC.c, 0));
+	}
+	
+	public Color getColor(int x, int y, int rx, int ry, int rO, int rI, Color outlineC, Color innerC, Color backgroundC)
+	{
+		double dy = y - ry + .5f;
+		double dx = x - rx + .5f;
+		float r = (float) Math.sqrt(dx * dx + dy * dy) + .5f;
 		float rdI;
 		Color c;
 		if ((rdI = (r - rI)) > 0)
@@ -120,9 +64,71 @@ public class RoundedTheme extends BasicTheme
 		float rdO;
 		if ((rdO = (r - rO)) > 0)
 		{
-			if (rdO < 1) c.a *= (1 - rdO);
-			else c.a = 0;
+			if (rdO < 1) c = Color.mix(c, backgroundC, rdO);
+			else c = backgroundC;
 		}
 		return c;
+	}
+
+	public void setRegionCurved(int cX, int cY, int x1, int y1, int x2, int y2, int rO, int rI, Color outlineC, Color innerC, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		setRegionCurved(cX, cY, x1, y1, x2, y2, rO, rI, outlineC, innerC, new Color(outlineC.c, 0), rotation, w, h, data);
+	}
+	
+	public void setRegionCurved(int cX, int cY, int x1, int y1, int x2, int y2, int rO, int rI, Color outlineC, Color innerC, Color backgroundC, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		for (int y = y1; y < y2; y++) for (int x = x1; x < x2; x++) rotation.set(x, y, getColor(x, y, cX, cY, rO, rI, outlineC, innerC, backgroundC).toARGB(), data, w, h);
+	}
+	
+	@Override
+	public void genTab(int w, int h, int outline, int radius, EnumDirection direction, boolean connectLeft, boolean connectRight, int tex)
+	{
+		if (radius <= 0) super.genTab(w, h, outline, radius, direction, connectLeft, connectRight, tex);
+		else
+		{
+			w += radius * 2;
+			h += radius * 2;
+			ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
+			setRectangle(w, h, 0x00000000, data);
+			int vW, vH;
+			if (direction == EnumDirection.DOWN || direction == EnumDirection.UP)
+			{
+				vW = w;
+				vH = h;
+			}
+			else
+			{
+				vW = h;
+				vH = w;
+			}
+			CoordinateRotator rotator = CoordinateRotator.forDirection(direction);
+			setRegionCurved(radius * 2, radius * 2, radius, radius, radius * 2, radius * 2, radius, radius - outline, this.outline, this.fill, rotator, vW, vH, data);
+			setRegionCurved(vW - radius * 2, radius * 2, vW - radius * 2, radius, vW - radius, radius * 2, radius, radius - outline, this.outline, this.fill, rotator, vW, vH, data);
+			setRegion(radius * 2, radius, vW - radius * 2, radius + outline, outlineI, rotator, vW, vH, data);
+			setRegion(radius * 2, radius + outline, vW - radius * 2, radius * 2, fillI, rotator, vW, vH, data);
+			setRegion(radius + outline, radius * 2, vW - radius - outline, vH, fillI, rotator, vW, vH, data);
+			if (connectLeft)
+			{
+				setRegionCurved(0, vH - radius * 2, 0, vH - radius * 2, radius + outline, vH - radius + outline, radius + outline, radius, this.outline, new Color(this.outline.c, 0), this.fill, rotator, vW, vH, data);
+				setRegion(radius, radius * 2, radius + outline, vH - radius * 2, outlineI, rotator, vW, vH, data);
+				setRegion(0, vH - radius + outline, radius + outline, vH, fillI, rotator, vW, vH, data);
+			}
+			else
+			{
+				setRegion(radius, radius * 2, radius + outline, vH, outlineI, rotator, vW, vH, data);
+			}
+			if (connectRight)
+			{
+				setRegionCurved(vW, vH - radius * 2, vW - radius - outline, vH - radius * 2, vW, vH - radius + outline, radius + outline, radius, this.outline, new Color(this.outline.c, 0), this.fill, rotator, vW, vH, data);
+				setRegion(vW - radius - outline, radius * 2, vW - radius, vH - radius * 2, outlineI, rotator, vW, vH, data);
+				setRegion(vW - radius - outline, vH - radius + outline, vW, vH, fillI, rotator, vW, vH, data);
+			}
+			else
+			{
+				setRegion(vW - radius - outline, radius * 2, vW - radius, vH, outlineI, rotator, vW, vH, data);
+			}
+			GuiTheme.makeTexture(tex, data, w, h);
+	    	MemoryUtil.memFree(data);
+		}
 	}
 }

@@ -4,17 +4,17 @@ import java.util.Collection;
 
 public interface IEditableParent
 {
-	public Collection<? extends IEditable> getChildren();
+	public Collection<? extends IModelEditable> getChildren();
 	
 	public boolean hasChildren();
 	
-	public boolean canBeChild(IEditable candidate);
+	public boolean canBeChild(IModelEditable candidate);
 	
-	public void addChild(IEditable child);
+	public void addChild(IModelEditable child);
 	
-	public void addChildBefore(IEditable child, IEditable position);
+	public void addChildBefore(IModelEditable child, IModelEditable position);
 	
-	public void addChildAfter(IEditable child, IEditable position);
+	public void addChildAfter(IModelEditable child, IModelEditable position);
 	
-	public void removeChild(IEditable child);
+	public void removeChild(IModelEditable child);
 }

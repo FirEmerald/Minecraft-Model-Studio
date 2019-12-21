@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <theme name="Light Theme" parent="basic.xml">
-	<background>0xFFBFBFBF</background>
+	<background>0xFFEFEFEF</background>
 	<outline>0xFF000000</outline>
 	<text>0xFF000000</text>
 	<fill>0xFFFFFFFF</fill>
-	<textbox>0xFFBFBFBF</textbox>
+	<textbox>0xFFEFEFEF</textbox>
 	<scrollbar>0xFF7F7F7F</scrollbar>
 </theme>

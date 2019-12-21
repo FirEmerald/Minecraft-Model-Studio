@@ -1,151 +1,166 @@
 package firemerald.mcms.api.model;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
+import org.joml.Matrix4d;
 
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
-import firemerald.mcms.api.data.W3CElement;
-import firemerald.mcms.api.math.Matrix4;
-import firemerald.mcms.api.math.Quaternion;
-import firemerald.mcms.api.math.Vec3;
-import firemerald.mcms.api.util.FileUtil;
+import firemerald.mcms.model.IModelEditable;
 
-public class Skeleton
+public class Skeleton implements ISkeleton
 {
 	public final List<Bone> base = new ArrayList<>();
 	public final Map<String, Bone> bones = new HashMap<>();
-	public final Map<String, Matrix4> inverts = new HashMap<>();
+	public final Map<String, Matrix4d> inverse = new HashMap<>();
 	
 	public Skeleton() {}
+	
+	public Skeleton(AbstractElement el)
+	{
+		load(el);
+	}
 	
 	public Skeleton(List<Bone> base)
 	{
 		setBase(base);
 	}
+
+	@Override
+	public List<Bone> getRootBones()
+	{
+		return base;
+	}
+
+	@Override
+	public Collection<Bone> getAllBones()
+	{
+		return bones.values();
+	}
+
+	@Override
+	public boolean isNameUsed(String name)
+	{
+		return bones.containsKey(name);
+	}
 	
 	public void setBase(List<Bone> bones)
 	{
 		base.clear();
-		this.bones.clear();
-		inverts.clear();
-		for (Bone bone : bones)
-		{
-			base.add(bone);
-			addBones(bone, new Matrix4());
-		}
+		base.addAll(bones);
+		updateBonesList();
 	}
 	
-	public void addBones(Bone bone, Matrix4 currentTransform)
+	@Override
+	public void updateBonesList()
+	{
+		bones.clear();
+		inverse.clear();
+		base.forEach(bone -> updateBone(bone));
+	}
+	
+	public void updateBone(Bone bone)
 	{
 		bones.put(bone.name, bone);
-		Matrix4 mat = new Matrix4(currentTransform);
-		Vec3 v = bone.defaultTransform.translation;
-		mat.translate(v);
-		mat.mul(bone.defaultTransform.rotation.getMatrix4());
-		inverts.put(bone.name, mat.invert(new Matrix4()));
-		for (Bone child : bone.children) addBones(child, mat);
+		inverse.put(bone.name, bone.getTransformation().invert(new Matrix4d()));
+		bone.children.forEach(child -> updateBone(child));
 	}
-	/*
-	public static Skeleton tryLoadXML(ResourceLocation file)
+
+	@Override
+	public Map<String, Matrix4d> getInverseTransforms()
 	{
-		InputStream in = null;
-		Skeleton skel = null;
-		try
-		{
-			skel = new Skeleton(in = Minecraft.getMinecraft().getResourceManager().getResource(file).getInputStream());
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		if (in != null) try
-		{
-			in.close();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-		return skel;
+		return inverse;
 	}
-	*/
-	public static Skeleton tryLoadXML(File file)
+
+	@Override
+	public void load(AbstractElement root)
 	{
-		Skeleton skel = null;
-		try
+		this.base.clear();
+		for (AbstractElement el : root.getChildren())
 		{
-			skel = new Skeleton(file);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		return skel;
-	}
-	
-	public Skeleton(File file) throws SAXException, IOException
-	{
-		List<Bone> base = iterate(FileUtil.readFile(file), null);
-		setBase(base);
-	}
-	
-	public static Skeleton tryLoadXML(InputStream in)
-	{
-		Skeleton skel = null;
-		try
-		{
-			skel = new Skeleton(in);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		return skel;
-	}
-	
-	public Skeleton(InputStream in) throws SAXException, IOException
-	{
-		Document doc = FileUtil.readXML(in);
-		List<Bone> base = iterate(new W3CElement(doc), null);
-		setBase(base);
-	}
-	
-	private static List<Bone> iterate(AbstractElement element, Bone parent)
-	{
-		List<Bone> bones = new ArrayList<Bone>();
-		for (AbstractElement e : element.getChildren()) if (e.getName().equals("bone"))
-		{
-			try
+			switch (el.getName())
 			{
-				String name = e.getString("boneName");
-				float x, y, z;
-				double qX, qY, qZ, qW;
-				x = e.getFloat("x", 0);
-				y = e.getFloat("y", 0);
-				z = e.getFloat("z", 0);
-				qX = e.getDouble("qX", 0);
-				qY = e.getDouble("qY", 0);
-				qZ = e.getDouble("qZ", 0);
-				qW = e.getDouble("qW", 1);
-				Transformation transform = new Transformation(new Quaternion(qX, qY, qZ, qW), new Vec3(x, y, z));
-				Bone bone = new Bone(name, transform, parent);
-				iterate(e, bone);
-				bones.add(bone);
+			case "bone":
+			{
+				Bone bone = new Bone(el.getString("name", "unnamed bone"), new Transformation());
+				bone.loadFromSkeleton(el);
+				base.add(bone);
+				break;
 			}
-			catch (Exception e1)
-			{
-				new Exception("Missing bone name", e1).printStackTrace();
 			}
 		}
-		return bones;
+		updateBonesList();
+	}
+	
+	@Override
+	public boolean addRootBone(Bone bone, boolean updateBoneList)
+	{
+		base.add(bone);
+		if (updateBoneList) this.updateBonesList();
+		return true;
+	}
+
+	@Override
+	public void save(AbstractElement skeletonEl, float scale)
+	{
+		base.forEach(bone -> bone.addToSkeleton(skeletonEl, scale));
+	}
+
+	@Override
+	public Collection<? extends IModelEditable> getChildren()
+	{
+		return this.getRootBones();
+	}
+
+	@Override
+	public boolean hasChildren()
+	{
+		return !base.isEmpty();
+	}
+
+	@Override
+	public boolean canBeChild(IModelEditable candidate)
+	{
+		return candidate instanceof Bone && !base.contains(candidate);
+	}
+
+	@Override
+	public void addChild(IModelEditable child)
+	{
+		if (child instanceof Bone && !this.base.contains(child)) this.addRootBone((Bone) child, true);
+	}
+
+	@Override
+	public void addChildBefore(IModelEditable child, IModelEditable position)
+	{
+		if (child instanceof Bone && !this.base.contains(child))
+		{
+			int pos = this.base.indexOf(position);
+			if (pos < 0) pos = 0;
+			this.base.add(pos, (Bone) child);
+			this.updateBonesList();
+		}
+	}
+
+	@Override
+	public void addChildAfter(IModelEditable child, IModelEditable position)
+	{
+		if (child instanceof Bone && !this.base.contains(child))
+		{
+			int pos = this.base.indexOf(position) + 1;
+			if (pos <= 0) pos = this.base.size();
+			this.base.add(pos, (Bone) child);
+			this.updateBonesList();
+		}
+	}
+
+	@Override
+	public void removeChild(IModelEditable child)
+	{
+		if (child instanceof Bone && base.remove(child)) updateBonesList();
 	}
 }

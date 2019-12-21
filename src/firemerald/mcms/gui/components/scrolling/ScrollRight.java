@@ -1,10 +1,12 @@
 package firemerald.mcms.gui.components.scrolling;
 
+import firemerald.mcms.theme.EnumDirection;
+
 public class ScrollRight extends ScrollButtonHorizontal
 {
-	public ScrollRight(float x1, float y1, float x2, float y2, IScrollableHorizontal scrollable)
+	public ScrollRight(int x1, int y1, int x2, int y2, IScrollableHorizontal scrollable)
 	{
-		super(x1, y1, x2, y2, 1, scrollable);
+		super(x1, y1, x2, y2, EnumDirection.RIGHT, scrollable);
 	}
 	
 	@Override

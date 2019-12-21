@@ -1,29 +1,36 @@
 package firemerald.mcms.gui.colors;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.gui.components.ComponentLabel;
+import firemerald.mcms.gui.components.ComponentFloatingLabel;
+import firemerald.mcms.gui.components.text.ComponentIncrementInt;
 import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.HSV;
-import firemerald.mcms.util.FontRenderer;
+import firemerald.mcms.util.font.FontRenderer;
 
 public class ComponentPaneHSV extends ComponentPaneColorPicker
 {
 	public final ColorPickerHSV hsvPicker;
 	public final ComponentTextInt hHSV, sHSV, vHSV;
 	
-	public ComponentPaneHSV(float x1, float y1, float x2, float y2, ColorModel color)
+	public ComponentPaneHSV(int x1, int y1, int x2, int y2, ColorModel color)
 	{
 		super(x1, y1, x2, y2);
 		HSV hsv = color.getHSV();
-		guiElements.add(hsvPicker = new ColorPickerHSV(0, 0, hsv));
+		this.addElement(hsvPicker = new ColorPickerHSV(0, 0, hsv));
 		FontRenderer font = Main.instance.fontMsg;
-		guiElements.add(new ComponentLabel(160, 00, 172, 20, font, "H"));
-		guiElements.add(hHSV = ComponentTextInt.makeIntControl(this, 172, 0, 44, 0, 0, 360, 1));
-		guiElements.add(new ComponentLabel(160, 20, 172, 40, font, "S"));
-		guiElements.add(sHSV = ComponentTextInt.makeIntControl(this, 172, 20, 44, 0, 0, 100, 1));
-		guiElements.add(new ComponentLabel(160, 40, 172, 60, font, "V"));
-		guiElements.add(vHSV = ComponentTextInt.makeIntControl(this, 172, 40, 44, 0, 0, 100, 1));
+		this.addElement(new ComponentFloatingLabel(160, 00, 172, 20, font, "H"));
+		this.addElement(hHSV = new ComponentTextInt(172, 0, 206, 20, font, 0, 360));
+		this.addElement(new ComponentIncrementInt(206, 0, hHSV, 1));
+		this.addElement(new ComponentIncrementInt(206, 10, hHSV, -1));
+		this.addElement(new ComponentFloatingLabel(160, 20, 172, 40, font, "S"));
+		this.addElement(sHSV = new ComponentTextInt(172, 20, 206, 40, font, 0, 100));
+		this.addElement(new ComponentIncrementInt(206, 20, sHSV, 1));
+		this.addElement(new ComponentIncrementInt(206, 30, sHSV, -1));
+		this.addElement(new ComponentFloatingLabel(160, 40, 172, 60, font, "V"));
+		this.addElement(vHSV = new ComponentTextInt(172, 40, 206, 60, font, 0, 100));
+		this.addElement(new ComponentIncrementInt(206, 40, vHSV, 1));
+		this.addElement(new ComponentIncrementInt(206, 50, vHSV, -1));
 		setColor(hsv);
 	}
 	

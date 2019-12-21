@@ -1,20 +1,14 @@
 package firemerald.mcms;
 
-import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL33.*;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.net.URL;
 import java.nio.IntBuffer;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -24,83 +18,172 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.glfw.GLFWImage;
-import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.system.MemoryStack;
 
-import firemerald.mcms.api.animation.Animation;
-import firemerald.mcms.api.animation.AnimationState;
-import firemerald.mcms.api.util.MatrixHandler;
 import firemerald.mcms.api.util.RaytraceResult;
-import firemerald.mcms.callbacks.*;
 import firemerald.mcms.gui.GuiScreen;
-import firemerald.mcms.gui.model.GuiModel;
-import firemerald.mcms.gui.themes.GuiThemes;
-import firemerald.mcms.model.IEditable;
-import firemerald.mcms.model.MatrixHandlerCore;
-import firemerald.mcms.model.Mesh;
+import firemerald.mcms.gui.main.GuiMain;
+import firemerald.mcms.model.EditorPanes;
+import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.shader.Shader;
+import firemerald.mcms.texture.BlendMode;
 import firemerald.mcms.texture.Color;
+import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.HSL;
 import firemerald.mcms.texture.HSV;
 import firemerald.mcms.texture.RGB;
-import firemerald.mcms.texture.ReloadingTexture;
 import firemerald.mcms.texture.Texture;
-import firemerald.mcms.theme.BasicTheme;
+import firemerald.mcms.texture.tools.ITool;
+import firemerald.mcms.texture.tools.IToolHolder;
 import firemerald.mcms.theme.GuiTheme;
-import firemerald.mcms.util.Action;
 import firemerald.mcms.util.ApplicationState;
-import firemerald.mcms.util.Cursors;
-import firemerald.mcms.util.FileUtils;
+import firemerald.mcms.util.EditorMode;
+import firemerald.mcms.util.EnumPlaybackMode;
 import firemerald.mcms.util.FileWatcher;
-import firemerald.mcms.util.FontRenderer;
+import firemerald.mcms.util.IEditable;
+import firemerald.mcms.util.PrintStreamLogger;
+import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.TextureManager;
-import net.sf.image4j.codec.ico.ICODecoder;
+import firemerald.mcms.util.font.FontRenderer;
+import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.window.api.Cursor;
+import firemerald.mcms.window.api.Window;
+import firemerald.mcms.window.glfw.GLFWWindow;
 
 public class Main
 {
+	//public static final String VERSION = "0.0.0.0";
+	public static final String VERSION = "Alpha 3";
+	public static final String BUILD_DATE = "12/9/2019 15:33";
 	public static final Logger LOGGER;
 	public static Main instance;
-	public long window;
+	public static final int MIN_W = 640, MIN_H = 480;
 	public int sizeW, sizeH;
 	public boolean focused = false;
 	public double mX = -1, mY = -1;
 	public Shader shader;
 	public TextureManager textureManager;
-	public GuiScreen gui = null;
+	public GuiScreen gui = new GuiScreen() { //blank gui to prevent null pointer exceptions
+		@Override
+		public void setSize(int w, int h) {}
+	};
 	public FontRenderer font0, fontMsg;
-	public int texSizeU = 1, texSizeV = 1;
 	public RaytraceResult trace = null;
-	public IEditable editing = null;
-	public static final Queue<Action> CLEANUP_ACTIONS = new ConcurrentLinkedQueue<>();
+	private IEditable editing = null;
+	private IModelEditable editingModel = null;
+	public static final Queue<Runnable> CLEANUP_ACTIONS = new ConcurrentLinkedQueue<>();
 	public Mesh screen;
-	public GuiTheme theme;
 	public FileWatcher watcher;
 	public boolean tooSmall = false;
 	public final ApplicationState state = new ApplicationState();
+	public final Project project = new Project("untitled", 16, 16);
+	private Texture overlay;
+	public float animTime = 0;
+	public EnumPlaybackMode animMode = EnumPlaybackMode.PAUSED;
+	public boolean animLoop = false;
+	public float animScale = 1;
+	public EditorPanes editorPanes;
+	public IToolHolder toolHolder = new IToolHolder()
+	{
+		public Color color1 = new Color(0, 0, 0, 1), color2 = new Color(1, 1, 1, 1);
+		public BlendMode blendMode = BlendMode.NORMAL;
+		
+		@Override
+		public Color getColor1()
+		{
+			return color1;
+		}
+
+		@Override
+		public Color getColor2()
+		{
+			return color2;
+		}
+
+		@Override
+		public void setColor1(ColorModel color)
+		{
+			color1.c = color;
+		}
+
+		@Override
+		public void setColor2(ColorModel color)
+		{
+			color2.c = color;
+		}
+
+		@Override
+		public void setAlpha(float alpha)
+		{
+			color1.a = alpha;
+			color2.a = alpha;
+		}
+
+		@Override
+		public BlendMode getBlendMode()
+		{
+			return blendMode;
+		}
+
+		@Override
+		public void setBlendMode(BlendMode mode)
+		{
+			blendMode = mode;
+		}
+	};
+	public ITool tool = null;
+	
+	public EditorMode getEditorMode()
+	{
+		return tool != null ? EditorMode.TEXTURE : EditorMode.MODEL;
+	}
+	
+	public void setEditing(IEditable editable)
+	{
+		if (this.editing != null) this.editing.onDeselect(editorPanes);
+		if ((this.editing = editable) != null)
+		{
+			this.editingModel = editable.getRenderComponent();
+			editable.onSelect(editorPanes, editorPanes.editor.minY);
+		}
+	}
+	
+	public IEditable getEditing()
+	{
+		return this.editing;
+	}
+	
+	public IModelEditable getEditingModel()
+	{
+		return this.editingModel;
+	}
 	
     static
     {
-    	System.setProperty("log4j2.configurationFile", "firemerald/mcms/resources/log4j2.xml");
+    	System.setProperty("log4j.configurationFile", "firemerald/mcms/resources/log4j2.xml");
     	LOGGER = LogManager.getLogger("MCAMC"); //the main logger
-    	Logger stdOut = LogManager.getLogger("STDOUT"); //the logger for System.out
-    	Logger stdErr = LogManager.getLogger("STDERR"); //the logger for System.err
-    	System.setOut(new PrintStreamLogger(System.out, stdOut, Level.INFO)); //replace the default output stream with one that goes to the logger
-    	System.setErr(new PrintStreamLogger(System.err, stdErr, Level.ERROR)); //replace the default error stream with one that goes to the logger
+    	if (!(System.out instanceof PrintStreamLogger))
+    	{
+        	Logger stdOut = LogManager.getLogger("STDOUT"); //the logger for System.out
+        	System.setOut(new PrintStreamLogger(System.out, stdOut, Level.INFO)); //replace the default output stream with one that goes to the logger
+    	}
+    	if (!(System.err instanceof PrintStreamLogger))
+    	{
+        	Logger stdErr = LogManager.getLogger("STDERR"); //the logger for System.err
+        	System.setErr(new PrintStreamLogger(System.err, stdErr, Level.ERROR)); //replace the default error stream with one that goes to the logger
+    	}
     }
     
     public static Mesh MODMESH;
 	
 	public static void main(String[] args)
 	{
-		(instance = new Main()).run();
+		(instance = new Main()).run(args);
 	}
 	
 	public void setSize(int w, int h)
 	{
-		if (w <= 0 || h <= 0)
+		if (w < MIN_W || h < MIN_H)
 		{
 			tooSmall = true;
 		}
@@ -111,31 +194,34 @@ public class Main
 			sizeH = h;
 			if (glActive) screen.setMesh(0, 0, w, h, 0, 0, 0, 1, 1);
 			if (gui != null) gui.setSize(w, h);
-			state.setSize(w, h);
 		}
-	}
-	
-	public void setPos(int x, int y)
-	{
-		state.setPos(x, y);
-	}
-	
-	public void setMaximized(boolean maximized)
-	{
-		state.setMaximized(maximized);
 	}
 	
 	public static boolean glActive = false;
 	
+	//public SystemTray tray;
+	//public TrayIcon trayIcon = null;
+	
 	public Main() {}
+	
+	public GuiTheme getTheme()
+	{
+		return state.getTheme();
+	}
 	
 	public void setTheme(GuiTheme theme)
 	{
-		this.theme = theme;
-		this.state.setTheme(theme.origin);
+		state.setTheme(theme);
 	}
 	
-	public void run()
+	public void setThemeNoStateUpdate(GuiTheme theme)
+	{
+		state.setThemeNoStateUpdate(theme);
+	}
+	
+	public Window window;
+	
+	public void run(String[] args)
 	{
 		try
 		{
@@ -146,9 +232,79 @@ public class Main
 			LOGGER.log(Level.FATAL, "Could not instantiate the filesystem watcher service", e);
 			System.exit(-1);
 		}
-		this.theme = (new BasicTheme());
+		window = new GLFWWindow(this);
+		//window = new AWTWindow(this);
 		state.loadState();
 		state.saveState();
+		window.showWindow();
+
+		/*
+        PopupMenu menu = new PopupMenu();
+        {
+        	MenuItem exit = new MenuItem("Exit");
+        	ActionListener actionExit = action -> window.close();
+        	exit.addActionListener(actionExit);
+        	menu.add(exit);
+        	menu.add("-");
+        	exit = new MenuItem("Exit 2");
+        	exit.addActionListener(actionExit);
+        	menu.add(exit);
+        	exit = new MenuItem("Exit 3");
+        	exit.addActionListener(actionExit);
+        	menu.add(exit);
+        	Menu menu2 = new Menu("menu");
+        	exit = new MenuItem("Exit 4");
+        	exit.addActionListener(actionExit);
+        	menu2.add(exit);
+        	exit = new MenuItem("Exit 5");
+        	exit.addActionListener(actionExit);
+        	menu2.add(exit);
+        	Menu menu3 = new Menu("menu");
+        	exit = new MenuItem("Exit 6");
+        	exit.addActionListener(actionExit);
+        	menu3.add(exit);
+        	exit = new MenuItem("Exit 7");
+        	exit.addActionListener(actionExit);
+        	menu3.add(exit);
+        	menu2.add(menu3);
+        	menu.add(menu2);
+        	menu.add("nothing");
+        	exit = new MenuItem("Close");
+        	exit.addActionListener(action -> {
+        		GuiScreen gui;
+        		if ((gui = Main.instance.gui) instanceof GuiPopup) ((GuiPopup) gui).deactivate();
+        	});
+        	menu.add(exit);
+        }
+		if (!SystemTray.isSupported())
+		{
+			//tray not supported
+			LOGGER.log(Level.INFO, "System tray is not supported. tray icon and notification features won't be available.");
+		}
+		else
+		{
+			LOGGER.log(Level.INFO, "Enabling system tray features.");
+			tray = SystemTray.getSystemTray();
+			Image img = Toolkit.getDefaultToolkit().createImage(getResourceURL("tray_icon.png"));
+			trayIcon = new TrayIcon(img, "MC Model Studio");
+			trayIcon.setImageAutoSize(true);
+	        trayIcon.setToolTip("MC Model Studio");
+	        trayIcon.setPopupMenu(menu);
+	        try
+	        {
+				tray.add(trayIcon);
+			}
+	        catch (AWTException e) {} //already prevented
+	        trayIcon.displayMessage("MC Model Studio", "System tray features enabled", MessageType.INFO);
+		}
+		*/
+		
+		// testing lwjgl3-awt
+		
+		//TODO
+		//window = new AWTWindow(this);
+		
+		/*
 		/*Testing NFD
 		LOGGER.info("Open file");
 		{
@@ -252,47 +408,6 @@ public class Main
 		}
 		System.exit(0);
 		*/
-		GLFWErrorCallback.createPrint(System.err).set();
-		if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
-		initWindow();
-		Cursors.init();
-		GL.createCapabilities();
-		glActive = true;
-		screen = new Mesh(0, 0, sizeW, sizeH, 0, 0, 0, 1, 1);
-		font0 = new FontRenderer("0", 8, 32, 255, true);
-		fontMsg = new FontRenderer("msg", 12, true);
-        glEnable(GL_CULL_FACE);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_BLEND);
-		shader = new Shader("shader", "shader");
-		glEnable(GL_LINE_SMOOTH);
-		MatrixHandler.instance = new MatrixHandlerCore();
-		
-		MODMESH = new Mesh(new float[0], new float[0], new float[0], new int[0], Mesh.DrawMode.TRIANGLES, GL_DYNAMIC_DRAW);
-		textureManager = new TextureManager();
-		
-		Animation anim = Animation.loadAnim(new File("example.anim"));
-		/** /
-		VBOObjModel model = VBOObjModel.tryLoadModel(new File("example.obj"), new File("example.skel"));
-		/*/
-		
-		//System.out.println(RenderObjectComponents.createObj(model).optimize());
-		/**/
-		AnimationState animState = new AnimationState(anim);
-		Texture tex;
-		try
-		{
-			tex = new ReloadingTexture(new File("test6.png"));
-		}
-		catch (IOException e1)
-		{
-			e1.printStackTrace();
-			tex = new Texture(1, 1);
-		}
-		
-		gui = new GuiModel(tex);
-		gui.setSize(sizeW, sizeH);
-		new GuiThemes().activate();
 		
 		//TODO
 		//saveColorWheel(155, 15);
@@ -303,9 +418,24 @@ public class Main
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(1, 0, 0), new RGB(0, 1, 1), new RGB(1, 1, 1), "red");
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(0, 1, 0), new RGB(1, 0, 1), new RGB(1, 1, 1), "green");
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(0, 0, 1), new RGB(1, 1, 0), new RGB(1, 1, 1), "blue");
-		long lastNanos = 0;
+		if (args.length > 0)
+		{
+			File file = new File(args[0]);
+			if (file.exists() && !file.isDirectory())
+			{
+				try
+				{
+					 project.load(file);
+				}
+				catch (Exception e)
+				{
+					LOGGER.error("Couldn't open invalid or corrupt project file " + file.getAbsolutePath(), e);
+				}
+			}
+			else LOGGER.warn("Couldn't open nonexistent project file " + file.getAbsolutePath());
+		}
 		boolean first = true;
-		while (!glfwWindowShouldClose(window))
+		while (!window.isClosed())
 		{
 			long nanos = System.nanoTime();
 			long thisTick;
@@ -316,50 +446,88 @@ public class Main
 			}
 			else thisTick = nanos - lastNanos;
 			lastNanos = nanos;
-	    	glfwPollEvents();
-	    	
-	    	watcher.poll();
-	    	
-	    	if (!tooSmall)
-	    	{
-		    	/**/
-				shader.bind();
-	    		shader.setColor(1, 1, 1, 1);
-				glViewport(0, 0, sizeW, sizeH);
-				Shader.MODEL.matrix().identity();
-				Shader.VIEW.matrix().identity();
-				Shader.PROJECTION.matrix().identity();
-	    		Shader.VIEW.matrix().translate(0, 0, -1000);
-	    		Shader.PROJECTION.matrix().setOrtho(0, sizeW, sizeH, 0, 0, 2000);
-	    		shader.updateModel();
-	    		shader.updateView();
-	    		shader.updateProjection();
-				theme.drawBackground();
-	            float mx = (float) mX;
-	            float my = (float) mY;
-	            if (gui != null) gui.tick(mx, my, (float) (thisTick * .000000001));
-	            if (gui != null)
-	            {
-	            	glfwSetCursor(window, gui.getCursor(mx, my));
-	            	gui.render(mx, my, true);
-	            }
-	            else glfwSetCursor(window, Cursors.standard);
-				shader.unbind();
-				glfwSwapBuffers(window);
-				listGLErrors("End render");
-	    	}
-			
-			while (!CLEANUP_ACTIONS.isEmpty()) CLEANUP_ACTIONS.remove().apply();
-			
+			window.tick(thisTick);
+			window.render();
+			String title = "Minecraft Model Studio - " + project.getName() + " (";
+			if (project.getSource() != null) title += project.getSource().toString() + ")";
+			else title += "not saved)";
+			window.setTitle(title);
 			try
 			{
 				Thread.sleep(1);
 			}
 			catch (InterruptedException e)
 			{
-				e.printStackTrace();
+				LOGGER.log(Level.WARN, e);
 			}
 		}
+		//tray.remove(trayIcon);
+		//tray = null;
+		//trayIcon = null;
+	}
+	
+	public long lastNanos = 0;
+	
+	public void initOpenGL()
+	{
+		GL.createCapabilities();
+		glActive = true;
+		screen = new Mesh(0, 0, sizeW, sizeH, 0, 0, 0, 1, 1);
+		font0 = new FontRenderer("0", 8, 32, 255, true);
+		fontMsg = new FontRenderer("msg", 12, true);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+		shader = new Shader("shader", "shader");
+		glEnable(GL_LINE_SMOOTH);
+		glDisable(GL_CULL_FACE);
+		
+		MODMESH = new Mesh(new float[0], new float[0], new float[0], new int[0], Mesh.DrawMode.TRIANGLES, GL_DYNAMIC_DRAW);
+		textureManager = new TextureManager();
+		overlay = new Texture(1, 1);
+
+		gui = new GuiMain();
+		gui.setSize(sizeW, sizeH);
+	}
+	
+	public void tick(long thisTick)
+	{
+    	watcher.poll();
+        getOverlay().clearTexture();
+        if (gui != null)
+        {
+            float mx = (float) mX;
+            float my = (float) mY;
+        	gui.tick(mx, my, (float) (thisTick * .000000001));
+        	window.setCursor(gui.getCursor(mx, my));
+        }
+        else window.setCursor(Cursor.STANDARD);
+		while (!CLEANUP_ACTIONS.isEmpty()) CLEANUP_ACTIONS.remove().run();
+	}
+	
+	public void renderOpenGL()
+	{
+		RenderUtil.stencilC = 0;
+    	if (!tooSmall)
+    	{
+			shader.bind();
+    		shader.setColor(1, 1, 1, 1);
+			glViewport(0, 0, sizeW, sizeH);
+			Shader.MODEL.matrix().identity();
+			Shader.VIEW.matrix().identity();
+			Shader.PROJECTION.matrix().identity();
+    		Shader.VIEW.matrix().translate(0, 0, -1000);
+    		Shader.PROJECTION.matrix().setOrtho(0, sizeW, sizeH, 0, 0, 2000);
+    		shader.updateModel();
+    		shader.updateView();
+    		shader.updateProjection();
+    		RenderUtil.clearStencil();
+			getTheme().drawBackground();
+            float mx = (float) mX;
+            float my = (float) mY;
+            if (gui != null) gui.render(mx, my, true);
+			shader.unbind();
+			listGLErrors("End render");
+    	}
 	}
 	
 	public static void saveColorWheel(final int s, final int w)
@@ -614,79 +782,6 @@ public class Main
 		glBindTexture(GL_TEXTURE_2D, prevTex);
 	}
 	
-	public void initWindow()
-	{
-		glfwDefaultWindowHints();
-		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-		glfwWindowHint(GLFW_DEPTH_BITS, 24);
-		glfwWindowHint(GLFW_STENCIL_BITS, 8);
-		glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-		int windowW = state.getWindowW();
-		int windowH = state.getWindowH();
-		window = glfwCreateWindow(windowW, windowH, "Minecraft Model Studio", 0, 0);
-		if (window == 0) throw new RuntimeException("Failed to create the GLFW window");
-		glfwSetWindowSizeLimits(window, 640, 480, GLFW_DONT_CARE, GLFW_DONT_CARE);
-		glfwSetCharCallback(window, new CharCallback());
-		glfwSetKeyCallback(window, new KeyCallback());
-		glfwSetMouseButtonCallback(window, new MouseButtonCallback());
-		glfwSetCursorPosCallback(window, new CursorPosCallback());
-		glfwSetScrollCallback(window, new ScrollCallback());
-		glfwSetWindowSizeCallback(window, new WindowSizeCallback());
-		glfwSetWindowFocusCallback(window, new WindowFocusCallback());
-		glfwSetWindowPosCallback(window, new WindowPosCallback());
-		glfwSetWindowMaximizeCallback(window, new WindowMaximizeCallback());
-		focused = true;
-		if (state.getMaximized())
-		{
-			glfwMaximizeWindow(window);
-		}
-		else try (MemoryStack stack = MemoryStack.stackPush())
-		{
-			IntBuffer pWidth = stack.mallocInt(1);
-			IntBuffer pHeight = stack.mallocInt(1);
-			glfwGetWindowSize(window, pWidth, pHeight);
-			GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-			int windowX = state.getWindowX(vidmode.width(), pWidth.get(0));
-			int windowY = state.getWindowY(vidmode.height(), pHeight.get(0));
-			glfwSetWindowPos(window, windowX, windowY);
-		}
-		glfwMakeContextCurrent(window);
-		try
-		{
-			InputStream in = Main.getResource("icon.ico");
-			List<BufferedImage> icons = ICODecoder.read(in);
-			FileUtils.closeSafe(in);
-			GLFWImage.Buffer buffer = GLFWImage.malloc(icons.size());
-			for (int i = 0; i < icons.size(); i++)
-			{
-				buffer.position(i);
-				BufferedImage img = icons.get(i);
-				int w = img.getWidth();
-				int h = img.getHeight();
-				int[] pixels = new int[w * h];
-				img.getRGB(0, 0, w, h, pixels, 0, w);
-				ByteBuffer buf = ByteBuffer.allocateDirect(w * h * 4);
-				buf.order(ByteOrder.BIG_ENDIAN);
-				for (int pixel : pixels) buf.putInt((pixel << 8) | (pixel >>> 24)); //ARGB -> RGBA
-				buf.flip();
-				buffer.width(w).height(h).pixels(buf);
-			}
-			glfwSetWindowIcon(window, buffer.position(0));
-			buffer.free();
-		}
-		catch (Throwable t)
-		{
-			Main.LOGGER.warn("Failed to load window icon(s)", t);
-		}
-		glfwSwapInterval(1);
-		glfwShowWindow(window);
-	}
-	
 	
     public static String getErrorCode(int error)
     {
@@ -715,17 +810,20 @@ public class Main
     public static void listGLErrors(String phase)
     {
         int error;
-        boolean first = true;
+        int ind = 0;
+        int skipped = 0;
         while ((error = glGetError()) != GL_NO_ERROR)
         {
-        	if (first)
+        	if (ind == 0)
         	{
-        		first = false;
         		Main.LOGGER.warn("OpenGL ERROR");
         		Main.LOGGER.warn("@ " + phase);
         	}
-        	Main.LOGGER.warn(error + ": " + getErrorCode(error));
+        	if (ind < 10) Main.LOGGER.warn(error + ": " + getErrorCode(error));
+        	else skipped++;
+        	ind++;
         }
+        if (skipped > 0) Main.LOGGER.warn("and " + skipped + " more");
     }
     
     
@@ -733,4 +831,13 @@ public class Main
     {
     	return Main.class.getResourceAsStream("resources/" + name);
     }
+    
+    public static URL getResourceURL(String name)
+    {
+    	return Main.class.getResource("resources/" + name);
+    }
+
+	public Texture getOverlay() {
+		return overlay;
+	}
 }

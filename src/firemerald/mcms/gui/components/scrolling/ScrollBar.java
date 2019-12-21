@@ -1,14 +1,13 @@
 package firemerald.mcms.gui.components.scrolling;
 
-import org.lwjgl.glfw.GLFW;
-
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.Component;
 import firemerald.mcms.gui.components.ComponentButton.ButtonState;
-import firemerald.mcms.model.Mesh;
 import firemerald.mcms.shader.Shader;
-import firemerald.mcms.theme.BoxFormat;
-import firemerald.mcms.theme.RoundedBoxFormat;
+import firemerald.mcms.theme.ThemeElement;
+import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.window.api.MouseButtons;
 
 public class ScrollBar extends Component
 {
@@ -19,10 +18,9 @@ public class ScrollBar extends Component
 	private float pY = 0;
 	private boolean pressedScroll = false;
 	private float pressedScrollVal;
-	private RoundedBoxFormat rectangle;
-	private BoxFormat scrollBarRectangle;
+	private ThemeElement rectangle, scrollBarRectangle;
 	
-	public ScrollBar(float x1, float y1, float x2, float y2, IScrollable scrollable)
+	public ScrollBar(int x1, int y1, int x2, int y2, IScrollable scrollable)
 	{
 		super(x1, y1, x2, y2);
 		this.scrollable = scrollable;
@@ -30,11 +28,10 @@ public class ScrollBar extends Component
 	}
 	
 	@Override
-	public void setSize(float x1, float y1, float x2, float y2)
+	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		super.setSize(x1, y1, x2, y2);
 		outline.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
-		rectangle = new RoundedBoxFormat((int) (x2 - x1), (int) (y2 - y1));
 		scrollSize = y2 - y1 - 2;
 		setMaxScroll();
 	}
@@ -52,8 +49,21 @@ public class ScrollBar extends Component
 			scrollBarSize = scrollSize * scrollSize / (scrollSize + size);
 			if (scrollBarSize < 10) scrollBarSize = 10;
 			bar.setMesh(x1 + 1, y1 + 1, x2 - 1, y1 + 1 + scrollBarSize, 0, 0, 0, 1, 1);
-			scrollBarRectangle = new BoxFormat((int) (x2 - x1 - 2), (int) scrollBarSize, 0);
 			scrollHeight = scrollSize - scrollBarSize;
+		}
+		onGuiUpdate(GuiUpdate.THEME);
+	}
+	
+	@Override
+	public void onGuiUpdate(GuiUpdate reason)
+	{
+		if (reason == GuiUpdate.THEME)
+		{
+			if (rectangle != null) rectangle.release();
+			rectangle = getTheme().genBox(x2 - x1, y2 - y1, 1);
+			if (scrollBarRectangle != null) scrollBarRectangle.release();
+			if (enabled) scrollBarRectangle = getTheme().genScrollBar(x2 - x1 - 2, (int) scrollBarSize, 1);
+			else scrollBarRectangle = null;
 		}
 	}
 	
@@ -73,7 +83,7 @@ public class ScrollBar extends Component
 	public void render(float mx, float my, boolean canHover)
 	{
 		Main main = Main.instance;
-		getTheme().bindRoundedBox(rectangle);
+		rectangle.bind();
 		if (enabled)
 		{
 			outline.render();
@@ -95,7 +105,7 @@ public class ScrollBar extends Component
 			Shader.MODEL.push();
 			Shader.MODEL.matrix().translate(0, scrollHeight * scroll / max, 0);
 			main.shader.updateModel();
-			getTheme().bindScrollBar(scrollBarRectangle);
+			scrollBarRectangle.bind();
 			bar.render();
 			Shader.MODEL.pop();
 			main.shader.updateModel();
@@ -124,7 +134,7 @@ public class ScrollBar extends Component
 	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
-		if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT)
+		if (button == MouseButtons.LEFT)
 		{
 			pY = my;
 			if (mx >= x1 + 1 && mx < x2 - 1)
@@ -141,9 +151,9 @@ public class ScrollBar extends Component
 	}
 	
 	@Override
-	public void onDrag(float mx, float my)
+	public void onDrag(float mx, float my, int button)
 	{
-		if (pressedScroll)
+		if (button == MouseButtons.LEFT && pressedScroll)
 		{
 			float dY = my - pY;
 			float max = scrollable.getMaxScroll();
@@ -157,7 +167,7 @@ public class ScrollBar extends Component
 	@Override
 	public void onMouseReleased(float mx, float my, int button, int mods)
 	{
-		if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT)
+		if (button == MouseButtons.LEFT)
 		{
 			pressedScroll = false;
 		}

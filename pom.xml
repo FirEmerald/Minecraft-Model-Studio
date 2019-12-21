@@ -3,27 +3,39 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>firemerald</groupId>
-	<artifactId>MCAMC</artifactId>
+	<artifactId>MCMS</artifactId>
 	<version>1.0</version>
-	<name>MCAMC</name>
+	<name>Minecraft Model Studio</name>
 	<url>http://maven.apache.org</url>
 	
 	<repositories>
+		<!-- Main maven repository: https://repo1.maven.org/maven2/ -->
+		<!-- repo URL: <repo>/<groupId>/<artifactId>/<version>/<artifactId>-<version>(-<classifier>).jar -->
 		<repository>
 			<id>jitpack.io</id>           <!-- JitPack allows github repo to be used as a maven repo -->
 			<url>https://jitpack.io</url> <!-- For documentation: http://jitpack.io/ -->
+		</repository>
+		<repository>
+			<id>sonatype-snapshots</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<releases><enabled>false</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
 	</repositories>
 	
 	<properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<built.by>FirEmerald</built.by>
-		<main.class>firemerald.mcamc.Main</main.class>
+		<main.class>firemerald.mcms.Main</main.class>
+		<maven.build.timestamp.format>yyMMdd_HHmm</maven.build.timestamp.format>
+		<buildNumber>${maven.build.timestamp}</buildNumber>
 		<!-- Versions -->
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<maven.compiler.source>1.8</maven.compiler.source>
         <java.version>1.8</java.version>
         <mvn.complilerplug.version>3.6.1</mvn.complilerplug.version>
 		<mvn.jarplug.version>3.0.2</mvn.jarplug.version>
-		<lwjgl.version>3.2.0</lwjgl.version>
+		<lwjgl.version>3.2.3</lwjgl.version>
     </properties>
 
 	<profiles>
@@ -85,6 +97,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-jawt</artifactId>
+			<version>${lwjgl.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-nfd</artifactId>
 			<version>${lwjgl.version}</version>
 		</dependency>
@@ -94,18 +111,258 @@
 			<version>${lwjgl.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.joml</groupId>
-			<artifactId>joml-jdk8</artifactId>
-			<version>1.9.9</version>
-		</dependency>
-		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.8.5</version>
 		</dependency>
+		<dependency>
+			<groupId>org.lwjglx</groupId>
+			<artifactId>lwjgl3-awt</artifactId>
+			<version>0.1.1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.lwjgl</groupId>
+					<artifactId>lwjgl-vulkan</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.joml</groupId>
+			<artifactId>joml</artifactId>
+			<version>1.9.16</version>
+		</dependency>
+
     
 		
-		<!-- Natives -->
+		<!-- Natives Windows x86-->
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-windows-x86</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-glfw</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-windows-x86</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-windows-x86</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-windows-x86</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-opengl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-windows-x86</classifier>
+			<scope>runtime</scope>
+		</dependency>
+
+    
+		
+		<!-- Natives Windows x86_64-->
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-windows</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-glfw</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-windows</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-windows</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-windows</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-opengl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-windows</classifier>
+			<scope>runtime</scope>
+		</dependency>
+
+    
+		
+		<!-- Natives Linux x86_64-->
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-glfw</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-opengl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux</classifier>
+			<scope>runtime</scope>
+		</dependency>
+
+    
+		
+		<!-- Natives Linux ARM32 >
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux-arm32</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-glfw</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux-arm32</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux-arm32</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux-arm32</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-opengl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux-arm32</classifier>
+			<scope>runtime</scope>
+		</dependency -->
+
+    
+		
+		<!-- Natives Linux ARM64 >
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux-arm64</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-glfw</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux-arm64</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux-arm64</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux-arm64</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-opengl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-linux-arm64</classifier>
+			<scope>runtime</scope>
+		</dependency -->
+
+    
+		
+		<!-- Natives macOS x86_64 -->
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-macos</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-glfw</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-macos</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-macos</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-macos</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-opengl</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>natives-macos</classifier>
+			<scope>runtime</scope>
+		</dependency>
+
+    
+		
+		<!-- Natives >
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl</artifactId>
@@ -125,6 +382,12 @@
 			<artifactId>lwjgl-nfd</artifactId>
 			<version>${lwjgl.version}</version>
 			<classifier>${lwjgl.natives}</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.lwjgl</groupId>
+			<artifactId>lwjgl-nfd</artifactId>
+			<version>${lwjgl.version}</version>
+			<classifier>${lwjgl.natives}</classifier>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
@@ -133,6 +396,6 @@
 			<version>${lwjgl.version}</version>
 			<classifier>${lwjgl.natives}</classifier>
 			<scope>runtime</scope>
-		</dependency>
+		</dependency -->
 	</dependencies>
 </project>

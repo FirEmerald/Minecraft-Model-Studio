@@ -4,15 +4,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import firemerald.mcms.api.math.Vec2;
-import firemerald.mcms.api.math.Vec3;
-import firemerald.mcms.api.math.Vec4;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
+
 import firemerald.mcms.api.model.ObjData;
-import firemerald.mcms.model.Mesh;
+import firemerald.mcms.util.mesh.Mesh;
 
 public class ObjUtil
 {
-	public static void addQuad(ObjData obj, List<int[][]> mesh, Vec3 v1, Vec3 v2, Vec3 v3, Vec3 v4, Vec3 norm)
+	public static void addQuad(ObjData obj, List<int[][]> mesh, Vector3f v1, Vector3f v2, Vector3f v3, Vector3f v4, Vector3f norm)
 	{
 		int ind1 = getSetIndex(obj.vertices, v1);
 		int ind2 = getSetIndex(obj.vertices, v2);
@@ -48,14 +49,14 @@ public class ObjUtil
 				int vert = data[0];
 				int tex = data[1];
 				int norm = data[2];
-				Vec3 vertex = obj.vertices.get(vert);
-				Vec4 vertexVec = new Vec4(vertex, 1);
+				Vector3f vertex = obj.vertices.get(vert);
+				Vector4f vertexVec = new Vector4f(vertex, 1);
 				verts.add(vertexVec.x());
 				verts.add(vertexVec.y());
 				verts.add(vertexVec.z());
 				if (tex >= 0)
 				{
-					Vec2 texture = obj.textureCoordinates.get(tex);
+					Vector2f texture = obj.textureCoordinates.get(tex);
 					texs.add(texture.x());
 					texs.add(texture.y());
 				}
@@ -66,7 +67,7 @@ public class ObjUtil
 				}
 				if (norm >= 0)
 				{
-					Vec3 normal = obj.vertexNormals.get(norm);
+					Vector3f normal = obj.vertexNormals.get(norm);
 					norms.add(normal.x());
 					norms.add(normal.y());
 					norms.add(normal.z());
@@ -92,7 +93,7 @@ public class ObjUtil
 	{
 		float[] array = new float[list.size()];
 		Iterator<Float> it = list.iterator();
-		for (int i = 0; i < array.length; i++) array[i] = it.next();
+		for (int i = 0; i < array.length; i++) array[i] = it.next().floatValue();
 		return array;
 	}
 	

@@ -1,8 +1,13 @@
 package firemerald.mcms.util;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.logging.log4j.Level;
+
+import firemerald.mcms.Main;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IModel;
 import firemerald.mcms.texture.Color;
@@ -24,7 +29,7 @@ public class MiscUtil
 		}
 		catch (Throwable t)
 		{
-			t.printStackTrace();
+			Main.LOGGER.log(Level.WARN, "Couldn't parse color: " + el.getValue(), t);
 			return def;
 		}
 	}
@@ -38,7 +43,7 @@ public class MiscUtil
 		}
 		catch (Throwable t)
 		{
-			t.printStackTrace();
+			Main.LOGGER.log(Level.WARN, "Couldn't parse color: " + el.getString(attr, "null"), t);
 			return def;
 		}
 	}
@@ -75,5 +80,29 @@ public class MiscUtil
 		String orig = name;
 		while (model.isNameUsed(name = (orig + " (" + Integer.toString(i) + ")"))) i++;
 		return name;
+	}
+	
+	public static String ensureUnique(String name, Set<String> names)
+	{
+		if (names.contains(name))
+		{
+			String orig = name;
+			int i = 2;
+			while (names.contains(name = orig + " (" + i++ + ")")) {}
+		}
+		return name;
+	}
+	
+	public static String[] array(String prepend, Collection<String> append)
+	{
+		return array(prepend, append.toArray(new String[append.size()]));
+	}
+	
+	public static String[] array(String prepend, String[] append)
+	{
+		String[] ret = new String[append.length + 1];
+		ret[0] = prepend;
+		System.arraycopy(append, 0, ret, 1, append.length);
+		return ret;
 	}
 }

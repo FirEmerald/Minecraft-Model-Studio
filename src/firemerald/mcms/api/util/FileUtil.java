@@ -1,7 +1,9 @@
 package firemerald.mcms.api.util;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,7 +12,8 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
+import java.util.Iterator;
+import java.util.Map.Entry;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -22,16 +25,20 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.logging.log4j.Level;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.internal.bind.TypeAdapters;
-
+import com.google.gson.stream.JsonReader;
 import firemerald.mcms.Main;
+import firemerald.mcms.api.API;
 import firemerald.mcms.api.data.*;
-import firemerald.mcms.util.FileUtils;
 
 public class FileUtil
 {
@@ -84,7 +91,7 @@ public class FileUtil
     	 * JSON:
     	 * {#name:(name),#value:(value),(attribute):(value),(child):{},(child):[0:(value),1:(value)],(child):[0:{},1:{}]}
     	 * 
-    	 * There is no JSON saver in place, since JSON does not support multiple elements with the same name - I need to find a way around this. In the meantime, learn XML as it is far better than JSON anyway.
+    	 * There is a rudimentary JSON saver in place, but it won't handle object names with non-alphanumeric characters. If you need those, use XML as it is far better than JSON anyway.
     	 * 
     	 * if there is no '#name', the name is 'root' for the root object or the name used to define it e.g. 'child:{}' would be named 'child'
     	 * if there is no '#value' the value is null - conversely, for re-encoding if the value is null there will be no '#value' present.
@@ -197,15 +204,15 @@ public class FileUtil
 		}
     	catch (SAXException e)
     	{
-    		FileUtils.closeSafe(in);
+    		closeSafe(in);
     		throw new IOException(e);
     	}
     	catch (IOException e)
     	{
-    		FileUtils.closeSafe(in);
+    		closeSafe(in);
     		throw e;
 		}
-		FileUtils.closeSafe(in);
+		closeSafe(in);
     	return el;
     }
     
@@ -223,12 +230,24 @@ public class FileUtil
     
     public static Element loadJSON(InputStream in, Charset charset) throws IOException, IllegalArgumentException
     {
-    	return loadJSON(new InputStreamReader(in, charset));
+    	return loadJSON(in, charset, true);
+    }
+    
+    public static Element loadJSON(InputStream in, Charset charset, boolean lenient) throws IOException, IllegalArgumentException
+    {
+    	return loadJSON(new InputStreamReader(in, charset), lenient);
     }
     
     public static Element loadJSON(Reader reader) throws IOException, IllegalArgumentException
     {
-    	JsonElement element = TypeAdapters.JSON_ELEMENT.fromJson(reader);
+    	return loadJSON(reader, true);
+    }
+    
+    public static Element loadJSON(Reader reader, boolean lenient) throws IOException, IllegalArgumentException
+    {
+    	JsonReader jsonReader = new JsonReader(reader);
+    	jsonReader.setLenient(lenient);
+    	JsonElement element = TypeAdapters.JSON_ELEMENT.read(jsonReader);
     	return Element.loadJSON(element);
     }
 	
@@ -265,6 +284,29 @@ public class FileUtil
 	    DOMSource source = new DOMSource(doc);
 	    StreamResult result = new StreamResult(System.out);
 		TF.transform(source, result);
+	}
+	
+	public static void saveJSON(JsonElement el, File output) throws IOException
+	{
+		if (output.getParentFile() != null) output.getParentFile().mkdirs();
+		output.createNewFile();
+		OutputStream out = null;
+		try
+		{
+			out = new FileOutputStream(output);
+			saveJSON(el, out);
+			out.close();
+		}
+		catch (IOException e)
+		{
+			FileUtil.closeSafe(out);
+			throw e;
+		}
+	}
+	
+	public static void saveJSON(JsonElement el, OutputStream out) throws IOException
+	{
+		out.write(toString(el, false).getBytes(StandardCharsets.UTF_8));
 	}
 	
 	public static void writeString(OutputStream out, String val, BinaryFormat format) throws IOException
@@ -364,5 +406,171 @@ public class FileUtil
 	public static double readDouble(InputStream in) throws IOException
 	{
 		return Double.longBitsToDouble(readLong(in));
+	}
+	
+	public static void closeSafe(Closeable out)
+	{
+		if (out != null) try
+		{
+			out.close();
+		}
+		catch (IOException e)
+		{
+			API.LOGGER.log(Level.WARN, "Failed to close closeable of type " + out.getClass().toString(), e);
+		}
+	}
+	
+	public static String toString(JsonElement json, boolean oneLine)
+	{
+		StringBuilder str = new StringBuilder();
+		toString(json, str, "", true, oneLine);
+		return str.toString();
+	}
+	
+	private static void toString(JsonElement json, StringBuilder builder, String tab, boolean isLast, boolean oneLine)
+	{
+		if (json.isJsonObject())
+		{
+			JsonObject obj = json.getAsJsonObject();
+			builder.append('{');
+			if (!oneLine) builder.append('\n');
+			Iterator<Entry<String, JsonElement>> entries = obj.entrySet().iterator();
+			String newTab = tab + "\t";
+			for (int i = 1; i <= obj.size(); i++)
+			{
+				Entry<String, JsonElement> entry = entries.next();
+				if (!oneLine) builder.append(newTab);
+				builder.append(entry.getKey());
+				builder.append(": ");
+				toString(entry.getValue(), builder, newTab, i == obj.size(), oneLine);
+			}
+			if (!oneLine) builder.append(tab);
+			builder.append('}');
+		}
+		else if (json.isJsonArray())
+		{
+			JsonArray array = json.getAsJsonArray();
+			builder.append('[');
+			if (!oneLine) builder.append('\n');
+			Iterator<JsonElement> values = array.iterator();
+			String newTab = tab + "\t";
+			for (int i = 1; i <= array.size(); i++)
+			{
+				if (!oneLine) builder.append(newTab);
+				toString(values.next(), builder, newTab, i == array.size(), oneLine);
+			}
+			if (!oneLine) builder.append(tab);
+			builder.append(']');
+		}
+		else if (json.isJsonPrimitive())
+		{
+			JsonPrimitive prim = json.getAsJsonPrimitive();
+			if (prim.isString()) builder.append(prim.toString());
+			else if (prim.isBoolean()) builder.append(prim.getAsBoolean() ? "1b" : "0b");
+			else if (prim.isNumber())
+			{
+				Number num = prim.getAsNumber();
+				if (num instanceof Byte) builder.append(num.toString() + "b");
+				else if (num instanceof Short) builder.append(num.toString() + "s");
+				else if (num instanceof Integer) builder.append(num.toString());
+				else if (num instanceof Long) builder.append(num.toString() + "l");
+				else if (num instanceof Float) builder.append(num.toString() + "f");
+				else if (num instanceof Double) builder.append(num.toString() + "d");
+				else builder.append("<INVALID VALUE>");
+			}
+			else builder.append("<INVALID VALUE>");
+		}
+		else builder.append("<INVALID VALUE>");
+		if (!isLast) builder.append(", ");
+		if (!oneLine) builder.append('\n');
+	}
+	
+	public static String getExtension(String fileName)
+	{
+	    char ch;
+	    int len;
+	    if(fileName==null || 
+	            (len = fileName.length())==0 || 
+	            (ch = fileName.charAt(len-1))=='/' || ch=='\\' || //in the case of a directory
+	             ch=='.' ) //in the case of . or ..
+	        return "";
+	    int dotInd = fileName.lastIndexOf('.'),
+	        sepInd = Math.max(fileName.lastIndexOf('/'), fileName.lastIndexOf('\\'));
+	    if( dotInd<=sepInd )
+	        return "";
+	    else
+	        return fileName.substring(dotInd+1).toLowerCase();
+	}
+	
+	public static DataType getAppropriateDataType(String file)
+	{
+		String ext = getExtension(file);
+		for (DataType type : DataType.values())
+		{
+			if (type.extension.equalsIgnoreCase(ext)) return type;
+			for (String alias : type.aliases) if (alias.equalsIgnoreCase(ext)) return type;
+		}
+		API.LOGGER.warn("Couldn't determine appropriate data type for saving: " + file + ". Defaulting to XML");
+		return DataType.XML;
+	}
+	
+	public static enum DataType
+	{
+		XML("xml", "mcms", "skel", "anim") {
+			@Override
+			public AbstractElement newElement(String name)
+			{
+				Document doc = createXML();
+				org.w3c.dom.Element element = doc.createElement(name);
+				doc.appendChild(element);
+				return new W3CElement(element);
+			}
+			
+			@Override
+			public void saveElement(AbstractElement el, File file) throws Exception
+			{
+				W3CElement wc3 = W3CElement.convert(el);
+				wc3.save(file);
+			}
+		},
+		JSON("json") {
+			@Override
+			public AbstractElement newElement(String name)
+			{
+				return new Element(name);
+			}
+			
+			@Override
+			public void saveElement(AbstractElement el, File file) throws Exception
+			{
+				FileUtil.saveJSON(el.toElement().makeElement(true), file);
+			}
+		},
+		BINARY("bin") {
+			@Override
+			public AbstractElement newElement(String name)
+			{
+				return new Element(name);
+			}
+			
+			@Override
+			public void saveElement(AbstractElement el, File file) throws Exception
+			{
+				el.toElement().saveBinary(file, BinaryFormat.UTF_8); //TODO different binary elements
+			}
+		};
+		
+		public final String extension;
+		public final String[] aliases;
+		
+		DataType(String extension, String... aliases)
+		{
+			this.extension = extension;
+			this.aliases = aliases;
+		}
+		
+		public abstract AbstractElement newElement(String name);
+		
+		public abstract void saveElement(AbstractElement el, File toSave) throws Exception;
 	}
 }

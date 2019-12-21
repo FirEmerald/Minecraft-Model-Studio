@@ -4,36 +4,47 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.joml.Matrix3d;
+import org.joml.Matrix4d;
+import org.joml.Quaterniond;
+import org.joml.Vector2f;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
+import org.joml.Vector4d;
+
 import firemerald.mcms.Main;
+import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
-import firemerald.mcms.api.math.Matrix3;
-import firemerald.mcms.api.math.Matrix4;
-import firemerald.mcms.api.math.Quaternion;
-import firemerald.mcms.api.math.Vec2;
-import firemerald.mcms.api.math.Vec3;
+import firemerald.mcms.api.math.EulerZYXRotation;
+import firemerald.mcms.api.math.IRotation;
+import firemerald.mcms.api.math.QuaternionRotation;
 import firemerald.mcms.api.model.IModel;
 import firemerald.mcms.api.model.IRaytraceTarget;
 import firemerald.mcms.api.model.ObjData;
-import firemerald.mcms.api.util.MatrixHandler;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.gui.GuiElementContainer;
-import firemerald.mcms.gui.components.ComponentLabel;
+import firemerald.mcms.gui.components.ComponentFloatingLabel;
+import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
+import firemerald.mcms.shader.Shader;
 import firemerald.mcms.util.ObjUtil;
+import firemerald.mcms.util.mesh.Mesh;
 
 /**
  * @author test
  *
  */
-public abstract class ModelComponent implements IRaytraceTarget, IComponentParent
+public abstract class ModelComponent implements IRaytraceTarget, IComponentParent //TODO fix offset calculation
 {
 	public boolean visible = true, childrenVisible = true;
 	public String name;
 	public IComponentParent parent;
 	public final List<ModelComponent> children = new ArrayList<>();
-	protected float posX = 0, posY = 0, posZ = 0, rotX = 0, rotY = 0, rotZ = 0, offX = 0, offY = 0, offZ = 0, texU = 0, texV = 0;
+	protected final Transformation position = new Transformation();
+	protected final Vector3f offset = new Vector3f();
+	protected float texU = 0, texV = 0;
 	/**
 	 * Texture size when computing UV's, as opposed to actual size.
 	 * for boxes, it allows HD textures (but bitmixing is discouraged!)
@@ -41,7 +52,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	 * 0 means it uses the actual texture size.
 	 */
 	protected int texSizeU = 0, texSizeV = 0;
-	protected Matrix4 transformation = new Matrix4();
+	protected Matrix4d transformation = new Matrix4d();
 	
 	public ModelComponent(String name)
 	{
@@ -55,7 +66,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		this.name = name;
 	}
 	
-	public Matrix4 transformation()
+	public Matrix4d transformation()
 	{
 		return transformation;
 	}
@@ -63,27 +74,20 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	public void updateTransform()
 	{
 		transformation.identity();
-		transformation.translate(posX, posY, posZ);
-		transformation.mul(Quaternion.forEulerXZY(rotX, rotY, rotZ).getMatrix4());
-		transformation.translate(offX, offY, offZ);
+		transformation.mul(position.getTransformation());
+		transformation.translate(offset);
 	}
 	
 	public void updateTransformVals()
 	{
-		Quaternion q = new Quaternion();
-		q.setFromMatrix(transformation);
-		Vec3 rots = q.toEulerXZY();
-		rotX = rots.x();
-		rotY = rots.y();
-		rotZ = rots.z();
-		offX = transformation.m30();
-		offY = transformation.m31();
-		offZ = transformation.m32();
+		position.rotation = new QuaternionRotation(); //just because
+		position.rotation.setFromQuaternion(transformation.getNormalizedRotation(new Quaterniond()));
+		position.translation.set(transformation.getTranslation(new Vector3d()));
 	}
 	
 	public int getTexSizeU()
 	{
-		return texSizeU > 0 ? texSizeU : Main.instance.texSizeU;
+		return texSizeU > 0 ? texSizeU : Main.instance.project.getTextureWidth();
 	}
 	
 	public void setTexSizeU(int size)
@@ -94,7 +98,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	
 	public int getTexSizeV()
 	{
-		return texSizeV > 0 ? texSizeV : Main.instance.texSizeV;
+		return texSizeV > 0 ? texSizeV : Main.instance.project.getTextureHeight();
 	}
 	
 	public void setTexSizeV(int size)
@@ -107,110 +111,114 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 
 	public float posX()
 	{
-		return posX;
+		return position.translation.x();
 	}
 
 	public void posX(float posX)
 	{
-		this.posX = posX;
+		position.translation.x = posX;
 		updateTransform();
 	}
 
 	public float posY()
 	{
-		return posY;
+		return position.translation.y();
 	}
 
 	public void posY(float posY)
 	{
-		this.posY = posY;
+		position.translation.y = posY;
 		updateTransform();
 	}
 
 	public float posZ()
 	{
-		return posZ;
+		return position.translation.z();
 	}
 
 	public void posZ(float posZ)
 	{
-		this.posZ = posZ;
-		updateTransform();
-	}
-
-	public float rotX()
-	{
-		return rotX;
-	}
-
-	public void rotX(float rotX)
-	{
-		this.rotX = rotX;
-		updateTransform();
-	}
-
-	public float rotY()
-	{
-		return rotY;
-	}
-
-	public void rotY(float rotY)
-	{
-		this.rotY = rotY;
-		updateTransform();
-	}
-
-	public float rotZ()
-	{
-		return rotZ;
-	}
-
-	public void rotZ(float rotZ)
-	{
-		this.rotZ = rotZ;
+		position.translation.z = posZ;
 		updateTransform();
 	}
 
 	public float offX()
 	{
-		return offX;
+		return offset.x();
 	}
 
 	public void offX(float offX)
 	{
-		this.offX = offX;
+		offset.x = offX;
 		updateTransform();
 	}
 
 	public float offY()
 	{
-		return offY;
+		return offset.y();
 	}
 
 	public void offY(float offY)
 	{
-		this.offY = offY;
+		offset.y = offY;
 		updateTransform();
 	}
 
 	public float offZ()
 	{
-		return offZ;
+		return offset.z();
 	}
 
 	public void offZ(float offZ)
 	{
-		this.offZ = offZ;
+		offset.z = offZ;
 		updateTransform();
 	}
+
+	public IRotation rotation()
+	{
+		return position.rotation;
+	}
+
+	public void rotation(IRotation rotation)
+	{
+		position.rotation = rotation;
+		updateTransform();
+	}
+
+	public float texU()
+	{
+		return texU;
+	}
+
+	public void texU(float texU)
+	{
+		this.texU = texU;
+	}
+
+	public float texV()
+	{
+		return texV;
+	}
+
+	public void texV(float texV)
+	{
+		this.texV = texV;
+	}
+	
+	public abstract void setTexs();
 	
 	public void render()
 	{
-		MatrixHandler.instance.push();
-		MatrixHandler.instance.multMatrix(transformation);
+		Shader.MODEL.push();
+		Shader.MODEL.matrix().mul(transformation);
+		Main.instance.shader.updateModel();
 		if (visible) this.doRender();
+		Shader.MODEL.matrix().translate(offset.negate(new Vector3f()));
+		Main.instance.shader.updateModel();
 		if (childrenVisible) for (ModelComponent c : children) c.render();
-		MatrixHandler.instance.pop();
+		Shader.MODEL.pop();
+		Main.instance.shader.updateModel();
 	}
 	
 	public abstract void doRender();
@@ -223,11 +231,12 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	
 	public abstract void doCleanUp();
 	
-	public void addToObjModel(Matrix4 transformation, ObjData obj, List<int[][]> mesh)
+	public void addToObjModel(Matrix4d transformation, ObjData obj, List<int[][]> mesh)
 	{
-		Matrix4 trans = new Matrix4();
+		float scale = Main.instance.project.getScale();
+		Matrix4d trans = new Matrix4d();
 		transformation.mul(this.transformation, trans);
-		Matrix3 norm = trans.transpose3().invert();
+		Matrix3d norm = trans.transpose3x3(new Matrix3d()).invert();
 		float[][][] m = generateMesh();
 		for (float[][] fData : m)
 		{
@@ -235,20 +244,29 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 			for (int i = 0; i < fData.length; i++)
 			{
 				float[] vData = fData[i];
-				vInd[i][0] = ObjUtil.getSetIndex(obj.vertices, trans.mul(vData[0], vData[1], vData[2], 1).xyz());
-				vInd[i][1] = ObjUtil.getSetIndex(obj.textureCoordinates, new Vec2(vData[3], vData[4]));
-				vInd[i][2] = ObjUtil.getSetIndex(obj.vertexNormals, norm.mul(vData[5], vData[6], vData[7]));
+				vInd[i][0] = ObjUtil.getSetIndex(obj.vertices, to3(trans.transform(new Vector4d(vData[0], vData[1], vData[2], 1))).mul(scale));
+				vInd[i][1] = ObjUtil.getSetIndex(obj.textureCoordinates, new Vector2f(vData[3], vData[4]));
+				vInd[i][2] = ObjUtil.getSetIndex(obj.vertexNormals, norm.transform(new Vector3f(vData[5], vData[6], vData[7])));
 			}
 			mesh.add(vInd);
 		}
+		trans.translate(offset.negate(new Vector3f()));
+		for (ModelComponent component : children) component.addToObjModel(trans, obj, mesh);
+	}
+	
+	public static Vector3f to3(Vector4d vec)
+	{
+		return new Vector3f((float) vec.x, (float) vec.y, (float) vec.z);
 	}
 	
 	/** float[face][vertex][{x,y,z,u,v,nx,ny,nz}] **/
 	public abstract float[][][] generateMesh();
 	
-	public RaytraceResult raytrace(float fx, float fy, float fz, float dx, float dy, float dz, Matrix4 transformation)
+	public RaytraceResult raytrace(float fx, float fy, float fz, float dx, float dy, float dz, Matrix4d transformation)
 	{
-		RaytraceResult result = visible ? doRaytrace(fx, fy, fz, dx, dy, dz, transformation = transformation.mul(this.transformation, new Matrix4())) : null;
+		transformation = transformation.mul(this.transformation, new Matrix4d());
+		RaytraceResult result = visible ? doRaytrace(fx, fy, fz, dx, dy, dz, transformation) : null;
+		transformation.translate(offset.negate(new Vector3f()));
 		if (childrenVisible) for (ModelComponent child : this.children)
 		{
 			RaytraceResult res = child.raytrace(fx, fy, fz, dx, dy, dz, transformation);
@@ -257,86 +275,128 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		return result;
 	}
 	
-	protected abstract RaytraceResult doRaytrace(float fx, float fy, float fz, float dx, float dy, float dz, Matrix4 transformation);
+	protected abstract RaytraceResult doRaytrace(float fx, float fy, float fz, float dx, float dy, float dz, Matrix4d transformation);
 
-	private ComponentText labelName;
-	private ComponentLabel labelPos;
+	private ComponentFloatingLabel labelName;
+	private ComponentText textName;
+	private ComponentFloatingLabel labelPos;
 	private ComponentTextFloat posXT;
 	private ComponentIncrementFloat posXP, posXS;
 	private ComponentTextFloat posYT;
 	private ComponentIncrementFloat posYP, posYS;
 	private ComponentTextFloat posZT;
 	private ComponentIncrementFloat posZP, posZS;
-	private ComponentLabel labelRot;
-	private ComponentTextFloat rotXT;
-	private ComponentIncrementFloat rotXP, rotXS;
-	private ComponentTextFloat rotYT;
-	private ComponentIncrementFloat rotYP, rotYS;
-	private ComponentTextFloat rotZT;
-	private ComponentIncrementFloat rotZP, rotZS;
-	private ComponentLabel labelOff;
+	private SelectorButton rotMode;
+	private ComponentFloatingLabel labelOff;
 	private ComponentTextFloat offXT;
 	private ComponentIncrementFloat offXP, offXS;
 	private ComponentTextFloat offYT;
 	private ComponentIncrementFloat offYP, offYS;
 	private ComponentTextFloat offZT;
 	private ComponentIncrementFloat offZP, offZS;
+	private ComponentFloatingLabel labelTex;
+	private ComponentTextFloat texOU;
+	private ComponentIncrementFloat texOUP, texOUS;
+	private ComponentTextFloat texOV;
+	private ComponentIncrementFloat texOVP, texOVS;
 	
 	@Override
-	public void onSelect(EditorPanes editorPanes)
+	public int onSelect(EditorPanes editorPanes, int editorY)
 	{
-		editorPanes.addBone.enabled = false;
+		final int origY = editorY;
 		editorPanes.addBox.setParent(this);
 		editorPanes.addMesh.setParent(this);
 		editorPanes.copy.setEditable(parent, this);
 		editorPanes.remove.setEditable(parent, this);
+
+		GuiElementContainer editor = editorPanes.editor.container;
+		int editorX = editorPanes.editor.minX;
+		editor.addElement(labelName = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20, Main.instance.fontMsg, "Component name"));
+		editorY += 20;
+		editor.addElement(textName  = new ComponentText(          editorX      , editorY, editorX + 300, editorY + 20, Main.instance.fontMsg, name, string -> this.name = string));
+		editorY += 20;
+		editor.addElement(labelPos  = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20, Main.instance.fontMsg, "Position"));
+		editorY += 20;
+		editor.addElement(posXT     = new ComponentTextFloat(     editorX      , editorY, editorX + 90 , editorY + 20, Main.instance.fontMsg, posX(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.posX(value)));
+		editor.addElement(posXP     = new ComponentIncrementFloat(editorX + 90 , editorY                             , posXT, 1));
+		editor.addElement(posXS     = new ComponentIncrementFloat(editorX + 90 , editorY + 10                        , posXT, -1));
+		editor.addElement(posYT     = new ComponentTextFloat(     editorX + 100, editorY, editorX + 190, editorY + 20, Main.instance.fontMsg, posY(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.posY(value)));
+		editor.addElement(posYP     = new ComponentIncrementFloat(editorX + 190, editorY                             , posYT, 1));
+		editor.addElement(posYS     = new ComponentIncrementFloat(editorX + 190, editorY + 10                        , posYT, -1));
+		editor.addElement(posZT     = new ComponentTextFloat(     editorX + 200, editorY, editorX + 290, editorY + 20 , Main.instance.fontMsg, posZ(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.posZ(value)));
+		editor.addElement(posZP     = new ComponentIncrementFloat(editorX + 290, editorY                              , posZT, 1));
+		editor.addElement(posZS     = new ComponentIncrementFloat(editorX + 290, editorY + 10                         , posZT, -1));
+		editorY += 20;
+
+		String[] names = new String[] {
+				"No rotation",
+				"Euler ZYX rotation",
+				//"Euler XYZ rotation",
+				"Quaternion rotation"
+		};
+		editor.addElement(rotMode = new SelectorButton(editorX, editorY, editorX + 300, editorY + 20, 
+				this.position.rotation == IRotation.NONE ? names[0] :  
+				this.position.rotation instanceof EulerZYXRotation ? names[1] :  
+				//this.defaultTransform.rotation instanceof EulerXYZRotation ? names[2] :  
+				this.position.rotation instanceof QuaternionRotation ? names[2] : "Unknown rotation"
+				, names, (ind, str) -> {
+					this.onDeselect(editorPanes);
+					IRotation old = position.rotation;
+					switch (ind)
+					{
+					case 0:
+						position.rotation = IRotation.NONE;
+						break;
+					case 1:
+						(position.rotation = new EulerZYXRotation()).setFromQuaternion(old.getQuaternion());
+						break;
+					//case 2:
+					//	(defaultTransform.rotation = new EulerXYZRotation()).setFromQuaternion(old.getQuaternion());
+					//	break;
+					case 2:
+						(position.rotation = new QuaternionRotation()).setFromQuaternion(old.getQuaternion());
+						break;
+					}
+					this.onSelect(editorPanes, origY);
+					this.updateTransform();
+				}));
+		editorY += 20;
+		editorY = this.position.rotation.onSelect(editorPanes, editorY, () -> this.updateTransform());
 		
-		GuiElementContainer editor = editorPanes.editor;
-		float editorX = editorPanes.editorX;
-		float editorY = editorPanes.editorY;
-		editor.addElement(labelName = new ComponentText(          editorX      , editorY      , editorX + 300, editorY + 20 , Main.instance.fontMsg, name, string -> this.name = string));
-		editor.addElement(labelPos  = new ComponentLabel(         editorX      , editorY + 20 , editorX + 300, editorY + 40 , Main.instance.fontMsg, "Position"));
-		editor.addElement(posXT     = new ComponentTextFloat(     editorX      , editorY + 40 , editorX + 90 , editorY + 60 , Main.instance.fontMsg, posX, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.posX(value)));
-		editor.addElement(posXP     = new ComponentIncrementFloat(editorX + 90 , editorY + 40                   , posXT, 1));
-		editor.addElement(posXS     = new ComponentIncrementFloat(editorX + 90 , editorY + 50                   , posXT, -1));
-		editor.addElement(posYT     = new ComponentTextFloat(     editorX + 100, editorY + 40 , editorX + 190, editorY + 60 , Main.instance.fontMsg, posY, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.posY(value)));
-		editor.addElement(posYP     = new ComponentIncrementFloat(editorX + 190, editorY + 40                   , posYT, 1));
-		editor.addElement(posYS     = new ComponentIncrementFloat(editorX + 190, editorY + 50                   , posYT, -1));
-		editor.addElement(posZT     = new ComponentTextFloat(     editorX + 200, editorY + 40 , editorX + 290, editorY + 60 , Main.instance.fontMsg, posZ, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.posZ(value)));
-		editor.addElement(posZP     = new ComponentIncrementFloat(editorX + 290, editorY + 40                   , posZT, 1));
-		editor.addElement(posZS     = new ComponentIncrementFloat(editorX + 290, editorY + 50                   , posZT, -1));
-		editor.addElement(labelRot  = new ComponentLabel(         editorX      , editorY + 60 , editorX + 300, editorY + 80 , Main.instance.fontMsg, "Rotation"));
-		editor.addElement(rotXT     = new ComponentTextFloat(     editorX      , editorY + 80 , editorX + 90 , editorY + 100, Main.instance.fontMsg, rotX, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.rotX(value)));
-		editor.addElement(rotXP     = new ComponentIncrementFloat(editorX + 90 , editorY + 80                   , rotXT, 1));
-		editor.addElement(rotXS     = new ComponentIncrementFloat(editorX + 90 , editorY + 90                   , rotXT, -1));
-		editor.addElement(rotYT     = new ComponentTextFloat(     editorX + 100, editorY + 80 , editorX + 190, editorY + 100, Main.instance.fontMsg, rotY, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.rotY(value)));
-		editor.addElement(rotYP     = new ComponentIncrementFloat(editorX + 190, editorY + 80                   , rotYT, 1));
-		editor.addElement(rotYS     = new ComponentIncrementFloat(editorX + 190, editorY + 90                   , rotYT, -1));
-		editor.addElement(rotZT     = new ComponentTextFloat(     editorX + 200, editorY + 80 , editorX + 290, editorY + 100, Main.instance.fontMsg, rotZ, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.rotZ(value)));
-		editor.addElement(rotZP     = new ComponentIncrementFloat(editorX + 290, editorY + 80                   , rotZT, 1));
-		editor.addElement(rotZS     = new ComponentIncrementFloat(editorX + 290, editorY + 90                   , rotZT, -1));
-		editor.addElement(labelOff  = new ComponentLabel(         editorX      , editorY + 100, editorX + 300, editorY + 120, Main.instance.fontMsg, "Offset"));
-		editor.addElement(offXT     = new ComponentTextFloat(     editorX      , editorY + 120, editorX + 90 , editorY + 140, Main.instance.fontMsg, offX, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.offX(value)));
-		editor.addElement(offXP     = new ComponentIncrementFloat(editorX + 90 , editorY + 120                  , offXT, 1));
-		editor.addElement(offXS     = new ComponentIncrementFloat(editorX + 90 , editorY + 130                  , offXT, -1));
-		editor.addElement(offYT     = new ComponentTextFloat(     editorX + 100, editorY + 120, editorX + 190, editorY + 140, Main.instance.fontMsg, offY, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.offY(value)));
-		editor.addElement(offYP     = new ComponentIncrementFloat(editorX + 190, editorY + 120                  , offYT, 1));
-		editor.addElement(offYS     = new ComponentIncrementFloat(editorX + 190, editorY + 130                  , offYT, -1));
-		editor.addElement(offZT     = new ComponentTextFloat(     editorX + 200, editorY + 120, editorX + 290, editorY + 140, Main.instance.fontMsg, offZ, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.offZ(value)));
-		editor.addElement(offZP     = new ComponentIncrementFloat(editorX + 290, editorY + 120                  , offZT, 1));
-		editor.addElement(offZS     = new ComponentIncrementFloat(editorX + 290, editorY + 130                  , offZT, -1));
+		editor.addElement(labelOff  = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20, Main.instance.fontMsg, "Offset"));
+		editorY += 20;
+		editor.addElement(offXT     = new ComponentTextFloat(     editorX      , editorY, editorX + 90 , editorY + 20, Main.instance.fontMsg, offX(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.offX(value)));
+		editor.addElement(offXP     = new ComponentIncrementFloat(editorX + 90 , editorY                             , offXT, 1));
+		editor.addElement(offXS     = new ComponentIncrementFloat(editorX + 90 , editorY + 10                        , offXT, -1));
+		editor.addElement(offYT     = new ComponentTextFloat(     editorX + 100, editorY, editorX + 190, editorY + 20, Main.instance.fontMsg, offY(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.offY(value)));
+		editor.addElement(offYP     = new ComponentIncrementFloat(editorX + 190, editorY                             , offYT, 1));
+		editor.addElement(offYS     = new ComponentIncrementFloat(editorX + 190, editorY + 10                        , offYT, -1));
+		editor.addElement(offZT     = new ComponentTextFloat(     editorX + 200, editorY, editorX + 290, editorY + 20, Main.instance.fontMsg, offZ(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.offZ(value)));
+		editor.addElement(offZP     = new ComponentIncrementFloat(editorX + 290, editorY                             , offZT, 1));
+		editor.addElement(offZS     = new ComponentIncrementFloat(editorX + 290, editorY + 10                        , offZT, -1));
+		editorY += 20;
+		editor.addElement(labelTex  = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20, Main.instance.fontMsg, "Texture Offset"));
+		editorY += 20;
+		editor.addElement(texOU     = new ComponentTextFloat(     editorX      , editorY, editorX + 140, editorY + 20, Main.instance.fontMsg, texU(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.texU(value)));
+		editor.addElement(texOUP    = new ComponentIncrementFloat(editorX + 140, editorY                             , texOU, 1));
+		editor.addElement(texOUS    = new ComponentIncrementFloat(editorX + 140, editorY + 10                        , texOU, -1));
+		editor.addElement(texOV     = new ComponentTextFloat(     editorX + 150, editorY, editorX + 290, editorY + 20, Main.instance.fontMsg, texV(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> this.texV(value)));
+		editor.addElement(texOVP    = new ComponentIncrementFloat(editorX + 290, editorY                             , texOV, 1));
+		editor.addElement(texOVS    = new ComponentIncrementFloat(editorX + 290, editorY + 10                        , texOV, -1));
+		editorY += 20;
+		return editorY;
 	}
 
 	@Override
 	public void onDeselect(EditorPanes editorPanes)
 	{
-		editorPanes.addBone.enabled = true;
 		editorPanes.addBox.setParent(null);
 		editorPanes.addMesh.setParent(null);
 		editorPanes.copy.setEditable(null, null);
 		editorPanes.remove.setEditable(null, null);
-		GuiElementContainer editor = editorPanes.editor;
+		GuiElementContainer editor = editorPanes.editor.container;
 		editor.removeElement(labelName);
+		editor.removeElement(textName);
 		editor.removeElement(labelPos);
 		editor.removeElement(posXT);
 		editor.removeElement(posXP);
@@ -347,16 +407,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		editor.removeElement(posZT);
 		editor.removeElement(posZP);
 		editor.removeElement(posZS);
-		editor.removeElement(labelRot);
-		editor.removeElement(rotXT);
-		editor.removeElement(rotXP);
-		editor.removeElement(rotXS);
-		editor.removeElement(rotYT);
-		editor.removeElement(rotYP);
-		editor.removeElement(rotYS);
-		editor.removeElement(rotZT);
-		editor.removeElement(rotZP);
-		editor.removeElement(rotZS);
+		editor.removeElement(rotMode);
 		editor.removeElement(labelOff);
 		editor.removeElement(offXT);
 		editor.removeElement(offXP);
@@ -367,6 +418,13 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		editor.removeElement(offZT);
 		editor.removeElement(offZP);
 		editor.removeElement(offZS);
+		editor.removeElement(labelTex);
+		editor.removeElement(texOU);
+		editor.removeElement(texOUP);
+		editor.removeElement(texOUS);
+		editor.removeElement(texOV);
+		editor.removeElement(texOVP);
+		editor.removeElement(texOVS);
 		labelName = null;
 		labelPos  = null;
 		posXT     = null;
@@ -378,16 +436,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		posZT     = null;
 		posZP     = null;
 		posZS     = null;
-		labelRot  = null;
-		rotXT     = null;
-		rotXP     = null;
-		rotXS     = null;
-		rotYT     = null;
-		rotYP     = null;
-		rotYS     = null;
-		rotZT     = null;
-		rotZP     = null;
-		rotZS     = null;
+		rotMode   = null;
 		labelOff  = null;
 		offXT     = null;
 		offXP     = null;
@@ -398,6 +447,14 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		offZT     = null;
 		offZP     = null;
 		offZS     = null;
+		labelTex  = null;
+		texOU     = null;
+		texOUP    = null;
+		texOUS    = null;
+		texOV     = null;
+		texOVP    = null;
+		texOVS    = null;
+		this.position.rotation.onDeselect(editorPanes);
 	}
 
 	@Override
@@ -407,7 +464,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	}
 
 	@Override
-	public Collection<? extends IEditable> getChildren()
+	public Collection<? extends IModelEditable> getChildren()
 	{
 		return children;
 	}
@@ -419,19 +476,19 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	}
 
 	@Override
-	public boolean canBeChild(IEditable candidate)
+	public boolean canBeChild(IModelEditable candidate)
 	{
 		return candidate instanceof ModelComponent;
 	}
 
 	@Override
-	public void addChild(IEditable child)
+	public void addChild(IModelEditable child)
 	{
 		if (child instanceof ModelComponent) this.children.add((ModelComponent) child);
 	}
 
 	@Override
-	public void addChildBefore(IEditable child, IEditable position)
+	public void addChildBefore(IModelEditable child, IModelEditable position)
 	{
 		if (child instanceof ModelComponent)
 		{
@@ -445,7 +502,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	}
 
 	@Override
-	public void addChildAfter(IEditable child, IEditable position)
+	public void addChildAfter(IModelEditable child, IModelEditable position)
 	{
 		if (child instanceof ModelComponent)
 		{
@@ -459,7 +516,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	}
 
 	@Override
-	public void removeChild(IEditable child)
+	public void removeChild(IModelEditable child)
 	{
 		if (child instanceof ModelComponent) this.children.remove(child);
 	}
@@ -468,17 +525,17 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	public void movedTo(IEditableParent oldParent, IEditableParent newParent)
 	{
 		this.parent = oldParent instanceof IComponentParent ? (IComponentParent) oldParent : null;
-		Matrix4 targetTransform = getTransformation();
+		Matrix4d targetTransform = getTransformation();
 		this.parent = newParent instanceof IComponentParent ? (IComponentParent) newParent : null;
-		Matrix4 parentTransform = parent == null ? new Matrix4() : parent.getTransformation();
+		Matrix4d parentTransform = parent == null ? new Matrix4d() : parent.getTransformation();
 		this.transformation = parentTransform.invert().mul(targetTransform);
 		this.updateTransformVals();
 	}
 
 	@Override
-	public Matrix4 getTransformation()
+	public Matrix4d getTransformation()
 	{
-		Matrix4 mat = new Matrix4(this.transformation);
+		Matrix4d mat = new Matrix4d(this.transformation);
 		if (parent != null) parent.getTransformation().mul(mat, mat);
 		return mat;
 	}
@@ -513,19 +570,14 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	public void addData(AbstractElement el)
 	{
 		el.setString("name", name);
-		el.setFloat("posX", posX);
-		el.setFloat("posY", posY);
-		el.setFloat("posZ", posZ);
-		el.setFloat("rotX", rotX);
-		el.setFloat("rotY", rotY);
-		el.setFloat("rotZ", rotZ);
-		el.setFloat("offX", offX);
-		el.setFloat("offY", offY);
-		el.setFloat("offZ", offZ);
-		el.setFloat("texU", texU);
-		el.setFloat("texV", texV);
-		el.setInt("texSizeU", texSizeU);
-		el.setInt("texSizeV", texSizeV);
+		position.save(el);
+		if (offset.x() != 0) el.setFloat("offX", offset.x());
+		if (offset.y() != 0) el.setFloat("offY", offset.y());
+		if (offset.z() != 0) el.setFloat("offZ", offset.z());
+		if (texU != 0) el.setFloat("texU", texU);
+		if (texV != 0) el.setFloat("texV", texV);
+		if (texSizeU != 0) el.setInt("texSizeU", texSizeU);
+		if (texSizeV != 0) el.setInt("texSizeV", texSizeV);
 	}
 	
 	public void addChildrenToXML(AbstractElement addTo)
@@ -536,20 +588,13 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	public void loadFromXML(AbstractElement el)
 	{
 		name = el.getString("name", "null");
-		posX = el.getFloat("posX", posX);
-		posY = el.getFloat("posY", posY);
-		posZ = el.getFloat("posZ", posZ);
-		rotX = el.getFloat("rotX", rotX);
-		rotY = el.getFloat("rotY", rotY);
-		rotZ = el.getFloat("rotZ", rotZ);
-		offX = el.getFloat("offX", offX);
-		offY = el.getFloat("offY", offY);
-		offZ = el.getFloat("offZ", offZ);
+		position.load(el);
+		offset.set(el.getFloat("offX", 0), el.getFloat("offY", 0), el.getFloat("offZ", 0));
 		updateTransform();
-		texU = el.getFloat("texU", texU);
-		texV = el.getFloat("texV", texV);
-		texSizeU = el.getInt("texSizeU", texSizeU);
-		texSizeV = el.getInt("texSizeV", texSizeV);
+		texU = el.getFloat("texU", 0);
+		texV = el.getFloat("texV", 0);
+		texSizeU = el.getInt("texSizeU", 0);
+		texSizeV = el.getInt("texSizeV", 0);
 		onTexSizeChange();
 		loadChildrenFromXML(el);
 	}
@@ -588,5 +633,18 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		}
 		default: return false;
 		}
+	}
+	
+	@Override
+	public void updateTex()
+	{
+		this.setTexs();
+		getChildrenComponents().forEach(component -> component.updateTex());
+	}
+
+	@Override
+	public Transformation getDefaultTransformation()
+	{
+		return this.position;
 	}
 }

@@ -2,19 +2,17 @@ package firemerald.mcms.gui.components;
 
 import static firemerald.mcms.gui.components.ComponentButton.ButtonState.*;
 
-import org.lwjgl.glfw.GLFW;
-
 import firemerald.mcms.Main;
-import firemerald.mcms.shader.Shader;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.texture.RGB;
+import firemerald.mcms.window.api.MouseButtons;
 
 public abstract class ComponentButton extends Component
 {	
 	public float repeatTime;
 	public boolean held;
 
-	public ComponentButton(float x1, float y1, float x2, float y2)
+	public ComponentButton(int x1, int y1, int x2, int y2)
 	{
 		super(x1, y1, x2, y2);
 	}
@@ -46,7 +44,7 @@ public abstract class ComponentButton extends Component
 	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
-		if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && isEnabled())
+		if (button == MouseButtons.LEFT && isEnabled())
 		{
 			held = true;
 			repeatTime = 0;
@@ -57,7 +55,7 @@ public abstract class ComponentButton extends Component
 	@Override
 	public void onMouseReleased(float mx, float my, int button, int mods)
 	{
-		if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT)
+		if (button == MouseButtons.LEFT && held)
 		{
 			held = false;
 			if (isEnabled() && contains(mx, my)) onRelease();
@@ -81,28 +79,28 @@ public abstract class ComponentButton extends Component
 	
 	public ButtonState getState(float mx, float my, boolean canHover)
 	{
-		return isEnabled() ? canHover && contains(mx, my) ? GLFW.glfwGetMouseButton(Main.instance.window, GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_RELEASE ? held ? PUSH : NONE : HOVER : NONE : DISABLED;
+		return isEnabled() ? canHover && contains(mx, my) ? Main.instance.window.isMouseDown(MouseButtons.LEFT) ? held ? PUSH : getIdleState() : HOVER : getIdleState() : DISABLED;
 	}
 
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
-		Shader s = Main.instance.shader;
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
-		s.updateModel();
 		render(getState(mx, my, canHover));
-		s.setTexOffset(0, 0);
-		Shader.MODEL.pop();
-		s.updateModel();
+		Main.instance.shader.setTexOffset(0, 0);
 	}
 	
 	public abstract void render(ButtonState state);
+	
+	public ButtonState getIdleState()
+	{
+		return ButtonState.NONE;
+	}
 	
 	public static enum ButtonState
 	{
 		//TODO theme colors
 		NONE(Color.WHITE, false),
+		INVERT(Color.WHITE, true),
 		HOVER(new Color(.75f, .75f, 1, 1), false),
 		PUSH(new Color(.75f, .75f, .75f, 1), true),
 		DISABLED(new Color(.5f, .5f, .5f, 1), false);
@@ -118,13 +116,13 @@ public abstract class ComponentButton extends Component
 		
 		public void applyButtonEffects()
 		{
-			Main.instance.shader.setColor(color);
+			Main.instance.shader.setColor2(color);
 			Main.instance.shader.setInvert(invert);
 		}
 		
 		public void removeButtonEffects()
 		{
-			Main.instance.shader.setColor(1, 1, 1, 1);
+			Main.instance.shader.setColor2(1, 1, 1, 1);
 			Main.instance.shader.setInvert(false);
 		}
 		

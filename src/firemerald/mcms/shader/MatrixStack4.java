@@ -2,18 +2,19 @@ package firemerald.mcms.shader;
 
 import java.util.Stack;
 
+import org.joml.Matrix4d;
+
 import firemerald.mcms.Main;
-import firemerald.mcms.api.math.Matrix4;
 
 public class MatrixStack4
 {
-	private final Stack<Matrix4> stack = new Stack<>();
-	private Matrix4 matrix = new Matrix4();
+	private final Stack<Matrix4d> stack = new Stack<>();
+	private Matrix4d matrix = new Matrix4d();
 	
 	public void push()
 	{
 		stack.push(matrix);
-		matrix = new Matrix4(matrix);
+		matrix = new Matrix4d(matrix);
 	}
 	
 	public void pop()
@@ -22,7 +23,7 @@ public class MatrixStack4
 		else Main.LOGGER.warn("tried to pop from empty matrix stack!");
 	}
 	
-	public Matrix4 matrix()
+	public Matrix4d matrix()
 	{
 		return matrix;
 	}

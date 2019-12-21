@@ -1,13 +1,12 @@
 package firemerald.mcms.gui.colors;
 
-import org.lwjgl.glfw.GLFW;
-
 import firemerald.mcms.Main;
-import firemerald.mcms.model.Mesh;
 import firemerald.mcms.shader.Shader;
 import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.HSL;
 import firemerald.mcms.util.TextureManager;
+import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.window.api.MouseButtons;
 
 public class ColorPickerHSL extends ColorPicker
 {
@@ -35,7 +34,7 @@ public class ColorPickerHSL extends ColorPicker
 	private HSL hsl;
 	private int selected = -1;
 	
-	public ColorPickerHSL(float x, float y, ColorModel color)
+	public ColorPickerHSL(int x, int y, ColorModel color)
 	{
 		super(x, y);
 		hsl = color.getHSL();
@@ -62,7 +61,7 @@ public class ColorPickerHSL extends ColorPicker
 	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
-		if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT)
+		if (button == MouseButtons.LEFT)
 		{
 			mx -= x1;
 			my -= y1;
@@ -85,11 +84,14 @@ public class ColorPickerHSL extends ColorPicker
 	}
 
 	@Override
-	public void onDrag(float mx, float my)
+	public void onDrag(float mx, float my, int button)
 	{
-		mx -= x1;
-		my -= y1;
-		update(mx, my);
+		if (button == MouseButtons.LEFT)
+		{
+			mx -= x1;
+			my -= y1;
+			update(mx, my);
+		}
 	}
 	
 	private void update(float mx, float my)

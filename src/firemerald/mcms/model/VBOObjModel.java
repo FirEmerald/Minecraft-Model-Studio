@@ -1,35 +1,41 @@
 package firemerald.mcms.model;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.joml.Matrix3d;
+import org.joml.Matrix4d;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
+
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.math.Matrix3;
-import firemerald.mcms.api.math.Matrix4;
-import firemerald.mcms.api.math.Vec2;
-import firemerald.mcms.api.math.Vec3;
-import firemerald.mcms.api.math.Vec4;
+import firemerald.mcms.api.math.MathUtils;
 import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.ObjData;
 import firemerald.mcms.api.model.ObjModel;
 import firemerald.mcms.api.model.Skeleton;
+import firemerald.mcms.api.model.ISkeleton;
+import firemerald.mcms.api.util.FileUtil;
+import firemerald.mcms.util.mesh.Mesh;
 
 public class VBOObjModel extends ObjModel
 {	
-	public VBOObjModel(File modelFile, Skeleton skeleton) throws Exception
+	public VBOObjModel(File modelFile, ISkeleton skeleton) throws Exception
 	{
 		super(modelFile, skeleton);
 	}
 
 	@Override
-	protected Bone makeObj(String name, Transformation transform, Bone parent, List<int[][]> mesh, ObjData obj, Skeleton skeleton)
+	protected Bone makeObj(String name, Transformation transform, Bone parent, List<int[][]> mesh, ObjData obj, ISkeleton skeleton)
 	{
-		Matrix4 m = skeleton.inverts.get(name);
-		Matrix3 n = null;
-		if (m != null) n = m.transpose3().invert();
+		Matrix4d m = skeleton.getInverseTransforms().get(name);
+		Matrix3d n = null;
+		if (m != null) n = m.transpose3x3(new Matrix3d()).invert();
 		List<Float> verts = new ArrayList<>();
 		List<Float> texs = new ArrayList<>();
 		List<Float> norms = new ArrayList<>();
@@ -43,15 +49,15 @@ public class VBOObjModel extends ObjModel
 				int vert = data[0];
 				int tex = data[1];
 				int norm = data[2];
-				Vec3 vertex = obj.vertices.get(vert);
-				Vec4 vertexVec = new Vec4(vertex, 1);
-				if (m != null) vertexVec = m.mul(vertexVec);
+				Vector3f vertex = obj.vertices.get(vert);
+				Vector4f vertexVec = new Vector4f(vertex, 1);
+				if (m != null) vertexVec = MathUtils.toVector4f(m.transform(MathUtils.toVector4d(vertexVec)));
 				verts.add(vertexVec.x());
 				verts.add(vertexVec.y());
 				verts.add(vertexVec.z());
 				if (tex >= 0)
 				{
-					Vec2 texture = obj.textureCoordinates.get(tex);
+					Vector2f texture = obj.textureCoordinates.get(tex);
 					texs.add(texture.x());
 					texs.add(texture.y());
 				}
@@ -62,8 +68,8 @@ public class VBOObjModel extends ObjModel
 				}
 				if (norm >= 0)
 				{
-					Vec3 normal = obj.vertexNormals.get(norm);
-					if (n != null) normal = n.mul(normal, new Vec3());
+					Vector3f normal = obj.vertexNormals.get(norm);
+					if (n != null) normal = MathUtils.toVector3f(n.transform(MathUtils.toVector3d(normal)));
 					norms.add(normal.x());
 					norms.add(normal.y());
 					norms.add(normal.z());
@@ -89,7 +95,7 @@ public class VBOObjModel extends ObjModel
 	{
 		float[] array = new float[list.size()];
 		Iterator<Float> it = list.iterator();
-		for (int i = 0; i < array.length; i++) array[i] = it.next();
+		for (int i = 0; i < array.length; i++) array[i] = it.next().floatValue();
 		return array;
 	}
 	
@@ -101,7 +107,7 @@ public class VBOObjModel extends ObjModel
 		return array;
 	}
 
-	public static VBOObjModel tryLoadModel(File file, Skeleton skeleton)
+	public static VBOObjModel tryLoadModel(File file, ISkeleton skeleton)
 	{
 		try
 		{
@@ -116,15 +122,22 @@ public class VBOObjModel extends ObjModel
 
 	public static VBOObjModel tryLoadModel(File modelFile, File skeletonFile)
 	{
-		Skeleton skeleton = Skeleton.tryLoadXML(skeletonFile);
-		if (skeleton == null) return null;
-		else try
+		try
 		{
-			return new VBOObjModel(modelFile, skeleton);
+			ISkeleton skeleton = new Skeleton(FileUtil.readFile(skeletonFile));
+			try
+			{
+				return new VBOObjModel(modelFile, skeleton);
+			}
+			catch (Exception e)
+			{
+				Main.LOGGER.error("failed to load model at " + modelFile, e);
+				return null;
+			}
 		}
-		catch (Exception e)
+		catch (IOException e)
 		{
-			Main.LOGGER.error("failed to load model at " + modelFile, e);
+			Main.LOGGER.error("failed to load skeleton at " + skeletonFile, e);
 			return null;
 		}
 	}

@@ -2,73 +2,99 @@ package firemerald.mcms.gui.components.text;
 
 import java.util.function.Consumer;
 
-import firemerald.mcms.Main;
-import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.texture.Color;
-import firemerald.mcms.util.FontRenderer;
+import firemerald.mcms.util.font.FontRenderer;
 
 public class ComponentTextFloat extends ComponentText
 {
-	public static ComponentTextFloat makeFloatControl(GuiElementContainer container, float x, float y, float w, float val, float min, float max, float increment, Consumer<Float> onValueChange)
-	{
-		ComponentTextFloat text;
-		container.addElement(text = new ComponentTextFloat(x, y, x + w - 10, y + 20, Main.instance.fontMsg, val, min, max, onValueChange));
-		container.addElement(new ComponentIncrementFloat(x + w - 10, y, text, increment));
-		container.addElement(new ComponentIncrementFloat(x + w - 10, y + 10, text, -increment));
-		return text;
-	}
-	
-	public static ComponentTextFloat makeFloatControl(GuiElementContainer container, float x, float y, float w, float val, float min, float max, float increment)
-	{
-		return makeFloatControl(container, x, y, w, val, min, max, increment, null);
-	}
-	
 	protected float val;
 	protected float min, max;
 	protected boolean error = false;
 	private final Consumer<Float> onValueChange;
+	private final String ambient;
 	
-	public ComponentTextFloat(float x1, float y1, float x2, float y2, FontRenderer font, float val, float min, float max, Consumer<Float> onValueChange)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, float min, float max, Consumer<Float> onValueChange)
+	{
+		this(x1, y1, x2, y2, font, val, min, max, onValueChange, null);
+	}
+	
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float min, float max, Consumer<Float> onValueChange)
+	{
+		this(x1, y1, x2, y2, font, 0, min, max, onValueChange, null);
+	}
+	
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, Consumer<Float> onValueChange)
+	{
+		this(x1, y1, x2, y2, font, val, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, onValueChange, null);
+	}
+	
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, Consumer<Float> onValueChange)
+	{
+		this(x1, y1, x2, y2, font, 0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, onValueChange, null);
+	}
+	
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, float min, float max)
+	{
+		this(x1, y1, x2, y2, font, val, min, max, null, null);
+	}
+	
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float min, float max)
+	{
+		this(x1, y1, x2, y2, font, 0, min, max, (String) null);
+	}
+	
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val)
+	{
+		this(x1, y1, x2, y2, font, val, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, (String) null);
+	}
+	
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font)
+	{
+		this(x1, y1, x2, y2, font, 0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, (String) null);
+	}
+	
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, float min, float max, Consumer<Float> onValueChange, String ambient)
 	{
 		super(x1, y1, x2, y2, font, null);
 		setBounds(min, max);
 		setVal(val);
 		this.onValueChange = onValueChange;
+		this.ambient = ambient;
 	}
 	
-	public ComponentTextFloat(float x1, float y1, float x2, float y2, FontRenderer font, float min, float max, Consumer<Float> onValueChange)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float min, float max, Consumer<Float> onValueChange, String ambient)
 	{
-		this(x1, y1, x2, y2, font, 0, min, max, onValueChange);
+		this(x1, y1, x2, y2, font, 0, min, max, onValueChange, ambient);
 	}
 	
-	public ComponentTextFloat(float x1, float y1, float x2, float y2, FontRenderer font, float val, Consumer<Float> onValueChange)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, Consumer<Float> onValueChange, String ambient)
 	{
-		this(x1, y1, x2, y2, font, val, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, onValueChange);
+		this(x1, y1, x2, y2, font, val, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, onValueChange, ambient);
 	}
 	
-	public ComponentTextFloat(float x1, float y1, float x2, float y2, FontRenderer font, Consumer<Float> onValueChange)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, Consumer<Float> onValueChange, String ambient)
 	{
-		this(x1, y1, x2, y2, font, 0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, onValueChange);
+		this(x1, y1, x2, y2, font, 0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, onValueChange, ambient);
 	}
 	
-	public ComponentTextFloat(float x1, float y1, float x2, float y2, FontRenderer font, float val, float min, float max)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, float min, float max, String ambient)
 	{
-		this(x1, y1, x2, y2, font, val, min, max, null);
+		this(x1, y1, x2, y2, font, val, min, max, null, ambient);
 	}
 	
-	public ComponentTextFloat(float x1, float y1, float x2, float y2, FontRenderer font, float min, float max)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float min, float max, String ambient)
 	{
-		this(x1, y1, x2, y2, font, 0, min, max);
+		this(x1, y1, x2, y2, font, 0, min, max, ambient);
 	}
 	
-	public ComponentTextFloat(float x1, float y1, float x2, float y2, FontRenderer font, float val)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, String ambient)
 	{
-		this(x1, y1, x2, y2, font, val, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
+		this(x1, y1, x2, y2, font, val, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, ambient);
 	}
 	
-	public ComponentTextFloat(float x1, float y1, float x2, float y2, FontRenderer font)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, String ambient)
 	{
-		this(x1, y1, x2, y2, font, 0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
+		this(x1, y1, x2, y2, font, 0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, ambient);
 	}
 	
 	public void setVal(float val)
@@ -126,9 +152,20 @@ public class ComponentTextFloat extends ComponentText
 		}
 	}
 	
+	public boolean isValid()
+	{
+		return !error || (ambient != null && text.length() == 0);
+	}
+	
+	@Override
+	public String getDisplayString()
+	{
+		return text.length() == 0 && ambient != null ? ambient : super.getDisplayString();
+	}
+	
 	@Override
 	public Color getTextColor()
 	{
-		return error ? Color.RED : super.getTextColor();
+		return text.length() == 0 && ambient != null ? new Color(super.getTextColor(), .25f) : error ? Color.RED : super.getTextColor();
 	}
 }

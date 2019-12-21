@@ -2,7 +2,6 @@ package firemerald.mcms.api.model;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,13 +9,13 @@ import java.util.List;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.MultiModel;
-import firemerald.mcms.api.model.Skeleton;
+import firemerald.mcms.api.util.FileUtil;
 
 public abstract class ObjModel extends MultiModel
 {
 	public final String modelFile;
 	
-	public ObjModel(File modelFile, Skeleton skeleton) throws Exception
+	public ObjModel(File modelFile, ISkeleton skeleton) throws Exception
 	{
 		super();
 		this.modelFile = modelFile.toString();
@@ -30,14 +29,14 @@ public abstract class ObjModel extends MultiModel
 		initWithClose(Minecraft.getMinecraft().getResourceManager().getResource(modelFile).getInputStream(), skeleton);
 	}
 	*/
-	public ObjModel(InputStream model, String modelName, Skeleton skeleton) throws Exception
+	public ObjModel(InputStream model, String modelName, ISkeleton skeleton) throws Exception
 	{
 		super();
 		this.modelFile = modelName;
 		init(model, skeleton);
 	}
 	
-	protected void initWithClose(InputStream in, Skeleton skeleton) throws Exception
+	protected void initWithClose(InputStream in, ISkeleton skeleton) throws Exception
 	{
 		Exception ex = null;
 		try
@@ -48,29 +47,22 @@ public abstract class ObjModel extends MultiModel
 		{
 			ex = e;
 		}
-		try
-		{
-			in.close();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
+		FileUtil.closeSafe(in);
 		if (ex != null) throw ex;
 	}
 	
-	protected void init(InputStream in, Skeleton skeleton) throws Exception
+	protected void init(InputStream in, ISkeleton skeleton) throws Exception
 	{
 		ObjData data = new ObjData(in);
 		List<Bone> base = new ArrayList<>();
 		List<String> unReg = new ArrayList<>();
 		unReg.addAll(data.groupObjects.keySet());
-		iterate(skeleton.base, data, unReg, base, null, skeleton);
-		for (String name : unReg) base.add(makeObj(name, Transformation.NONE, null, data.groupObjects.get(name), data, skeleton));
+		iterate(skeleton.getRootBones(), data, unReg, base, null, skeleton);
+		for (String name : unReg) base.add(makeObj(name, new Transformation(), null, data.groupObjects.get(name), data, skeleton));
 		setBase(base);
 	}
 	
-	private void iterate(List<Bone> bones, ObjData data, List<String> unReg, List<Bone> base, Bone parent, Skeleton skeleton)
+	private void iterate(List<Bone> bones, ObjData data, List<String> unReg, List<Bone> base, Bone parent, ISkeleton skeleton)
 	{
 		for (Bone bone : bones)
 		{
@@ -91,5 +83,5 @@ public abstract class ObjModel extends MultiModel
 		}
 	}
 	
-	protected abstract Bone makeObj(String name, Transformation transform, Bone parent, List<int[][]> mesh, ObjData obj, Skeleton skeleton);
+	protected abstract Bone makeObj(String name, Transformation transform, Bone parent, List<int[][]> mesh, ObjData obj, ISkeleton skeleton);
 }

@@ -1,93 +1,123 @@
 package firemerald.mcms.theme;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.lwjgl.opengl.GL11;
+import static org.lwjgl.opengl.GL11.*;
 
 import firemerald.mcms.Main;
 
 public abstract class CommonGuiTheme extends GuiTheme
 {
-	protected final Map<RoundedBoxFormat, Integer> boxes = new HashMap<>();
-	protected final Map<BoxFormat, Integer> textBoxes = new HashMap<>();
-	protected final Map<BoxFormat, Integer> scrollBars = new HashMap<>();
-	protected final Map<DirectionButtonFormat, Integer> scrollButtons = new HashMap<>();
-	protected final Map<DirectionButtonFormat, Integer> directionButtons = new HashMap<>();
-
+	public final ThemeElementNone NONE = new ThemeElementNone(this, Main.instance);
+	
 	public CommonGuiTheme(String name, String origin)
 	{
 		super(name, origin);
 	}
 	
 	@Override
-	public void cleanUp()
-	{
-		for (Integer tex : boxes.values()) Main.CLEANUP_ACTIONS.add(() -> GL11.glDeleteTextures(tex));
-		for (Integer tex : textBoxes.values()) Main.CLEANUP_ACTIONS.add(() -> GL11.glDeleteTextures(tex));
-		for (Integer tex : scrollBars.values()) Main.CLEANUP_ACTIONS.add(() -> GL11.glDeleteTextures(tex));
-		for (Integer tex : scrollButtons.values()) Main.CLEANUP_ACTIONS.add(() -> GL11.glDeleteTextures(tex));
-		for (Integer tex : directionButtons.values()) Main.CLEANUP_ACTIONS.add(() -> GL11.glDeleteTextures(tex));
-		boxes.clear();
-		textBoxes.clear();
-		scrollBars.clear();
-		scrollButtons.clear();
-		directionButtons.clear();
-	}
+	public void cleanUp() {}
 	
 	@Override
 	public void finalize()
 	{
 		if (Main.glActive) this.cleanUp();
 	}
-
+	
 	@Override
-	public void bindRoundedBox(RoundedBoxFormat box)
+	public ThemeElement genRoundedBox(int w, int h, int outline, int radius)
 	{
-		Integer tex = boxes.get(box);
-		if (tex == null) generateRoundedBox(box);
-		else GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
+		if (w <= 0 || h <= 0) return NONE;
+		int tex;
+		genRoundedBox(w, h, outline, radius, tex = glGenTextures());
+		return new ThemeElementTexture(this, tex);
 	}
 	
-	public abstract void generateRoundedBox(RoundedBoxFormat box);
-
+	public abstract void genRoundedBox(int w, int h, int outline, int radius, int tex);
+	
 	@Override
-	public void bindTextBox(BoxFormat textBox)
+	public ThemeElement genTextBox(int w, int h, int outline)
 	{
-		Integer tex = textBoxes.get(textBox);
-		if (tex == null) generateTextBox(textBox);
-		else GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
+		if (w <= 0 || h <= 0) return NONE;
+		int tex;
+		genTextBox(w, h, outline, tex = glGenTextures());
+		return new ThemeElementTexture(this, tex);
 	}
 	
-	public abstract void generateTextBox(BoxFormat textBox);
-
+	public abstract void genTextBox(int w, int h, int outline, int tex);
+	
 	@Override
-	public void bindScrollBar(BoxFormat scrollBar)
+	public ThemeElement genScrollBar(int w, int h, int outline)
 	{
-		Integer tex = scrollBars.get(scrollBar);
-		if (tex == null) generateScrollBar(scrollBar);
-		else GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
+		if (w <= 0 || h <= 0) return NONE;
+		int tex;
+		genScrollBar(w, h, outline, tex = glGenTextures());
+		return new ThemeElementTexture(this, tex);
 	}
 	
-	public abstract void generateScrollBar(BoxFormat scrollBar);
-
+	public abstract void genScrollBar(int w, int h, int outline, int tex);
+	
 	@Override
-	public void bindScrollButton(DirectionButtonFormat scrollButton)
+	public ThemeElement genScrollButton(int w, int h, int outline, EnumDirection direction)
 	{
-		Integer tex = scrollButtons.get(scrollButton);
-		if (tex == null) generateScrollButton(scrollButton);
-		else GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
+		if (w <= 0 || h <= 0) return NONE;
+		int tex;
+		genScrollButton(w, h, outline, direction, tex = glGenTextures());
+		return new ThemeElementTexture(this, tex);
 	}
 	
-	public abstract void generateScrollButton(DirectionButtonFormat scrollButton);
-
+	public abstract void genScrollButton(int w, int h, int outline, EnumDirection direction, int tex);
+	
 	@Override
-	public void bindDirectionButton(DirectionButtonFormat directionButton)
+	public ThemeElement genDirectionButton(int w, int h, int outline, int radius, EnumDirection direction)
 	{
-		Integer tex = directionButtons.get(directionButton);
-		if (tex == null) generateDirectionButton(directionButton);
-		else GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
+		if (w <= 0 || h <= 0) return NONE;
+		int tex;
+		genDirectionButton(w, h, outline, radius, direction, tex = glGenTextures());
+		return new ThemeElementTexture(this, tex);
 	}
 	
-	public abstract void generateDirectionButton(DirectionButtonFormat directionButton);
+	public abstract void genDirectionButton(int w, int h, int outline, int radius, EnumDirection direction, int tex);
+	
+	@Override
+	public ThemeElement genArrowedButton(int w, int h, int outline, int radius, float x1, float y1, float x2, float y2, EnumDirection direction)
+	{
+		if (w <= 0 || h <= 0) return NONE;
+		int tex;
+		genArrowedButton(w, h, outline, radius, x1, y1, x2, y2, direction, tex = glGenTextures());
+		return new ThemeElementTexture(this, tex);
+	}
+	
+	public abstract void genArrowedButton(int w, int h, int outline, int radius, float x1, float y1, float x2, float y2, EnumDirection direction, int tex);
+	
+	@Override
+	public ThemeElement genArrow(int h, int outline, EnumDirection direction)
+	{
+		if (h <= 0) return NONE;
+		int tex;
+		genArrow(h, outline, direction, tex = glGenTextures());
+		return new ThemeElementTexture(this, tex);
+	}
+	
+	public abstract void genArrow(int h, int outline, EnumDirection direction, int tex);
+	
+	@Override
+	public ThemeElement genMenuSeperator(int w, int h, int thickness, int offset)
+	{
+		if (w <= 0 || h <= 0) return NONE;
+		int tex;
+		genMenuSeperator(w, h, thickness, offset, tex = glGenTextures());
+		return new ThemeElementTexture(this, tex);
+	}
+	
+	public abstract void genMenuSeperator(int w, int h, int thickness, int offset, int tex);
+
+	@Override
+	public ThemeElement genTab(int w, int h, int outline, int radius, EnumDirection direction, boolean connectLeft, boolean connectRight)
+	{
+		if (w <= 0 || h <= 0) return NONE;
+		int tex;
+		genTab(w, h, outline, radius, direction, connectLeft, connectRight, tex = glGenTextures());
+		return new ThemeElementTexture(this, tex);
+	}
+	
+	public abstract void genTab(int w, int h, int outline, int radius, EnumDirection direction, boolean connectLeft, boolean connectRight, int tex);
 }

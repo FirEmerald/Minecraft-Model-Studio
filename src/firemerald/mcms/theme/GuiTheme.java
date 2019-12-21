@@ -36,38 +36,113 @@ public abstract class GuiTheme
 	
 	public abstract void drawBackground();
 	
-	public abstract void bindRoundedBox(RoundedBoxFormat box);
+	public ThemeElement genBox(int w, int h)
+	{
+		return genRoundedBox(w, h, 1, 0);
+	}
 	
-	public abstract void bindTextBox(BoxFormat textBox);
+	public ThemeElement genBox(int w, int h, int outline)
+	{
+		return genRoundedBox(w, h, outline, 0);
+	}
 	
-	public abstract void bindScrollBar(BoxFormat scrollBar);
+	public ThemeElement genRoundedBox(int w, int h, int radius)
+	{
+		return genRoundedBox(w, h, 1, radius);
+	}
 	
-	public abstract void bindScrollButton(DirectionButtonFormat scrollButton);
+	public abstract ThemeElement genRoundedBox(int w, int h, int outline, int radius);
 	
-	public abstract void bindDirectionButton(DirectionButtonFormat directionButton);
+	public ThemeElement genTextBox(int w, int h)
+	{
+		return genTextBox(w, h, 1);
+	}
+	
+	public abstract ThemeElement genTextBox(int w, int h, int outline);
+	
+	public ThemeElement genScrollBar(int w, int h)
+	{
+		return genScrollBar(w, h, 1);
+	}
+	
+	public abstract ThemeElement genScrollBar(int w, int h, int outline);
+	
+	public ThemeElement genScrollButton(int w, int h, EnumDirection direction)
+	{
+		return genScrollButton(w, h, 1, direction);
+	}
+	
+	public abstract ThemeElement genScrollButton(int w, int h, int outline, EnumDirection direction);
+	
+	public ThemeElement genDirectionButton(int w, int h, EnumDirection direction)
+	{
+		return genDirectionButton(w, h, 1, 0, direction);
+	}
+	
+	public ThemeElement genDirectionButton(int w, int h, int outline, EnumDirection direction)
+	{
+		return genDirectionButton(w, h, outline, 0, direction);
+	}
+	
+	public abstract ThemeElement genDirectionButton(int w, int h, int outline, int radius, EnumDirection direction);
+	
+	public ThemeElement genArrowedButton(int w, int h, float x1, float y1, float x2, float y2, EnumDirection direction)
+	{
+		return genArrowedButton(w, h, 1, 0, x1, y1, x2, y2, direction);
+	}
+	
+	public ThemeElement genArrowedButton(int w, int h, int outline, float x1, float y1, float x2, float y2, EnumDirection direction)
+	{
+		return genArrowedButton(w, h, outline, 0, x1, y1, x2, y2, direction);
+	}
+	
+	public abstract ThemeElement genArrowedButton(int w, int h, int outline, int radius, float x1, float y1, float x2, float y2, EnumDirection direction);
+	
+	public ThemeElement genArrow(int h, EnumDirection direction)
+	{
+		return genArrow(h, 1, direction);
+	}
+	
+	public abstract ThemeElement genArrow(int h, int outline, EnumDirection direction);
+	
+	public ThemeElement genMenuSeperator(int w, int h)
+	{
+		return genMenuSeperator(w, h, 1, 1);
+	}
+	
+	public ThemeElement genMenuSeperator(int w, int h, int thickness)
+	{
+		return genMenuSeperator(w, h, thickness, 1);
+	}
+	
+	public abstract ThemeElement genMenuSeperator(int w, int h, int thickness, int offset);
+	
+	public abstract ThemeElement genTab(int w, int h, int outline, int radius, EnumDirection direction, boolean connectLeft, boolean connectRight);
 	
 	public abstract Color getTextColor();
 	
-	public static int makeTexture(ByteBuffer texture, int w, int h)
+	public abstract Color getFillColor();
+	
+	public abstract Color getOutlineColor();
+	
+	public static void makeTexture(int tex, ByteBuffer texture, int w, int h)
 	{
-		int t = glGenTextures();
-		glBindTexture(GL_TEXTURE_2D, t);
+		glBindTexture(GL_TEXTURE_2D, tex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, texture);
     	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    	return t;
 	}
 	
-	public static class ThemeElement
+	public static class InstanceElement
 	{
 		public final String name;
 		public final String variant;
 		public final AbstractElement element;
 		public final boolean compile;
 		
-		public ThemeElement(AbstractElement element, String parentName, String variant, boolean compile)
+		public InstanceElement(AbstractElement element, String parentName, String variant, boolean compile)
 		{
 			this.name = String.format((this.element = element).getString("name", ""), parentName);
 			this.variant = variant;
@@ -90,7 +165,7 @@ public abstract class GuiTheme
 			file = origin.substring(0, pos);
 			variant = origin.substring(pos + 1).split("\\|");
 		}
-		ThemeElement fin = null;
+		InstanceElement fin = null;
 		try
 		{
 			AbstractElement root = FileUtil.readFile(new File(file));
@@ -106,7 +181,7 @@ public abstract class GuiTheme
 					if (el.hasAttribute("name")) name = String.format(el.getString("name", "null"), name);
 				}
 				AbstractElement el;
-				ThemeElement t = new ThemeElement(el = new MergedElement(files), name, origin, true);
+				InstanceElement t = new InstanceElement(el = new MergedElement(files), name, origin, true);
 				String prefix = file + "|";
 				boolean flag;
 				if (variant.length == 0) flag = true;
@@ -120,7 +195,7 @@ public abstract class GuiTheme
 						{
 							flag = true;
 							AbstractElement merged = MergedElement.merge(child, t.element);
-							t = new ThemeElement(merged, t.name, prefix + id, child.getBoolean("compile", true));
+							t = new InstanceElement(merged, t.name, prefix + id, child.getBoolean("compile", true));
 							prefix += id + "|";
 							el = child;
 							break;
@@ -137,7 +212,6 @@ public abstract class GuiTheme
 		catch (FileNotFoundException e)
 		{
 			Main.LOGGER.log(Level.WARN, "could not open theme file", e);
-			e.printStackTrace();
 		}
 		catch (IOException e)
 		{
@@ -165,11 +239,11 @@ public abstract class GuiTheme
 				AbstractElement el = files.get(i);
 				if (el.hasAttribute("name")) name = String.format(el.getString("name", "null"), name);
 			} 
-			List<ThemeElement> list = new ArrayList<>();
-			ThemeElement t;
-			list.add(t = new ThemeElement(new MergedElement(files), name, origin, true));
+			List<InstanceElement> list = new ArrayList<>();
+			InstanceElement t;
+			list.add(t = new InstanceElement(new MergedElement(files), name, origin, true));
 			addVariantsToList(t.element, t, origin + "|", list);
-			for (ThemeElement el: list) if (el.compile)
+			for (InstanceElement el: list) if (el.compile)
 			{
 				GuiTheme theme = makeTheme(el);
 				if (theme != null) themes.add(theme);
@@ -194,13 +268,13 @@ public abstract class GuiTheme
 				catch (IOException e)
 				{
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					Main.LOGGER.log(Level.WARN, e);
 				}
 			}
 		}
 	}
 	
-	public static void addVariantsToList(AbstractElement el, ThemeElement parent, String prefix, List<ThemeElement> list)
+	public static void addVariantsToList(AbstractElement el, InstanceElement parent, String prefix, List<InstanceElement> list)
 	{
 		for (AbstractElement var : el.getChildren()) if (var.getName().equals("variant"))
 		{
@@ -210,8 +284,8 @@ public abstract class GuiTheme
 				if (!id.contains("|"))
 				{
 					AbstractElement merged = MergedElement.merge(var, parent.element);
-					ThemeElement t2;
-					list.add(t2 = new ThemeElement(merged, parent.name, prefix + id, var.getBoolean("compile", true)));
+					InstanceElement t2;
+					list.add(t2 = new InstanceElement(merged, parent.name, prefix + id, var.getBoolean("compile", true)));
 					addVariantsToList(var, t2, prefix + id + "|", list);
 				}
 				else Main.LOGGER.warn("Invalid character '|' in variant ID");
@@ -220,7 +294,7 @@ public abstract class GuiTheme
 		}
 	}
 	
-	public static GuiTheme makeTheme(ThemeElement t)
+	public static GuiTheme makeTheme(InstanceElement t)
 	{
 		String className = t.element.getString("class", "firemerald.mcamc.theme.BasicTheme");
 		try
@@ -229,8 +303,7 @@ public abstract class GuiTheme
 		}
 		catch (Throwable th)
 		{
-			//TODO exception
-			th.printStackTrace();
+			Main.LOGGER.log(Level.WARN, th);
 			return null;
 		}
 	}

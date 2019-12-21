@@ -3,16 +3,15 @@ package firemerald.mcms.api.model;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import firemerald.mcms.api.animation.AnimationState;
+import org.joml.Matrix4d;
+
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
-import firemerald.mcms.api.math.Matrix4;
 import firemerald.mcms.api.util.RaytraceResult;
-import firemerald.mcms.model.IEditable;
+import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.model.RenderObjectComponents;
 
 public class Model implements IModel
@@ -25,6 +24,24 @@ public class Model implements IModel
 	public Model(Bone base)
 	{
 		setBase(base);
+	}
+
+	@Override
+	public List<Bone> getRootBones()
+	{
+		return Collections.singletonList(base);
+	}
+
+	@Override
+	public Collection<Bone> getAllBones()
+	{
+		return bones;
+	}
+	
+	@Override
+	public boolean addRootBone(Bone bone, boolean updateBoneList)
+	{
+		return false;
 	}
 	
 	public Bone getBase()
@@ -45,16 +62,7 @@ public class Model implements IModel
 	}
 	
 	@Override
-	public Map<String, Matrix4> getPose(AnimationState... anims)
-	{
-		Map<String, Matrix4> map = new HashMap<>();
-		base.setDefTransform(map);
-		for (AnimationState state : anims) state.anim.getBones(map, state.time, bones);
-		return map;
-	}
-	
-	@Override
-	public void render(Map<String, Matrix4> map)
+	public void render(Map<String, Matrix4d> map)
 	{
 		base.render(map);
 	}
@@ -66,15 +74,15 @@ public class Model implements IModel
 	}
 
 	@Override
-	public RaytraceResult rayTrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4> transformations)
+	public RaytraceResult rayTrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> transformations)
 	{
-		Matrix4 transformation = transformations.get(base.name);
-		if (transformation == null) transformation = new Matrix4();
+		Matrix4d transformation = transformations.get(base.name);
+		if (transformation == null) transformation = new Matrix4d();
 		return base.raytrace(fx, fy, fz, dx, dy, dz, transformations, transformation);
 	}
 
 	@Override
-	public Collection<? extends IEditable> getChildren()
+	public Collection<? extends IModelEditable> getChildren()
 	{
 		return Collections.singleton(base);
 	}
@@ -86,22 +94,22 @@ public class Model implements IModel
 	}
 
 	@Override
-	public boolean canBeChild(IEditable candidate)
+	public boolean canBeChild(IModelEditable candidate)
 	{
 		return false;
 	}
 
 	@Override
-	public void addChild(IEditable child) {}
+	public void addChild(IModelEditable child) {}
 
 	@Override
-	public void addChildBefore(IEditable child, IEditable position) {}
+	public void addChildBefore(IModelEditable child, IModelEditable position) {}
 
 	@Override
-	public void addChildAfter(IEditable child, IEditable position) {}
+	public void addChildAfter(IModelEditable child, IModelEditable position) {}
 
 	@Override
-	public void removeChild(IEditable child) {}
+	public void removeChild(IModelEditable child) {}
 
 	@Override
 	public boolean isNameUsed(String name)
@@ -118,7 +126,7 @@ public class Model implements IModel
 	}
 
 	@Override
-	public void loadFromXML(AbstractElement root)
+	public void load(AbstractElement root)
 	{
 		for (AbstractElement el : root.getChildren())
 		{
@@ -126,10 +134,6 @@ public class Model implements IModel
 			switch (el.getName())
 			{
 			case "bone":
-			{
-				base = new Bone(el.getString("name", "unnamed bone"), new Transformation());
-				break;
-			}
 			case "component_holder":
 			{
 				base = new RenderObjectComponents(el.getString("name", "unnamed bone"), new Transformation());
@@ -144,5 +148,34 @@ public class Model implements IModel
 			}
 		}
 		updateBonesList();
+	}
+
+	@Override
+	public void save(AbstractElement modelEl)
+	{
+		base.addToXML(modelEl);
+	}
+
+	@Override
+	public ISkeleton getSkeleton()
+	{
+		Skeleton skeleton = new Skeleton();
+		Bone root = new Bone(base.name, base.defaultTransform);
+		skeleton.addRootBone(root, false);
+		processToSkeleton(root, base);
+		skeleton.updateBonesList();
+		return skeleton;
+	}
+	
+	@Override
+	public void processToSkeleton(Bone addTo, Bone addFrom)
+	{
+		addFrom.children.forEach(bone -> processToSkeleton(new Bone(bone.name, bone.defaultTransform, addTo), bone));
+	}
+
+	@Override
+	public void updateTex()
+	{
+		base.updateTex();
 	}
 }

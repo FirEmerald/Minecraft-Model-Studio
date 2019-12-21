@@ -2,25 +2,32 @@ package firemerald.mcms.api.model;
 
 import java.util.Map;
 
-import firemerald.mcms.api.animation.AnimationState;
-import firemerald.mcms.api.data.AbstractElement;
-import firemerald.mcms.api.math.Matrix4;
-import firemerald.mcms.api.util.RaytraceResult;
-import firemerald.mcms.model.IEditableParent;
+import org.eclipse.jdt.annotation.Nullable;
+import org.joml.Matrix4d;
 
-public interface IModel extends IRaytraceTarget, IEditableParent
+import firemerald.mcms.api.animation.Transformation;
+import firemerald.mcms.api.util.RaytraceResult;
+import firemerald.mcms.model.RenderObjectComponents;
+
+public interface IModel extends IRaytraceTarget, IRigged<IModel>
 {
-	public Map<String, Matrix4> getPose(AnimationState... anims);
-	
-	public void render(Map<String, Matrix4> pos);
+	public void render(Map<String, Matrix4d> pos);
 	
 	public void cleanUp();
 	
-	public RaytraceResult rayTrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4> map);
+	public RaytraceResult rayTrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> map);
 	
-	public boolean isNameUsed(String name);
+	public void updateTex();
 	
-	public void updateBonesList();
+	@Override
+	public default Bone makeNew(String name, Transformation defaultTransform, @Nullable Bone parent)
+	{
+		return new RenderObjectComponents(name, defaultTransform, parent);
+	}
 	
-	public void loadFromXML(AbstractElement root);
+	@Override
+	public default String getElementName()
+	{
+		return "model";
+	}
 }

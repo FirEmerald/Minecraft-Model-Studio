@@ -39,6 +39,8 @@ public class FrameBuffer
 	
 	public void setSize(int sizeW, int sizeH)
 	{
+		if (sizeW < 1) sizeW = 1;
+		if (sizeH < 1) sizeH = 1;
 		if (sizeW == this.sizeW && sizeH == this.sizeH) return;
 		glBindTexture(GL_TEXTURE_2D, depth_stencil_texture);
 		setTexArgs(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST);

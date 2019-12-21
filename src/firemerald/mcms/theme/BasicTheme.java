@@ -60,84 +60,166 @@ public class BasicTheme extends CommonGuiTheme
 	}
 
 	@Override
-	public void generateRoundedBox(RoundedBoxFormat box)
+	public Color getFillColor()
 	{
-		int w = box.w;
-		int h = box.h;
-		int outline = box.outline;
+		return fill;
+	}
+
+	@Override
+	public Color getOutlineColor()
+	{
+		return outline;
+	}
+
+	@Override
+	public void genRoundedBox(int w, int h, int outline, int radius, int tex)
+	{
 		ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
 		setBaseRectangle(w, h, outline, outlineI, fillI, data);
-		int t = GuiTheme.makeTexture(data, w, h);
-		boxes.put(box, t);
+		GuiTheme.makeTexture(tex, data, w, h);
     	MemoryUtil.memFree(data);
 	}
 
 	@Override
-	public void generateTextBox(BoxFormat textBox)
+	public void genTextBox(int w, int h, int outline, int tex)
 	{
-		int w = textBox.w;
-		int h = textBox.h;
-		int outline = textBox.outline;
 		ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
 		setBaseRectangle(w, h, outline, outlineI, textboxI, data);
-		int t = GuiTheme.makeTexture(data, w, h);
-		textBoxes.put(textBox, t);
+		GuiTheme.makeTexture(tex, data, w, h);
     	MemoryUtil.memFree(data);
 	}
 
 	@Override
-	public void generateScrollBar(BoxFormat scrollBar)
+	public void genScrollBar(int w, int h, int outline, int tex)
 	{
-		int w = scrollBar.w;
-		int h = scrollBar.h;
-		int outline = scrollBar.outline;
 		ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
 		setBaseRectangle(w, h, outline, outlineI, scrollbarI, data);
-		int t = GuiTheme.makeTexture(data, w, h);
-		scrollBars.put(scrollBar, t);
+		GuiTheme.makeTexture(tex, data, w, h);
     	MemoryUtil.memFree(data);
 	}
 
 	@Override
-	public void generateScrollButton(DirectionButtonFormat scrollButton)
+	public void genScrollButton(int w, int h, int outline, EnumDirection direction, int tex)
 	{
-		int w = scrollButton.w;
-		int h = scrollButton.h;
-		int outline = scrollButton.outline;
 		ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
 		setBaseRectangle(w, h, outline, outlineI, fillI, data);
-		this.addScrollArrows(w, h, outlineI, scrollButton.direction, data);
-		int t = GuiTheme.makeTexture(data, w, h);
-		scrollButtons.put(scrollButton, t);
+		addScrollArrows(w, h, outlineI, direction, data);
+		GuiTheme.makeTexture(tex, data, w, h);
     	MemoryUtil.memFree(data);
 	}
 
 	@Override
-	public void generateDirectionButton(DirectionButtonFormat directionButton)
+	public void genDirectionButton(int w, int h, int outline, int radius, EnumDirection direction, int tex)
 	{
-		int w = directionButton.w;
-		int h = directionButton.h;
-		int outline = directionButton.outline;
 		ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
 		setBaseRectangle(w, h, outline, outlineI, fillI, data);
-		this.addDirectionArrows(w, h, outlineI, directionButton.direction, data);
-		int t = GuiTheme.makeTexture(data, w, h);
-		directionButtons.put(directionButton, t);
+		this.addDirectionArrows(w, h, outlineI, direction, data);
+		GuiTheme.makeTexture(tex, data, w, h);
+    	MemoryUtil.memFree(data);
+	}
+
+	@Override
+	public void genArrowedButton(int w, int h, int outline, int radius, float x1, float y1, float x2, float y2, EnumDirection direction, int tex)
+	{
+		ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
+		setBaseRectangle(w, h, outline, outlineI, fillI, data);
+		this.addDirectionArrows(w, h, outlineI, x1, y1, x2, y2, direction, data);
+		GuiTheme.makeTexture(tex, data, w, h);
+    	MemoryUtil.memFree(data);
+	}
+
+	@Override
+	public void genArrow(int h, int outline, EnumDirection direction, int tex)
+	{
+		int w = h * 2;
+		ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
+		CoordinateRotator rotator = CoordinateRotator.forDirection(direction);
+		setRectangle(w, h, 0x00000000, data);
+		this.setRegionUR(0, 0, h, outline, this.outline, fill, rotator, w, h, data);
+		this.setRegionUL(h, 0, h, outline, this.outline, fill, rotator, w, h, data);
+		if (outline > 0) this.setRegionRGB(0, 0, w, outline, this.outlineI, rotator, w, h, data);
+		GuiTheme.makeTexture(tex, data, w, h);
+    	MemoryUtil.memFree(data);
+	}
+
+	@Override
+	public void genMenuSeperator(int w, int h, int thickness, int offset, int tex)
+	{
+		ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
+		setRectangle(w, h, fillI, data);
+		int y = (h - thickness) / 2;
+		setRegion(offset, y, w - offset, y + thickness, outlineI, CoordinateRotator._0, w, h, data);
+		GuiTheme.makeTexture(tex, data, w, h);
+    	MemoryUtil.memFree(data);
+	}
+	
+	@Override
+	public void genTab(int w, int h, int outline, int radius, EnumDirection direction, boolean connectLeft, boolean connectRight, int tex)
+	{
+		w += radius * 2;
+		h += radius * 2;
+		ByteBuffer data = MemoryUtil.memAlloc(w * h * 4);
+		setRectangle(w, h, 0x00000000, data);
+		int vW, vH;
+		if (direction == EnumDirection.DOWN || direction == EnumDirection.UP)
+		{
+			vW = w;
+			vH = h;
+		}
+		else
+		{
+			vW = h;
+			vH = w;
+		}
+		CoordinateRotator rotator = CoordinateRotator.forDirection(direction);
+		setRegion(radius, radius, vW - radius, radius + outline, outlineI, rotator, vW, vH, data);
+		setRegion(radius + outline, radius + outline, vW - radius - outline, vH, fillI, rotator, vW, vH, data);
+		if (connectLeft)
+		{
+			setRegion(radius, radius + outline, radius + outline, vH - radius, outlineI, rotator, vW, vH, data);
+			setRegion(0, vH - radius, radius + outline, vH - radius + outline, outlineI, rotator, vW, vH, data);
+			setRegion(0, vH - radius + outline, radius + outline, vH, fillI, rotator, vW, vH, data);
+		}
+		else
+		{
+			setRegion(radius, radius + outline, radius + outline, vH, outlineI, rotator, vW, vH, data);
+		}
+		if (connectRight)
+		{
+			setRegion(vW - radius - outline, radius + outline, vW - radius, vH - radius, outlineI, rotator, vW, vH, data);
+			setRegion(vW - radius - outline, vH - radius, vW, vH - radius + outline, outlineI, rotator, vW, vH, data);
+			setRegion(vW - radius - outline, vH - radius + outline, vW, vH, fillI, rotator, vW, vH, data);
+		}
+		else
+		{
+			setRegion(vW - radius - outline, radius + outline, vW - radius, vH, outlineI, rotator, vW, vH, data);
+		}
+		GuiTheme.makeTexture(tex, data, w, h);
     	MemoryUtil.memFree(data);
 	}
 	
 	public void setBaseRectangle(int w, int h, int outline, int outlineI, int innerI, ByteBuffer data)
 	{
-    	int ind = 0;
-    	for (int y = 0; y < h; y++)
-    	{
-    		boolean isOutline = (y < outline) || (y >= (h - outline));
-    		for (int x = 0; x < w; x++)
-    		{
-    			data.putInt(ind, isOutline || (x < outline) || (x >= (w - outline)) ? outlineI : innerI);
-    			ind += 4;
-    		}
-    	}
+		setRegion(0, 0, w, outline, outlineI, CoordinateRotator._0, w, h, data);
+		setRegion(0, h - outline, w, h, outlineI, CoordinateRotator._0, w, h, data);
+		setRegion(0, outline, outline, h - outline, outlineI, CoordinateRotator._0, w, h, data);
+		setRegion(w - outline, outline, w, h - outline, outlineI, CoordinateRotator._0, w, h, data);
+		setRegion(outline, outline, w - outline, h - outline, innerI, CoordinateRotator._0, w, h, data);
+	}
+	
+	public void setRectangle(int w, int h, int color, ByteBuffer data)
+	{
+		setRegion(0, 0, w, h, color, CoordinateRotator._0, w, h, data);
+	}
+	
+	public void setRegion(int x1, int y1, int x2, int y2, int color, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		for (int y = y1; y < y2; y++) for (int x = x1; x < x2; x++) rotation.set(x, y, color, data, w, h);
+	}
+	
+	public void setRegionRGB(int x1, int y1, int x2, int y2, int rgb, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		for (int y = y1; y < y2; y++) for (int x = x1; x < x2; x++) rotation.set(x, y, (rotation.get(x, y, data, w, h) & 0xFF000000) | (rgb & 0xFFFFFF), data, w, h);
 	}
 	
 	public void addArrowUp(float x1, float y1, float x2, float y2, int w, int h, int color, ByteBuffer data)
@@ -302,34 +384,34 @@ public class BasicTheme extends CommonGuiTheme
 		}
 	}
 	
-	public void addScrollArrows(int w, int h, int color, int direction, ByteBuffer data)
+	public void addScrollArrows(int w, int h, int color, EnumDirection direction, ByteBuffer data)
 	{
 		float x0 = w * 2 / 10f, x1 = w / 2f, x2 = w * 8 / 10f;
 		float y0 = h * 2 / 10f, y1 = h / 2f, y2 = h * 8 / 10f;
 		switch (direction)
 		{
-		case 0:// /\
+		case UP:// /\
 		{
 			addArrowUp(x0, y0, x2, y1, w, h, color, data);
 			addArrowUpRight(x1, y1, x2, y2, w, h, color, data);
 			addArrowUpLeft(x0, y1, x1, y2, w, h, color, data);
 			break;
 		}
-		case 1:// >
+		case RIGHT:// >
 		{
 			addArrowRight(x1, y0, x2, y2, w, h, color, data);
 			addArrowUpRight(x0, y0, x1, y1, w, h, color, data);
 			addArrowDownRight(x0, y1, x1, y2, w, h, color, data);
 			break;
 		}
-		case 2:// \/
+		case DOWN:// \/
 		{
 			addArrowDown(x0, y1, x2, y2, w, h, color, data);
 			addArrowDownRight(x1, y0, x2, y1, w, h, color, data);
 			addArrowDownLeft(x0, y0, x1, y1, w, h, color, data);
 			break;
 		}
-		case 3:// <
+		case LEFT:// <
 		{
 			addArrowLeft(x0, y0, x1, y2, w, h, color, data);
 			addArrowDownLeft(x1, y1, x2, y2, w, h, color, data);
@@ -339,32 +421,225 @@ public class BasicTheme extends CommonGuiTheme
 		}
 	}
 	
-	public void addDirectionArrows(int w, int h, int color, int direction, ByteBuffer data)
+	public void addDirectionArrows(int w, int h, int color, EnumDirection direction, ByteBuffer data)
 	{
 		float x0 = w * 2 / 10f, x2 = w * 8 / 10f;
 		float y0 = h * 2 / 10f, y2 = h * 8 / 10f;
+		addDirectionArrows(w, h, color, x0, y0, x2, y2, direction, data);
+	}
+	
+	public void addDirectionArrows(int w, int h, int color, float x1, float y1, float x2, float y2, EnumDirection direction, ByteBuffer data)
+	{
 		switch (direction)
 		{
-		case 0:// /\
+		case UP:// /\
 		{
-			addArrowUp(x0, y0, x2, y2, w, h, color, data);
+			addArrowUp(x1, y1, x2, y2, w, h, color, data);
 			break;
 		}
-		case 1:// >
+		case RIGHT:// >
 		{
-			addArrowRight(x0, y0, x2, y2, w, h, color, data);
+			addArrowRight(x1, y1, x2, y2, w, h, color, data);
 			break;
 		}
-		case 2:// \/
+		case DOWN:// \/
 		{
-			addArrowDown(x0, y0, x2, y2, w, h, color, data);
+			addArrowDown(x1, y1, x2, y2, w, h, color, data);
 			break;
 		}
-		case 3:// <
+		case LEFT:// <
 		{
-			addArrowLeft(x0, y0, x2, y2, w, h, color, data);
+			addArrowLeft(x1, y1, x2, y2, w, h, color, data);
 			break;
 		}
+		}
+	}
+
+	public void setRegionDR(int cX, int cY, int size, int outline, Color outlineC, Color innerC, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		setRegionDR(cX, cY, size, outline, outlineC, innerC, new Color(outlineC.c, 0), rotation, w, h, data);
+	}
+
+	public void setRegionDR(int cX, int cY, int size, int outline, Color outlineC, Color innerC, Color backgroundC, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		Color bo = Color.mix(outlineC, backgroundC, .5f);
+		Color oi = Color.mix(outlineC, innerC, .5f);
+		int offset = 0;
+		for (int y = cY; y < cY + size; y++)
+		{
+			int t = 1 + offset - size;
+			for (int x = cX; x < cX + size; x++)
+			{
+				Color c;
+				if (t < -1) c = backgroundC;
+				else if (t == -1) c = bo;
+				else if (t < outline) c = outlineC;
+				else if (t == outline) c = oi;
+				else c = innerC;
+				rotation.set(x, y, c.toARGB(), data, w, h);
+				t++;
+			}
+			offset++;
+		}
+	}
+
+	public void setRegionUR(int cX, int cY, int size, int outline, Color outlineC, Color innerC, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		setRegionUR(cX, cY, size, outline, outlineC, innerC, new Color(outlineC.c, 0), rotation, w, h, data);
+	}
+
+	public void setRegionUR(int cX, int cY, int size, int outline, Color outlineC, Color innerC, Color backgroundC, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		Color bo = Color.mix(outlineC, backgroundC, .5f);
+		Color oi = Color.mix(outlineC, innerC, .5f);
+		int offset = 0;
+		for (int y = cY; y < cY + size; y++)
+		{
+			int t = -offset;
+			for (int x = cX; x < cX + size; x++)
+			{
+				Color c;
+				if (t < -1) c = backgroundC;
+				else if (t == -1) c = bo;
+				else if (t < outline) c = outlineC;
+				else if (t == outline) c = oi;
+				else c = innerC;
+				rotation.set(x, y, c.toARGB(), data, w, h);
+				t++;
+			}
+			offset++;
+		}
+	}
+
+	public void setRegionUL(int cX, int cY, int size, int outline, Color outlineC, Color innerC, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		setRegionUL(cX, cY, size, outline, outlineC, innerC, new Color(outlineC.c, 0), rotation, w, h, data);
+	}
+
+	public void setRegionUL(int cX, int cY, int size, int outline, Color outlineC, Color innerC, Color backgroundC, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		Color bo = Color.mix(outlineC, backgroundC, .5f);
+		Color oi = Color.mix(outlineC, innerC, .5f);
+		int offset = 0;
+		for (int y = cY; y < cY + size; y++)
+		{
+			int t = size - offset - 1;
+			for (int x = cX; x < cX + size; x++)
+			{
+				Color c;
+				if (t < -1) c = backgroundC;
+				else if (t == -1) c = bo;
+				else if (t < outline) c = outlineC;
+				else if (t == outline) c = oi;
+				else c = innerC;
+				rotation.set(x, y, c.toARGB(), data, w, h);
+				t--;
+			}
+			offset++;
+		}
+	}
+
+	public void setRegionDL(int cX, int cY, int size, int outline, Color outlineC, Color innerC, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		setRegionDL(cX, cY, size, outline, outlineC, innerC, new Color(outlineC.c, 0), rotation, w, h, data);
+	}
+
+	public void setRegionDL(int cX, int cY, int size, int outline, Color outlineC, Color innerC, Color backgroundC, CoordinateRotator rotation, int w, int h, ByteBuffer data)
+	{
+		Color bo = Color.mix(outlineC, backgroundC, .5f);
+		Color oi = Color.mix(outlineC, innerC, .5f);
+		int offset = 0;
+		for (int y = cY; y < cY + size; y++)
+		{
+			int t = offset;
+			for (int x = cX; x < cX + size; x++)
+			{
+				Color c;
+				if (t < -1) c = backgroundC;
+				else if (t == -1) c = bo;
+				else if (t < outline) c = outlineC;
+				else if (t == outline) c = oi;
+				else c = innerC;
+				rotation.set(x, y, c.toARGB(), data, w, h);
+				t--;
+			}
+			offset++;
+		}
+	}
+	
+	public static enum CoordinateRotator
+	{
+		_0() {
+			@Override
+			public void set(int x, int y, int color, ByteBuffer data, int w, int h)
+			{
+				data.putInt(((y * w) + x) * 4, color);
+			}
+
+			@Override
+			public int get(int x, int y, ByteBuffer data, int w, int h)
+			{
+				return data.getInt(((y * w) + x) * 4);
+			}
+		},
+		_90() {
+			@Override
+			public void set(int x, int y, int color, ByteBuffer data, int w, int h)
+			{
+				data.putInt((((w - x - 1) * h) + y) * 4, color);
+			}
+
+			@Override
+			public int get(int x, int y, ByteBuffer data, int w, int h)
+			{
+				return data.getInt((((w - x - 1) * h) + y) * 4);
+			}
+		},
+		_180() {
+			@Override
+			public void set(int x, int y, int color, ByteBuffer data, int w, int h)
+			{
+				data.putInt((((h - y - 1) * w) + w - x - 1) * 4, color);
+			}
+
+			@Override
+			public int get(int x, int y, ByteBuffer data, int w, int h)
+			{
+				return data.getInt((((h - y - 1) * w) + w - x - 1) * 4);
+			}
+		},
+		_270() {
+			@Override
+			public void set(int x, int y, int color, ByteBuffer data, int w, int h)
+			{
+				data.putInt(((x * h) + h - y - 1) * 4, color);
+			}
+
+			@Override
+			public int get(int x, int y, ByteBuffer data, int w, int h)
+			{
+				return data.getInt(((x * h) + h - y - 1) * 4);
+			}
+		};
+		
+		public abstract void set(int x, int y, int color, ByteBuffer data, int w, int h);
+
+		public abstract int get(int x, int y, ByteBuffer data, int w, int h);
+		
+		public static CoordinateRotator forDirection(EnumDirection direction)
+		{
+			switch (direction)
+			{
+			case RIGHT:
+				return _90;
+			case UP:
+				return _180;
+			case LEFT:
+				return _270;
+			case DOWN:
+			default:
+				return _0;
+			}
 		}
 	}
 }

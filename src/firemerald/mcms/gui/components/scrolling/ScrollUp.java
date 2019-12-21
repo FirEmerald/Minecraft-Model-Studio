@@ -1,10 +1,12 @@
 package firemerald.mcms.gui.components.scrolling;
 
+import firemerald.mcms.theme.EnumDirection;
+
 public class ScrollUp extends ScrollButton
 {
-	public ScrollUp(float x1, float y1, float x2, float y2, IScrollable scrollable)
+	public ScrollUp(int x1, int y1, int x2, int y2, IScrollable scrollable)
 	{
-		super(x1, y1, x2, y2, 0, scrollable);
+		super(x1, y1, x2, y2, EnumDirection.UP, scrollable);
 	}
 	
 	@Override

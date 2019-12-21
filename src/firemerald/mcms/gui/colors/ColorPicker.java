@@ -7,7 +7,7 @@ public abstract class ColorPicker extends Component
 {
 	public boolean hasChanged = false;
 	
-	public ColorPicker(float x, float y)
+	public ColorPicker(int x, int y)
 	{
 		super(x, y, x + 155, y + 155);
 	}

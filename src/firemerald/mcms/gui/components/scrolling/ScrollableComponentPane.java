@@ -4,11 +4,12 @@ import firemerald.mcms.Main;
 import firemerald.mcms.gui.IGuiElement;
 import firemerald.mcms.gui.components.ComponentPane;
 import firemerald.mcms.gui.components.IComponent;
-import firemerald.mcms.model.Mesh;
 import firemerald.mcms.shader.Shader;
-import firemerald.mcms.theme.RoundedBoxFormat;
+import firemerald.mcms.theme.ThemeElement;
+import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MathUtil;
-import firemerald.mcms.util.RenderUtil;
+import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.window.api.Cursor;
 
 public class ScrollableComponentPane extends ComponentPane implements IScrollable, IScrollableHorizontal
 {
@@ -18,15 +19,15 @@ public class ScrollableComponentPane extends ComponentPane implements IScrollabl
 	public int width = 0;
 	protected float scrollH = 0;
 	protected float scrollSizeH = 0;
-	public final Mesh border = new Mesh(), inside = new Mesh();
-	public RoundedBoxFormat rect;
+	public final Mesh border = new Mesh();
+	public ThemeElement rect;
 	public float h = 0, w = 0;
 	public ScrollBar scrollBar = null;
 	public ScrollBarH scrollBarH = null;
 	
-	public ScrollableComponentPane(float x1, float y1, float x2, float y2)
+	public ScrollableComponentPane(int x1, int y1, int x2, int y2)
 	{
-		super(x1, y1, x2, y2);
+		super(x1, y1, x2, y2, 1);
 		setSize(x1, y1, x2, y2);
 	}
 	
@@ -43,29 +44,39 @@ public class ScrollableComponentPane extends ComponentPane implements IScrollabl
 	}
 	
 	@Override
-	public void setSize(float x1, float y1, float x2, float y2)
+	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		super.setSize(x1, y1, x2, y2);
 		h = y2 - y1;
 		w = x2 - x1;
 		updateScrollSize();
 		border.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
-		inside.setMesh(x1 + 1, y1 + 1, x2 - 1, y2 - 1, 0, 0, 0, 1, 1);
-		rect = new RoundedBoxFormat((int) (x2 - x1), (int) (y2 - y1));
+		onGuiUpdate(GuiUpdate.THEME);
+	}
+	
+	@Override
+	public void onGuiUpdate(GuiUpdate reason)
+	{
+		super.onGuiUpdate(reason);
+		if (reason == GuiUpdate.THEME)
+		{
+			if (rect != null) rect.release();
+			rect = getTheme().genBox(x2 - x1, y2 - y1, 1);
+		}
 	}
 	
 	public void updateComponentSize()
 	{
 		float w = 0, h = 0;
-		for (IGuiElement el : this.guiElements)
+		for (IGuiElement el : this.getElementsCopy())
 		{
 			float x = el.getX2();
 			if (x > w) w = x;
 			float y = el.getY2();
 			if (y > h) h = y;
 		}
-		height = MathUtil.ceil(h);
-		width = MathUtil.ceil(w);
+		height = MathUtil.ceil(h) + margin * 2;
+		width = MathUtil.ceil(w) + margin * 2;
 	}
 	
 	public void updateScrollSize()
@@ -94,9 +105,9 @@ public class ScrollableComponentPane extends ComponentPane implements IScrollabl
 	}
 
 	@Override
-	public void onDrag(float mx, float my)
+	public void onDrag(float mx, float my, int button)
 	{
-		super.onDrag(mx + scrollH, my + scroll);
+		super.onDrag(mx + scrollH, my + scroll, button);
 	}
 	
 	@Override
@@ -138,36 +149,53 @@ public class ScrollableComponentPane extends ComponentPane implements IScrollabl
 			scrollH -= scrollX * 4;
 			if (scrollH < 0) scrollH = 0;
 			else if (scrollH > scrollSizeH) scrollH = scrollSizeH;
+			onScrolledH();
 		}
 		if (!hScrollV)
 		{
 			scroll -= scrollY * 4;
 			if (scroll < 0) scroll = 0;
 			else if (scroll > scrollSize) scroll = scrollSize;
+			onScrolled();
 		}
 		//TODO if (mouseDown) onDrag(mx, my); //Because it's kinda a drag XD
+	}
+	
+	public void onScrolled() {}
+	
+	public void onScrolledH() {}
+	
+	@Override
+	public int getComponentOffsetX()
+	{
+		return super.getComponentOffsetX() + (int) Math.floor(scrollH);
+	}
+	
+	@Override
+	public int getComponentOffsetY()
+	{
+		return super.getComponentOffsetY() + (int) Math.floor(scroll);
 	}
 
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
 		Main main = Main.instance;
-		getTheme().bindRoundedBox(rect);
+		rect.bind();
 		border.render();
-		main.textureManager.unbindTexture();
-		main.shader.setColor(1, 1, 1, 1);
-		RenderUtil.pushStencil();
-		RenderUtil.startStencil(false);
-		inside.render();
-		RenderUtil.endStencil();
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(-scrollH, -scroll, 0);
-		main.shader.updateModel();
 		super.render(mx + scrollH, my + scroll, canHover);
 		Shader.MODEL.pop();
 		main.shader.updateModel();
-		//TODO rendering
-		RenderUtil.popStencil();
+	}
+	
+	@Override
+	public void renderStencilArea()
+	{
+		Main.instance.textureManager.unbindTexture();
+		inside.render();
+		Shader.MODEL.push();
+		Shader.MODEL.matrix().translate(-scrollH, -scroll, 0);
+		Main.instance.shader.updateModel();
 	}
 	
 	@Override
@@ -183,7 +211,7 @@ public class ScrollableComponentPane extends ComponentPane implements IScrollabl
 	}
 	
 	@Override
-	public long getCursor(float mx, float my)
+	public Cursor getCursor(float mx, float my)
 	{
 		return super.getCursor(mx + scrollH, my + scroll);
 	}
@@ -204,6 +232,7 @@ public class ScrollableComponentPane extends ComponentPane implements IScrollabl
 	public void setScroll(float scroll)
 	{
 		this.scroll = scroll;
+		onScrolled();
 	}
 
 	@Override
@@ -222,5 +251,6 @@ public class ScrollableComponentPane extends ComponentPane implements IScrollabl
 	public void setScrollH(float scrollH)
 	{
 		this.scrollH = scrollH;
+		onScrolledH();
 	}
 }

@@ -74,4 +74,10 @@ public class HSV extends ColorModel
 		float s = (l == 0 || l == 1) ? 0 : (v * this.s) / (1 - Math.abs(2 * l - 1));
 		return new HSL(h, s, l);
 	}
+
+	@Override
+	public HSV copy()
+	{
+		return new HSV(h, s, v);
+	}
 }

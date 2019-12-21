@@ -2,73 +2,101 @@ package firemerald.mcms.gui.components.text;
 
 import java.util.function.Consumer;
 
-import firemerald.mcms.Main;
-import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.texture.Color;
-import firemerald.mcms.util.FontRenderer;
+import firemerald.mcms.util.font.FontRenderer;
 
 public class ComponentTextInt extends ComponentText
 {
-	public static ComponentTextInt makeIntControl(GuiElementContainer container, float x, float y, float w, int val, int min, int max, int increment, Consumer<Integer> onValueChange)
-	{
-		ComponentTextInt text;
-		container.addElement(text = new ComponentTextInt(x, y, x + w - 10, y + 20, Main.instance.fontMsg, val, min, max, onValueChange));
-		container.addElement(new ComponentIncrementInt(x + w - 10, y, text, 1));
-		container.addElement(new ComponentIncrementInt(x + w - 10, y + 10, text, -1));
-		return text;
-	}
-	
-	public static ComponentTextInt makeIntControl(GuiElementContainer container, float x, float y, float w, int val, int min, int max, int increment)
-	{
-		return makeIntControl(container, x, y, w, val, min, max, increment, null);
-	}
-	
 	protected int val;
 	protected int min, max;
 	protected boolean error = false;
 	private final Consumer<Integer> onValueChange;
+	private final String ambient;
 	
-	public ComponentTextInt(float x1, float y1, float x2, float y2, FontRenderer font, int val, int min, int max, Consumer<Integer> onValueChange)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int val, int min, int max, Consumer<Integer> onValueChange)
+	{
+		this(x1, y1, x2, y2, font, val, min, max, onValueChange, null);
+	}
+	
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int min, int max, Consumer<Integer> onValueChange)
+	{
+		this(x1, y1, x2, y2, font, 0, min, max, onValueChange, null);
+	}
+	
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int val, Consumer<Integer> onValueChange)
+	{
+		this(x1, y1, x2, y2, font, val, Integer.MIN_VALUE, Integer.MAX_VALUE, onValueChange, null);
+	}
+	
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Consumer<Integer> onValueChange)
+	{
+		this(x1, y1, x2, y2, font, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, onValueChange, null);
+	}
+	
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int val, int min, int max)
+	{
+		this(x1, y1, x2, y2, font, val, min, max, null, null);
+	}
+	
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int min, int max)
+	{
+		this(x1, y1, x2, y2, font, 0, min, max, (String) null);
+	}
+	
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int val)
+	{
+		this(x1, y1, x2, y2, font, val, Integer.MIN_VALUE, Integer.MAX_VALUE, (String) null);
+	}
+	
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font)
+	{
+		this(x1, y1, x2, y2, font, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, (String) null);
+	}
+	
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Integer val, int min, int max, Consumer<Integer> onValueChange, String ambient)
 	{
 		super(x1, y1, x2, y2, font, null);
 		setBounds(min, max);
-		setVal(val);
+		if (val != null) setVal(val);
+		else if (ambient == null) setVal(0);
+		else setText("");
 		this.onValueChange = onValueChange;
+		this.ambient = ambient;
 	}
 	
-	public ComponentTextInt(float x1, float y1, float x2, float y2, FontRenderer font, int min, int max, Consumer<Integer> onValueChange)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int min, int max, Consumer<Integer> onValueChange, String ambient)
 	{
-		this(x1, y1, x2, y2, font, 0, min, max, onValueChange);
+		this(x1, y1, x2, y2, font, null, min, max, onValueChange, ambient);
 	}
 	
-	public ComponentTextInt(float x1, float y1, float x2, float y2, FontRenderer font, int val, Consumer<Integer> onValueChange)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Integer val, Consumer<Integer> onValueChange, String ambient)
 	{
-		this(x1, y1, x2, y2, font, val, Integer.MIN_VALUE, Integer.MAX_VALUE, onValueChange);
+		this(x1, y1, x2, y2, font, val, Integer.MIN_VALUE, Integer.MAX_VALUE, onValueChange, ambient);
 	}
 	
-	public ComponentTextInt(float x1, float y1, float x2, float y2, FontRenderer font, Consumer<Integer> onValueChange)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Consumer<Integer> onValueChange, String ambient)
 	{
-		this(x1, y1, x2, y2, font, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, onValueChange);
+		this(x1, y1, x2, y2, font, null, Integer.MIN_VALUE, Integer.MAX_VALUE, onValueChange, ambient);
 	}
 	
-	public ComponentTextInt(float x1, float y1, float x2, float y2, FontRenderer font, int val, int min, int max)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Integer val, int min, int max, String ambient)
 	{
-		this(x1, y1, x2, y2, font, val, min, max, null);
+		this(x1, y1, x2, y2, font, val, min, max, null, ambient);
 	}
 	
-	public ComponentTextInt(float x1, float y1, float x2, float y2, FontRenderer font, int min, int max)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int min, int max, String ambient)
 	{
-		this(x1, y1, x2, y2, font, 0, min, max);
+		this(x1, y1, x2, y2, font, (Integer) null, min, max, ambient);
 	}
 	
-	public ComponentTextInt(float x1, float y1, float x2, float y2, FontRenderer font, int val)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Integer val, String ambient)
 	{
-		this(x1, y1, x2, y2, font, val, Integer.MIN_VALUE, Integer.MAX_VALUE);
+		this(x1, y1, x2, y2, font, val, Integer.MIN_VALUE, Integer.MAX_VALUE, ambient);
 	}
 	
-	public ComponentTextInt(float x1, float y1, float x2, float y2, FontRenderer font)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, String ambient)
 	{
-		this(x1, y1, x2, y2, font, 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
+		this(x1, y1, x2, y2, font, (Integer) null, Integer.MIN_VALUE, Integer.MAX_VALUE, ambient);
 	}
 	
 	public void setVal(int val)
@@ -126,9 +154,20 @@ public class ComponentTextInt extends ComponentText
 		}
 	}
 	
+	public boolean isValid()
+	{
+		return !error || (ambient != null && text.length() == 0);
+	}
+	
+	@Override
+	public String getDisplayString()
+	{
+		return text.length() == 0 && ambient != null ? ambient : super.getDisplayString();
+	}
+	
 	@Override
 	public Color getTextColor()
 	{
-		return error ? Color.RED : getTheme().getTextColor();
+		return text.length() == 0 && ambient != null ? new Color(super.getTextColor(), .25f) : error ? Color.RED : super.getTextColor();
 	}
 }

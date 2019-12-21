@@ -2,16 +2,15 @@ package firemerald.mcms.api.model;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import firemerald.mcms.api.animation.AnimationState;
+import org.joml.Matrix4d;
+
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
-import firemerald.mcms.api.math.Matrix4;
 import firemerald.mcms.api.util.RaytraceResult;
-import firemerald.mcms.model.IEditable;
+import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.model.RenderObjectComponents;
 
 public class MultiModel implements IModel
@@ -21,14 +20,34 @@ public class MultiModel implements IModel
 	
 	public MultiModel() {}
 	
+	public MultiModel(AbstractElement el)
+	{
+		load(el);
+	}
+	
 	public MultiModel(List<Bone> base)
 	{
 		setBase(base);
 	}
 	
-	public List<Bone> getBase()
+	@Override
+	public List<Bone> getRootBones()
 	{
 		return base;
+	}
+
+	@Override
+	public Collection<Bone> getAllBones()
+	{
+		return bones;
+	}
+	
+	@Override
+	public boolean addRootBone(Bone bone, boolean updateBoneList)
+	{
+		base.add(bone);
+		if (updateBoneList) this.updateBonesList();
+		return true;
 	}
 	
 	public void setBase(List<Bone> base)
@@ -66,16 +85,7 @@ public class MultiModel implements IModel
 	}
 	
 	@Override
-	public Map<String, Matrix4> getPose(AnimationState... anims)
-	{
-		Map<String, Matrix4> map = new HashMap<>();
-		for (Bone base : this.base) base.setDefTransform(map);
-		for (AnimationState state : anims) map = state.anim.getBones(map, state.time, bones);
-		return map;
-	}
-	
-	@Override
-	public void render(Map<String, Matrix4> map)
+	public void render(Map<String, Matrix4d> map)
 	{
 		for (Bone base : this.base) base.render(map);
 	}
@@ -87,13 +97,13 @@ public class MultiModel implements IModel
 	}
 
 	@Override
-	public RaytraceResult rayTrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4> transformations)
+	public RaytraceResult rayTrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> transformations)
 	{
 		RaytraceResult result = null;
 		for (Bone bone : base)
 		{
-			Matrix4 transformation = transformations.get(bone.name);
-			if (transformation == null) transformation = new Matrix4();
+			Matrix4d transformation = transformations.get(bone.name);
+			if (transformation == null) transformation = new Matrix4d();
 			RaytraceResult res = bone.raytrace(fx, fy, fz, dx, dy, dz, transformations, transformation);
 			if (res != null && (result == null || res.m < result.m)) result = res;
 		}
@@ -101,7 +111,7 @@ public class MultiModel implements IModel
 	}
 
 	@Override
-	public Collection<? extends IEditable> getChildren()
+	public Collection<? extends IModelEditable> getChildren()
 	{
 		return base;
 	}
@@ -113,19 +123,19 @@ public class MultiModel implements IModel
 	}
 
 	@Override
-	public boolean canBeChild(IEditable candidate)
+	public boolean canBeChild(IModelEditable candidate)
 	{
 		return candidate instanceof Bone;
 	}
 
 	@Override
-	public void addChild(IEditable child)
+	public void addChild(IModelEditable child)
 	{
 		if (child instanceof Bone && !this.base.contains(child)) this.addBaseBone((Bone) child);
 	}
 
 	@Override
-	public void addChildBefore(IEditable child, IEditable position)
+	public void addChildBefore(IModelEditable child, IModelEditable position)
 	{
 		if (child instanceof Bone && !this.base.contains(child))
 		{
@@ -137,7 +147,7 @@ public class MultiModel implements IModel
 	}
 
 	@Override
-	public void addChildAfter(IEditable child, IEditable position)
+	public void addChildAfter(IModelEditable child, IModelEditable position)
 	{
 		if (child instanceof Bone && !this.base.contains(child))
 		{
@@ -149,7 +159,7 @@ public class MultiModel implements IModel
 	}
 
 	@Override
-	public void removeChild(IEditable child)
+	public void removeChild(IModelEditable child)
 	{
 		if (child instanceof Bone) this.base.remove(child);
 	}
@@ -169,7 +179,7 @@ public class MultiModel implements IModel
 	}
 
 	@Override
-	public void loadFromXML(AbstractElement root)
+	public void load(AbstractElement root)
 	{
 		base.clear();
 		for (AbstractElement el : root.getChildren())
@@ -196,5 +206,17 @@ public class MultiModel implements IModel
 			}
 		}
 		updateBonesList();
+	}
+
+	@Override
+	public void save(AbstractElement modelEl)
+	{
+		base.forEach(bone -> bone.addToXML(modelEl));
+	}
+
+	@Override
+	public void updateTex()
+	{
+		base.forEach(bone -> bone.updateTex());
 	}
 }

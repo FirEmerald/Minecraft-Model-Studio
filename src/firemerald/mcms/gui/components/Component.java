@@ -1,13 +1,31 @@
 package firemerald.mcms.gui.components;
 
-import firemerald.mcms.util.Cursors;
+import firemerald.mcms.Main;
+import firemerald.mcms.gui.IGuiHolder;
+import firemerald.mcms.theme.GuiTheme;
+import firemerald.mcms.window.api.Cursor;
+import firemerald.mcms.window.api.Key;
 
 public abstract class Component implements IComponent
 {
-	public float x1, y1, x2, y2;
+	protected GuiTheme theme = null;
+	public int x1, y1, x2, y2;
 	public boolean focused = false;
+	public IGuiHolder holder = null;
+
+	@Override
+	public void setHolder(IGuiHolder holder)
+	{
+		this.holder = holder;
+	}
 	
-	public Component(float x1, float y1, float x2, float y2)
+	@Override
+	public IGuiHolder getHolder()
+	{
+		return this.holder;
+	}
+	
+	public Component(int x1, int y1, int x2, int y2)
 	{
 		this.x1 = x1;
 		this.y1 = y1;
@@ -16,7 +34,7 @@ public abstract class Component implements IComponent
 	}
 	
 	@Override
-	public void setSize(float x1, float y1, float x2, float y2)
+	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		this.x1 = x1;
 		this.y1 = y1;
@@ -46,7 +64,7 @@ public abstract class Component implements IComponent
 	public void onMouseReleased(float mx, float my, int button, int mods) {}
 
 	@Override
-	public void onDrag(float mx, float my) {}
+	public void onDrag(float mx, float my, int button) {}
 
 	@Override
 	public void onMouseScroll(float mx, float my, float scrollX, float scrollY) {}
@@ -58,47 +76,59 @@ public abstract class Component implements IComponent
 	public void onCharTyped(char chr) {}
 
 	@Override
-	public void onKeyPressed(int key, int scancode, int mods) {}
+	public void onKeyPressed(Key key, int scancode, int mods) {}
 
 	@Override
-	public void onKeyReleased(int key, int scancode, int mods) {}
+	public void onKeyReleased(Key key, int scancode, int mods) {}
 
 	@Override
-	public void onKeyRepeat(int key, int scancode, int mods) {}
+	public void onKeyRepeat(Key key, int scancode, int mods) {}
 
 	@Override
-	public long getCursor(float mx, float my)
+	public Cursor getCursor(float mx, float my)
 	{
-		return Cursors.standard;
+		return Cursor.STANDARD;
 	}
 	
 	@Override
 	public boolean contains(float x, float y)
 	{
-		return (x >= x1 && y >= y1 && x < x2 && y < y2);
+		return (x >= getX1() && y >= getY1() && x < getX2() && y < getY2());
 	}
 	
 	@Override
-	public float getX1()
+	public int getX1()
 	{
 		return x1;
 	}
 	
 	@Override
-	public float getY1()
+	public int getY1()
 	{
 		return y1;
 	}
 	
 	@Override
-	public float getX2()
+	public int getX2()
 	{
 		return x2;
 	}
 	
 	@Override
-	public float getY2()
+	public int getY2()
 	{
 		return y2;
+	}
+	
+	@Override
+	public GuiTheme getTheme()
+	{
+		return theme == null ? Main.instance.getTheme() : theme;
+	}
+
+	@Override
+	public void setThemeOverride(GuiTheme theme)
+	{
+		this.theme = theme;
 	}
 }

@@ -13,14 +13,16 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
+import org.apache.logging.log4j.Level;
 import org.lwjgl.system.MemoryUtil;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.api.util.FileUtil;
 
 public class TextureManager
 {
 	private final Map<String, Integer> textureMap = new HashMap<>();
-	private final int missingTex, noTex;
+	public final int missingTex, noTex;
 	
 	public TextureManager()
 	{
@@ -82,13 +84,13 @@ public class TextureManager
 				catch (IOException e)
 				{
 					tex = new Integer(missingTex);
-					e.printStackTrace();
+					Main.LOGGER.log(Level.WARN, "Couldn't load texture " + texture, e);
 				}
-				FileUtils.closeSafe(in);
+				FileUtil.closeSafe(in);
 			}
 			else
 			{
-				new Exception("Missing texture: " + texture).printStackTrace();
+				Main.LOGGER.log(Level.WARN, new Exception("Missing texture: " + texture));
 				tex = new Integer(missingTex);
 			}
 			textureMap.put(texture, tex);
@@ -113,14 +115,14 @@ public class TextureManager
 			}
 			catch (IOException e)
 			{
-				e.printStackTrace();
+				Main.LOGGER.log(Level.WARN, "Couldn't load texture " + texture, e);
 			}
-			FileUtils.closeSafe(in);
+			FileUtil.closeSafe(in);
 			return data;
 		}
 		else
 		{
-			new Exception("Missing texture: " + texture).printStackTrace();
+			Main.LOGGER.log(Level.WARN, new Exception("Missing texture: " + texture));
 			return null;
 		}
 	}

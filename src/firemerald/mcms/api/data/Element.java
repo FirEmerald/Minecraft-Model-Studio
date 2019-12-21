@@ -35,7 +35,6 @@ import firemerald.mcms.api.data.attributes.AttributeShort;
 import firemerald.mcms.api.data.attributes.AttributeString;
 import firemerald.mcms.api.data.attributes.IAttribute;
 import firemerald.mcms.api.util.FileUtil;
-import firemerald.mcms.util.FileUtils;
 
 public class Element extends AbstractElement
 {
@@ -132,10 +131,10 @@ public class Element extends AbstractElement
 		}
 		catch (IOException e)
 		{
-			FileUtils.closeSafe(out);
+			FileUtil.closeSafe(out);
 			throw e;
 		}
-		FileUtils.closeSafe(out);
+		FileUtil.closeSafe(out);
 	}
 	
 	public void saveBinary(OutputStream out, BinaryFormat format) throws IOException
@@ -171,7 +170,7 @@ public class Element extends AbstractElement
 		{
 			out.write(CHILDREN);
 			FileUtil.writeInt(out, children.size());
-			for (Element child : children) ((Element) child).saveBinaryHeaderless(out, format);
+			for (Element child : children) child.saveBinaryHeaderless(out, format);
 		}
 		out.write(END);
 	}
@@ -311,11 +310,7 @@ public class Element extends AbstractElement
 			else if (!name.equals("#name"))
 			{
 				JsonElement element = entry.getValue();
-				if (element instanceof JsonPrimitive)
-				{
-					System.out.println(name);
-					setAttribute(name, (JsonPrimitive) element);
-				}
+				if (element instanceof JsonPrimitive) setAttribute(name, (JsonPrimitive) element);
 				else
 				{
 					if (element instanceof JsonObject)
@@ -538,11 +533,11 @@ public class Element extends AbstractElement
 		}
 		List<String> childNames = new ArrayList<>();
 		JsonObject obj = new JsonObject();
-		if (needsName) obj.addProperty("#name", getName());
-		if (value != null) obj.addProperty("#value", value);
+		if (needsName) obj.addProperty("\"#name\"", getName());
+		if (value != null) obj.addProperty("\"#value\"", value);
 		attributes.forEach((name, attr) -> {
 			childNames.add(name);
-			obj.add(name, attr.makeElement());
+			obj.add('"' + name + '"', attr.makeElement());
 		});
 		int i = 0;
 		for (Element child : children)
@@ -550,14 +545,15 @@ public class Element extends AbstractElement
 			String name = child.getName();
 			if (childNames.contains(name))
 			{
-				while (childNames.contains(name = "duplicate_name_" + (i++))) {};
+				String oldName = name;
+				while (childNames.contains(name = (0 == i++) ? (oldName + " (duplicate)") : (oldName + " (duplicate " + i + ")"))) {};
 				childNames.add(name);
-				obj.add(name, child.makeElement(true));
+				obj.add('"' + name + '"', child.makeElement(true));
 			}
 			else
 			{
 				childNames.add(name);
-				obj.add(name, child.makeElement(false));
+				obj.add('"' + name + '"', child.makeElement(false));
 			}
 		}
 		return obj;

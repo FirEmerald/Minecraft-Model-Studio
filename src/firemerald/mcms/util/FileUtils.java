@@ -12,12 +12,12 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Base64;
 
-import org.apache.logging.log4j.Level;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.util.nfd.NFDPathSet;
 import org.lwjgl.util.nfd.NativeFileDialog;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.api.util.FileUtil;
 
 public class FileUtils
 {
@@ -54,11 +54,7 @@ public class FileUtils
 		{
 			throw new IllegalStateException(t);
 		}
-		if (reader != null) try
-		{
-			reader.close();
-		}
-		catch (Throwable t) {}
+		FileUtil.closeSafe(reader);
 		return str;
 	}
 	
@@ -108,46 +104,40 @@ public class FileUtils
 	
 	public static File getOpenFile(CharSequence filter, CharSequence directory)
 	{
+		long n = System.nanoTime();
+		File file;
 		PointerBuffer output = PointerBuffer.allocateDirect(1);
 		int status = NativeFileDialog.NFD_OpenDialog(filter, directory, output);
 		switch (status)
 		{
-		case NativeFileDialog.NFD_CANCEL:
-			return null;
+		case NativeFileDialog.NFD_OKAY:
+			String fileName = output.getStringUTF8(0);
+			NativeFileDialog.nNFD_Free(output.get(0));
+			file = new File(fileName);
+			break;
 		case NativeFileDialog.NFD_ERROR:
 			Main.LOGGER.error("Error in open file dialog");
 			Main.LOGGER.error("==========================");
 			String err;
 			while ((err = NativeFileDialog.NFD_GetError()) != null) Main.LOGGER.error("* " + err);
 			Main.LOGGER.error("==========================");
-			return null;
-		case NativeFileDialog.NFD_OKAY:
-			String file = output.getStringUTF8(0);
-			NativeFileDialog.nNFD_Free(output.get(0));
-			return new File(file);
+		case NativeFileDialog.NFD_CANCEL:
 		default:
-			return null;
+			file = null;
+			break;
 		}
+		Main.instance.lastNanos += (System.nanoTime() - n);
+		return file;
 	}
 	
 	public static File[] getOpenFiles(CharSequence filter, CharSequence directory)
 	{
+		long n = System.nanoTime();
 		File[] files;
 		NFDPathSet pathSet = NFDPathSet.calloc();
 		int status = NativeFileDialog.NFD_OpenDialogMultiple(filter, directory, pathSet);
 		switch (status)
 		{
-		case NativeFileDialog.NFD_CANCEL:
-			files = new File[0];
-			break;
-		case NativeFileDialog.NFD_ERROR:
-			Main.LOGGER.error("Error in open files dialog");
-			Main.LOGGER.error("==========================");
-			String err;
-			while ((err = NativeFileDialog.NFD_GetError()) != null) Main.LOGGER.error("* " + err);
-			Main.LOGGER.error("==========================");
-			files = new File[0];
-			break;
 		case NativeFileDialog.NFD_OKAY:
             int count = (int) NativeFileDialog.NFD_PathSet_GetCount(pathSet);
             files = new File[count];
@@ -158,58 +148,72 @@ public class FileUtils
             }
     		NativeFileDialog.NFD_PathSet_Free(pathSet);
     		break;
+		case NativeFileDialog.NFD_ERROR:
+			Main.LOGGER.error("Error in open files dialog");
+			Main.LOGGER.error("==========================");
+			String err;
+			while ((err = NativeFileDialog.NFD_GetError()) != null) Main.LOGGER.error("* " + err);
+			Main.LOGGER.error("==========================");
+		case NativeFileDialog.NFD_CANCEL:
 		default:
 			files = new File[0];
+			break;
 		}
+		Main.instance.lastNanos += (System.nanoTime() - n);
 		return files;
 	}
 	
 	public static File getSaveFile(CharSequence filter, CharSequence directory)
 	{
+		long n = System.nanoTime();
+		File file;
 		PointerBuffer output = PointerBuffer.allocateDirect(1);
 		int status = NativeFileDialog.NFD_SaveDialog(filter, directory, output);
 		switch (status)
 		{
-		case NativeFileDialog.NFD_CANCEL:
-			return null;
+		case NativeFileDialog.NFD_OKAY:
+			String fileName = output.getStringUTF8(0);
+			NativeFileDialog.nNFD_Free(output.get(0));
+			file = new File(fileName);
+			break;
 		case NativeFileDialog.NFD_ERROR:
 			Main.LOGGER.error("Error in save file dialog");
-			Main.LOGGER.error("==========================");
-			String err;
-			while ((err = NativeFileDialog.NFD_GetError()) != null) Main.LOGGER.error("* " + err);
-			Main.LOGGER.error("==========================");
-			return null;
-		case NativeFileDialog.NFD_OKAY:
-			String file = output.getStringUTF8(0);
-			NativeFileDialog.nNFD_Free(output.get(0));
-			return new File(file);
+			Main.LOGGER.error("* " + NativeFileDialog.NFD_GetError());
+		case NativeFileDialog.NFD_CANCEL:
 		default:
-			return null;
+			file = null;
+			break;
 		}
+		Main.instance.lastNanos += (System.nanoTime() - n);
+		return file;
 	}
 	
 	public static File getFolder(CharSequence directory)
 	{
+		long n = System.nanoTime();
+		File file;
 		PointerBuffer output = PointerBuffer.allocateDirect(1);
 		int status = NativeFileDialog.NFD_PickFolder(directory, output);
 		switch (status)
 		{
-		case NativeFileDialog.NFD_CANCEL:
-			return null;
+		case NativeFileDialog.NFD_OKAY:
+			String path = output.getStringUTF8(0);
+			NativeFileDialog.nNFD_Free(output.get(0));
+			file = new File(path);
+			break;
 		case NativeFileDialog.NFD_ERROR:
 			Main.LOGGER.error("Error in folder dialog");
 			Main.LOGGER.error("==========================");
 			String err;
 			while ((err = NativeFileDialog.NFD_GetError()) != null) Main.LOGGER.error("* " + err);
 			Main.LOGGER.error("==========================");
-			return null;
-		case NativeFileDialog.NFD_OKAY:
-			String path = output.getStringUTF8(0);
-			NativeFileDialog.nNFD_Free(output.get(0));
-			return new File(path);
+		case NativeFileDialog.NFD_CANCEL:
 		default:
-			return null;
+			file = null;
+			break;
 		}
+		Main.instance.lastNanos += (System.nanoTime() - n);
+		return file;
 	}
 	
 	public static String encode64(InputStream in) throws IOException
@@ -240,29 +244,5 @@ public class FileUtils
 	public static byte[] decode64(String str)
 	{
 		return Base64.getDecoder().decode(str);
-	}
-	
-	public static void closeSafe(InputStream in)
-	{
-		if (in != null) try
-		{
-			in.close();
-		}
-		catch (IOException e)
-		{
-			Main.LOGGER.log(Level.WARN, "Failed to close input stream", e);
-		}
-	}
-	
-	public static void closeSafe(OutputStream out)
-	{
-		if (out != null) try
-		{
-			out.close();
-		}
-		catch (IOException e)
-		{
-			Main.LOGGER.log(Level.WARN, "Failed to close output stream", e);
-		}
 	}
 }

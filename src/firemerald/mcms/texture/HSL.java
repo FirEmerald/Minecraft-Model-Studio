@@ -74,4 +74,10 @@ public class HSL extends ColorModel
 	{
 		return this;
 	}
+
+	@Override
+	public HSL copy()
+	{
+		return new HSL(h, s, l);
+	}
 }

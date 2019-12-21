@@ -1,51 +1,80 @@
 package firemerald.mcms.gui;
 
-import org.lwjgl.glfw.GLFW;
+import java.util.HashMap;
+import java.util.Map;
 
 import firemerald.mcms.Main;
 
 public abstract class GuiScreen extends GuiElementContainer
 {
-	protected boolean mouseDown = false, clicked = false;
-	protected float pmx, pmy;
+	protected final Map<Integer, Boolean> pressed = new HashMap<>();
+	public IGuiHolder holder = null;
+
+	@Override
+	public void setHolder(IGuiHolder holder)
+	{
+		this.holder = holder;
+	}
+	
+	@Override
+	public IGuiHolder getHolder()
+	{
+		return this.holder;
+	}
+
+	@Override
+	public int getComponentOffsetX()
+	{
+		return 0;
+	}
+
+	@Override
+	public int getComponentOffsetY()
+	{
+		return 0;
+	}
 	
 	public abstract void setSize(int w, int h);
 	
-	@Override
-	public void tick(float mx, float my, float deltaTime)
+	public void onMouseMoved(float mx, float my)
 	{
-		super.tick(mx, my, deltaTime);
-		if (GLFW.glfwGetMouseButton(Main.instance.window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS)
-		{
-			if (!mouseDown) clicked = true;
-			else if (clicked && (mx != pmx || my != pmy)) onDrag(mx, my);
-			mouseDown = true;
-		}
-		else mouseDown = clicked = false;
-		pmx = mx;
-		pmy = my;
+		pressed.forEach((button, isPressed) -> {if (isPressed) onDrag(mx, my, button);});
+	}
+
+	@Override
+	public void onMousePressed(float mx, float my, int button, int mods)
+	{
+		pressed.put(button, true);
+		super.onMousePressed(mx, my, button, mods);
+	}
+
+	@Override
+	public void onMouseReleased(float mx, float my, int button, int mods)
+	{
+		pressed.put(button, false);
+		super.onMouseReleased(mx, my, button, mods);
 	}
 	
 	@Override
-	public float getX1()
-	{
-		return 0;
-	}
-	
-	@Override
-	public float getY1()
+	public int getX1()
 	{
 		return 0;
 	}
 	
 	@Override
-	public float getX2()
+	public int getY1()
+	{
+		return 0;
+	}
+	
+	@Override
+	public int getX2()
 	{
 		return Main.instance.sizeW;
 	}
 	
 	@Override
-	public float getY2()
+	public int getY2()
 	{
 		return Main.instance.sizeH;
 	}

@@ -6,16 +6,18 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
+import org.joml.Matrix3d;
+import org.joml.Matrix4d;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
+
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.math.Matrix3;
-import firemerald.mcms.api.math.Matrix4;
-import firemerald.mcms.api.math.Vec2;
-import firemerald.mcms.api.math.Vec3;
-import firemerald.mcms.api.math.Vec4;
+import firemerald.mcms.api.math.MathUtils;
 
 public class ObjModelDisplayList extends ObjModel
 {
-	public ObjModelDisplayList(File modelFile, Skeleton skeleton) throws Exception
+	public ObjModelDisplayList(File modelFile, ISkeleton skeleton) throws Exception
 	{
 		super(modelFile, skeleton);
 	}
@@ -25,17 +27,17 @@ public class ObjModelDisplayList extends ObjModel
 		super(modelFile, skeleton);
 	}
 	*/
-	public ObjModelDisplayList(InputStream model, String modelName, Skeleton skeleton) throws Exception
+	public ObjModelDisplayList(InputStream model, String modelName, ISkeleton skeleton) throws Exception
 	{
 		super(model, modelName, skeleton);
 	}
 
 	@Override
-	protected Bone makeObj(String name, Transformation transform, Bone parent, List<int[][]> mesh, ObjData obj, Skeleton skeleton)
+	protected Bone makeObj(String name, Transformation transform, Bone parent, List<int[][]> mesh, ObjData obj, ISkeleton skeleton)
 	{
-		Matrix4 m = skeleton.inverts.get(name);
-		Matrix3 n = null;
-		if (m != null) n = m.transpose3().invert();
+		Matrix4d m = skeleton.getInverseTransforms().get(name);
+		Matrix3d n = null;
+		if (m != null) n = m.transpose3x3(new Matrix3d()).invert();
 		int drawMode = -1;
 		int list = glGenLists(1);
 		glNewList(list, GL_COMPILE);
@@ -65,21 +67,21 @@ public class ObjModelDisplayList extends ObjModel
 					int norm = data[2];
 					if (norm >= 0)
 					{
-						Vec3 normal = obj.vertexNormals.get(norm);
-						if (n != null) normal = n.mul(normal, new Vec3());
-						glNormal3d(normal.x(), normal.y(), normal.z());
+						Vector3f normal = obj.vertexNormals.get(norm);
+						if (n != null) normal = n.transform(normal, new Vector3f());
+						glNormal3f(normal.x(), normal.y(), normal.z());
 					}
 					else glNormal3f(0, 0, 0);
 					if (tex >= 0)
 					{
-						Vec2 texture = obj.textureCoordinates.get(tex);
-						glTexCoord2d(texture.x(), texture.y());
+						Vector2f texture = obj.textureCoordinates.get(tex);
+						glTexCoord2f(texture.x(), texture.y());
 					}
 					else glTexCoord2f(0, 0);
-					Vec3 vertex = obj.vertices.get(vert);
-					Vec4 vertexVec = new Vec4(vertex, 1);
-					if (m != null) vertexVec = m.mul(vertexVec, new Vec4());
-					glVertex3d(vertexVec.x(), vertexVec.y(), vertexVec.z());
+					Vector3f vertex = obj.vertices.get(vert);
+					Vector4f vertexVec = new Vector4f(vertex, 1);
+					if (m != null) vertexVec = MathUtils.toVector4f(m.transform(MathUtils.toVector4d(vertexVec)));
+					glVertex3f(vertexVec.x(), vertexVec.y(), vertexVec.z());
 				}
 			}
 		}

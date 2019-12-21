@@ -10,11 +10,11 @@ out vec3 outNormal;
 uniform mat4 modelMatrix;
 uniform mat4 viewProjectionMatrix;
 uniform mat3 normalMatrix;
-uniform mat3 textureMatrix;
+uniform mat4 textureMatrix;
 
 void main()
 {
     gl_Position = viewProjectionMatrix * modelMatrix * vec4(vertex, 1.0);
 	outNormal = normalMatrix * normal;
-    outTexCoord = (textureMatrix * vec3(texCoord, 1.0)).xy;
+    outTexCoord = (textureMatrix * vec4(texCoord, 0.0, 1.0)).xy;
 }

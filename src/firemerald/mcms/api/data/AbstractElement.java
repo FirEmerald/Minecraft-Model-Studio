@@ -79,11 +79,29 @@ public abstract class AbstractElement
 		return getAttribute(attr).getByte();
 	}
 	
+	public byte getByte(String attr, byte min, byte max) throws Exception
+	{
+		byte val = getByte(attr);
+		return val <= min ? min : val >= max ? max : val;
+	}
+	
 	public byte getByte(String attr, byte def)
 	{
 		try
 		{
 			return getByte(attr);
+		}
+		catch (Exception e)
+		{
+			return def;
+		}
+	}
+	
+	public byte getByte(String attr, byte min, byte max, byte def)
+	{
+		try
+		{
+			return getByte(attr, min, max);
 		}
 		catch (Exception e)
 		{
@@ -101,11 +119,29 @@ public abstract class AbstractElement
 		return getAttribute(attr).getShort();
 	}
 	
+	public short getShort(String attr, short min, short max) throws Exception
+	{
+		short val = getShort(attr);
+		return val <= min ? min : val >= max ? max : val;
+	}
+	
 	public short getShort(String attr, short def)
 	{
 		try
 		{
 			return getShort(attr);
+		}
+		catch (Exception e)
+		{
+			return def;
+		}
+	}
+	
+	public short getShort(String attr, short min, short max, short def)
+	{
+		try
+		{
+			return getShort(attr, min, max);
 		}
 		catch (Exception e)
 		{
@@ -123,11 +159,29 @@ public abstract class AbstractElement
 		return getAttribute(attr).getInt();
 	}
 	
+	public int getInt(String attr, int min, int max) throws Exception
+	{
+		int val = getInt(attr);
+		return val <= min ? min : val >= max ? max : val;
+	}
+	
 	public int getInt(String attr, int def)
 	{
 		try
 		{
 			return getInt(attr);
+		}
+		catch (Exception e)
+		{
+			return def;
+		}
+	}
+	
+	public int getInt(String attr, int min, int max, int def)
+	{
+		try
+		{
+			return getInt(attr, min, max);
 		}
 		catch (Exception e)
 		{
@@ -145,11 +199,29 @@ public abstract class AbstractElement
 		return getAttribute(attr).getLong();
 	}
 	
+	public long getLong(String attr, long min, long max) throws Exception
+	{
+		long val = getLong(attr);
+		return val <= min ? min : val >= max ? max : val;
+	}
+	
 	public long getLong(String attr, long def)
 	{
 		try
 		{
 			return getLong(attr);
+		}
+		catch (Exception e)
+		{
+			return def;
+		}
+	}
+	
+	public long getLong(String attr, long min, long max, long def)
+	{
+		try
+		{
+			return getLong(attr, min, max);
 		}
 		catch (Exception e)
 		{
@@ -167,11 +239,29 @@ public abstract class AbstractElement
 		return getAttribute(attr).getFloat();
 	}
 	
+	public float getFloat(String attr, float min, float max) throws Exception
+	{
+		float val = getFloat(attr);
+		return val <= min ? min : val >= max ? max : val;
+	}
+	
 	public float getFloat(String attr, float def)
 	{
 		try
 		{
 			return getFloat(attr);
+		}
+		catch (Exception e)
+		{
+			return def;
+		}
+	}
+	
+	public float getFloat(String attr, float min, float max, float def)
+	{
+		try
+		{
+			return getFloat(attr, min, max);
 		}
 		catch (Exception e)
 		{
@@ -189,11 +279,29 @@ public abstract class AbstractElement
 		return getAttribute(attr).getDouble();
 	}
 	
+	public double getDouble(String attr, double min, double max) throws Exception
+	{
+		double val = getDouble(attr);
+		return val <= min ? min : val >= max ? max : val;
+	}
+	
 	public double getDouble(String attr, double def)
 	{
 		try
 		{
 			return getDouble(attr);
+		}
+		catch (Exception e)
+		{
+			return def;
+		}
+	}
+	
+	public double getDouble(String attr, double min, double max, double def)
+	{
+		try
+		{
+			return getDouble(attr, min, max);
 		}
 		catch (Exception e)
 		{
@@ -284,7 +392,7 @@ public abstract class AbstractElement
 	
 	protected Element toElement(Element parent)
 	{
-		Element el = (Element) parent.addChild(getName());
+		Element el = parent.addChild(getName());
 		copyTo(el);
 		return el;
 	}

@@ -1,8 +1,8 @@
 package firemerald.mcms.model;
 
-import firemerald.mcms.api.math.Matrix4;
+import org.joml.Matrix4d;
 
 public interface ITransformed
 {
-	public Matrix4 getTransformation();
+	public Matrix4d getTransformation();
 }

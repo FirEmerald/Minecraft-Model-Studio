@@ -7,7 +7,7 @@ public abstract class ComponentPaneColorPicker extends ComponentPane
 {
 	public boolean hasChanged = false;
 	
-	public ComponentPaneColorPicker(float x1, float y1, float x2, float y2)
+	public ComponentPaneColorPicker(int x1, int y1, int x2, int y2)
 	{
 		super(x1, y1, x2, y2);
 	}

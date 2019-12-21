@@ -1,12 +1,14 @@
 package firemerald.mcms.api.animation;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
-import firemerald.mcms.api.math.Matrix4;
-import firemerald.mcms.api.model.Bone;
+import org.joml.Matrix4d;
 
-public interface IAnimation
+import firemerald.mcms.api.model.Bone;
+import firemerald.mcms.api.util.ISaveable;
+
+public interface IAnimation extends ISaveable
 {
 	/**
 	 * gets the transformation matrices to apply to the given bones.
@@ -17,5 +19,11 @@ public interface IAnimation
 	 * @param bones the model's bones
 	 * @return a map paring bones to transformation matrices
 	 */
-	public Map<String, Matrix4> getBones(Map<String, Matrix4> map, float frame, List<Bone> bones);
-}
+	public Map<String, Matrix4d> getBones(Map<String, Matrix4d> map, float frame, Collection<Bone> bones);
+	
+	/**
+	 * gets the animation's running length, or loop length for looping animations. This can be used to detect when an animation has completed.
+	 * @return the animation's total length (use {@link Float#POSITIVE_INFINITY} for custom animations that have no specified length)
+	 */
+	public float getLength();
+} 

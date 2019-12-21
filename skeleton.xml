@@ -1,5 +1,0 @@
-<skeleton>
-	<bone boneName="bone name" x="x position" y="y position" z="z position" qX = "quaternion X" qY = "quaternion Y" qZ = "quaternion Z" qW = "quaternion W"/>
-		<bone boneName="child bone name" x="x position" y="y position" z="z position" qX = "quaternion X" qY = "quaternion Y" qZ = "quaternion Z" qW = "quaternion W"/>
-	</bone>
-</skeleton>

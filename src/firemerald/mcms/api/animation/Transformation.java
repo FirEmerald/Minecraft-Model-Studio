@@ -1,68 +1,21 @@
 package firemerald.mcms.api.animation;
 
+import org.joml.Matrix4d;
+import org.joml.Quaterniond;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
+
+import firemerald.mcms.Main;
 import firemerald.mcms.api.data.AbstractElement;
-import firemerald.mcms.api.math.Matrix4;
-import firemerald.mcms.api.math.Quaternion;
-import firemerald.mcms.api.math.Vec3;
+import firemerald.mcms.api.math.EulerXYZRotation;
+import firemerald.mcms.api.math.EulerZYXRotation;
+import firemerald.mcms.api.math.IRotation;
+import firemerald.mcms.api.math.QuaternionRotation;
 
 public class Transformation
 {
-	public Quaternion rotation;
-	public Vec3 translation;
-	public double rX, rY, rZ;
-	
-	public static final Transformation NONE = new Transformation();
-	
-	public static enum SaveType
-	{
-		NONE(false, false, false),
-		TRANSLATION(true, false, false),
-		EULER_XZY(false, true, false),
-		TRANSLATION_EULER_XZY(true, true, false),
-		QUATERNION(false, false, true),
-		TRANSLATION_QUATERNION(true, false, true),
-		EULER_XZY_QUATERNION(false, true, true),
-		FULL(true, true, true);
-		
-		public final boolean hasTranslation, hasEuler, hasQuaternion;
-		
-		SaveType(boolean hasTranslation, boolean hasEuler, boolean hasQuaternion)
-		{
-			this.hasTranslation = hasTranslation;
-			this.hasEuler = hasEuler;
-			this.hasQuaternion = hasQuaternion;
-		}
-		
-		public static SaveType getType(boolean hasTranslation, boolean hasEuler, boolean hasQuaternion)
-		{
-			if (hasTranslation)
-			{
-				if (hasEuler)
-				{
-					if (hasQuaternion) return FULL;
-					else return TRANSLATION_EULER_XZY;
-				}
-				else
-				{
-					if (hasQuaternion) return TRANSLATION_QUATERNION;
-					else return TRANSLATION;
-				}
-			}
-			else
-			{
-				if (hasEuler)
-				{
-					if (hasQuaternion) return EULER_XZY_QUATERNION;
-					else return EULER_XZY;
-				}
-				else
-				{
-					if (hasQuaternion) return QUATERNION;
-					else return NONE;
-				}
-			}
-		}
-	}
+	public IRotation rotation = IRotation.NONE;
+	public final Vector3f translation = new Vector3f();
 	
 	public static Transformation getFromChild(AbstractElement el, String name)
 	{
@@ -72,24 +25,15 @@ public class Transformation
 	
 	public Transformation(AbstractElement el)
 	{
-		SaveType type = el.getEnum("type", SaveType.values(), SaveType.NONE);
-		if (type.hasTranslation) loadTranslation(el);
-		if (type.hasEuler)
-		{
-			loadEuler(el);
-			if (type.hasQuaternion) loadQuaternion(el);
-			else updateFromEuler();
-		}
-		else if (type.hasQuaternion)
-		{
-			loadQuaternion(el);
-			Vec3 rot = rotation.toEulerXZY();
-			rX = rot.x();
-			rY = rot.y();
-			rZ = rot.z();
-		}
+		load(el);
 	}
 	
+	public void set(Transformation trans)
+	{
+		this.translation.set(trans.translation);
+		this.rotation = trans.rotation.copy();
+	}
+	/*
 	public void loadFromChild(AbstractElement el, String name)
 	{
 		for (AbstractElement child : el.getChildren()) if (child.getName().equals(name))
@@ -98,173 +42,115 @@ public class Transformation
 			break;
 		}
 	}
-	
+	*/
 	public void load(AbstractElement el)
 	{
-		SaveType type = el.getEnum("type", SaveType.values(), SaveType.NONE);
-		if (type.hasTranslation) loadTranslation(el);
-		else
+		translation.set(el.getFloat("tX", 0), el.getFloat("tY", 0), el.getFloat("tZ", 0));
+		String rotationType = el.getString("rotation", null);
+		if (rotationType != null) switch (rotationType)
 		{
-			translation.x(0);
-			translation.y(0);
-			translation.z(0);
+		case "quaternion":
+			rotation = new QuaternionRotation();
+			break;
+		case "euler_xyz":
+			rotation = new EulerXYZRotation();
+			break;
+		case "euler_zyx":
+			rotation = new EulerZYXRotation();
+			break;
+		default:
+			rotation = IRotation.NONE;
+			Main.LOGGER.warn("Could not load unknown rotation type " + rotationType);
+			break;
 		}
-		if (type.hasEuler)
-		{
-			loadEuler(el);
-			if (type.hasQuaternion) loadQuaternion(el);
-			else updateFromEuler();
-		}
-		else if (type.hasQuaternion)
-		{
-			loadQuaternion(el);
-			Vec3 rot = rotation.toEulerXZY();
-			rX = rot.x();
-			rY = rot.y();
-			rZ = rot.z();
-		}
-		else
-		{
-			rX = rY = rZ = 0;
-			rotation = new Quaternion();
-		}
+		else rotation = IRotation.NONE;
+		rotation.load(el);
 	}
-	
-	public void saveAsChild(AbstractElement el, String name, boolean hasTranslation, boolean hasEuler, boolean hasQuaternion)
+	/*
+	public void saveAsChild(AbstractElement el, String name)
 	{
 		AbstractElement child = el.addChild(name);
-		save(child, hasTranslation, hasEuler, hasQuaternion);
+		save(child);
 	}
-	
-	public void save(AbstractElement el, boolean hasTranslation, boolean hasEuler, boolean hasQuaternion)
+	*/
+	public void save(AbstractElement el)
 	{
-		hasTranslation &= (translation.x() != 0 || translation.y() != 0 || translation.z() != 0);
-		hasEuler &= (rX != 0 || rY != 0 || rZ != 0);
-		hasQuaternion &= (rotation.x() != 0 || rotation.y() != 0 || rotation.z() != 0);
-		SaveType type = SaveType.getType(hasTranslation, hasEuler, hasQuaternion);
-		el.setEnum("type", type);
-		if (hasTranslation) saveTranslation(el);
-		if (hasEuler) saveEuler(el);
-		if (hasQuaternion) saveQuaternion(el);
-	}
-	
-	public void loadTranslation(AbstractElement el)
-	{
-		translation = new Vec3(el.getFloat("x", 0), el.getFloat("y", 0), el.getFloat("z", 0));
-	}
-	
-	public void saveTranslation(AbstractElement el)
-	{
-		el.setFloat("x", translation.x());
-		el.setFloat("y", translation.y());
-		el.setFloat("z", translation.z());
-	}
-	
-	public void loadEuler(AbstractElement el)
-	{
-		rX = el.getDouble("rX", 0);
-		rY = el.getDouble("rY", 0);
-		rZ = el.getDouble("rZ", 0);
-	}
-	
-	public void saveEuler(AbstractElement el)
-	{
-		el.setDouble("rX", rX);
-		el.setDouble("rY", rY);
-		el.setDouble("rZ", rZ);
-	}
-	
-	public void loadQuaternion(AbstractElement el)
-	{
-		rotation = new Quaternion(el.getDouble("qX", 0), el.getDouble("qY", 0), el.getDouble("qZ", 0), el.getDouble("qW", 1)).normalize();
-	}
-	
-	public void saveQuaternion(AbstractElement el)
-	{
-		el.setDouble("qX", rotation.x());
-		el.setDouble("qY", rotation.y());
-		el.setDouble("qZ", rotation.z());
-		el.setDouble("qW", rotation.w());
+		if (translation.x() != 0) el.setFloat("tX", translation.x());
+		if (translation.y() != 0) el.setFloat("tY", translation.y());
+		if (translation.z() != 0) el.setFloat("tZ", translation.z());
+		IRotation saveRot = rotation;
+		if (!(rotation == IRotation.NONE || rotation.getQuaternion().normalize().w() == 1.0))
+		{
+			if (rotation instanceof QuaternionRotation) el.setString("rotation", "quaternion");
+			else if (rotation instanceof EulerXYZRotation) el.setString("rotation", "euler_xyz");
+			else if (rotation instanceof EulerZYXRotation) el.setString("rotation", "euler_zyx");
+			else
+			{
+				saveRot = new QuaternionRotation(rotation.getQuaternion());
+				el.setString("rotation", "quaternion");
+				Main.LOGGER.warn("Could not save unknown rotation type " + rotation.getClass().toString(), " saving it as a quaternion.");
+			}
+		}
+		saveRot.save(el);
 	}
 	
 	public Transformation(Transformation t)
 	{
-		translation = new Vec3(t.translation);
-		rotation = new Quaternion(t.rotation);
-		rX = t.rX;
-		rY = t.rY;
-		rZ = t.rZ;
+		translation.set(t.translation);
+		rotation = t.rotation.copy();
 	}
 	
-	public Transformation(Quaternion rotation, Vec3 translation)
+	public Transformation(Quaterniond rotation, Vector3f translation)
 	{
-		this.translation = translation;
-		setQuaternion(rotation.normalize());
+		this.translation.set(translation);
+		this.rotation = new QuaternionRotation(rotation);
 	}
 	
-	public Transformation(Quaternion rotation)
+	public Transformation(Quaterniond rotation)
 	{
-		this.rotation = rotation;
-		setQuaternion(rotation.normalize());
+		this.rotation = new QuaternionRotation(rotation);
 	}
 	
-	public Transformation(Vec3 translation)
+	public Transformation(Vector3f translation)
 	{
-		this.rotation = Quaternion.IDENTITY;
-		this.translation = translation;
-		rX = rY = rZ = 0;
+		this.translation.set(translation);
 	}
 	
-	public Transformation()
+	public Transformation() {}
+	
+	public void setQuaternion(Quaterniond q)
 	{
-		rotation = Quaternion.IDENTITY;
-		translation = Vec3.ZERO;
-		rX = rY = rZ = 0;
+		if (q.x == 0 && q.y == 0 && q.z == 0) this.rotation = IRotation.NONE; //set to null
+		else if (this.rotation == IRotation.NONE) this.rotation = new QuaternionRotation(q); //set to quaternion
+		else this.rotation.setFromQuaternion(q); //set current rotation values
 	}
 	
-	public void setQuaternion(Quaternion q)
+	public Matrix4d getTransformation()
 	{
-		this.rotation = q;
-		Vec3 rot = q.toEulerXZY();
-		rX = rot.x();
-		rY = rot.y();
-		rZ = rot.z();
+		return new Matrix4d().translate(translation).rotate(rotation.getQuaternion());
 	}
 	
-	public void updateFromEuler()
+	public void setFromMatrix(Matrix4d matrix)
 	{
-		rotation = Quaternion.forEulerXZY(rX, rY, rZ);
+		setQuaternion(new Quaterniond().setFromUnnormalized(matrix));
+		this.translation.set(matrix.getTranslation(new Vector3d()));
 	}
 	
-	public void setRX(double rX)
+	@Override
+	public String toString()
 	{
-		this.rX = rX;
-		updateFromEuler();
+		return "translation: " + translation.toString() + ", rotation: " + rotation.toString();
 	}
 	
-	public void setRY(double rY)
+	public Transformation copy()
 	{
-		this.rY = rY;
-		updateFromEuler();
+		return new Transformation(this);
 	}
 	
-	public void setRZ(double rZ)
+	public static Transformation tween(Transformation a, Transformation b, float mix)
 	{
-		this.rZ = rZ;
-		updateFromEuler();
-	}
-	
-	public Matrix4 getTransformation()
-	{
-		return new Matrix4().translate(translation).mul(rotation.getMatrix4());
-	}
-	
-	public void setFromMatrix(Matrix4 matrix)
-	{
-		this.rotation.setFromMatrix(matrix);
-		setQuaternion(rotation);
-		Matrix4 trans = matrix.matrix3().invert().matrix4();
-		matrix.mul(trans, trans);
-		this.translation = new Vec3(trans.m30(), trans.m31(), trans.m32());
+		Quaterniond q = a.rotation.getQuaternion().slerp(b.rotation.getQuaternion(), mix);
+		Vector3f vec = new Vector3f(a.translation.x() + (b.translation.x() - a.translation.x()) * mix, a.translation.y() + (b.translation.y() - a.translation.y()) * mix, a.translation.z() + (b.translation.z() - a.translation.z()) * mix);
+		return new Transformation(q, vec);
 	}
 }

@@ -3,7 +3,6 @@ package firemerald.mcms.api.model;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -17,8 +16,12 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import firemerald.mcms.api.math.Vec2;
-import firemerald.mcms.api.math.Vec3;
+import org.apache.logging.log4j.Level;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+
+import firemerald.mcms.api.API;
+import firemerald.mcms.api.util.FileUtil;
 
 public class ObjData
 {
@@ -35,9 +38,9 @@ public class ObjData
 	public static Matcher face_V_VT_VN_Matcher, face_V_VT_Matcher, face_V_VN_Matcher, face_V_Matcher;
 	public static Matcher groupObjectMatcher;
 
-	public List<Vec3> vertices = new ArrayList<>();
-	public List<Vec2> textureCoordinates = new ArrayList<>();
-	public List<Vec3> vertexNormals = new ArrayList<>();
+	public List<Vector3f> vertices = new ArrayList<>();
+	public List<Vector2f> textureCoordinates = new ArrayList<>();
+	public List<Vector3f> vertexNormals = new ArrayList<>();
 	public Map<String, List<int[][]>> groupObjects;
 	
 	public static ObjData tryLoad(File file)
@@ -46,19 +49,12 @@ public class ObjData
 		{
 			InputStream in;
 			ObjData data = new ObjData(in = new FileInputStream(file));
-			try
-			{
-				in.close();
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-			}
+			FileUtil.closeSafe(in);
 			return data;
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+			API.LOGGER.log(Level.WARN, "Couldn't load OBJ from " + file, e);
 			return null;
 		}
 	}
@@ -68,7 +64,7 @@ public class ObjData
 		groupObjects = loadObjModel(in);
 	}
 	
-	public ObjData(Collection<Vec3> vertices, Collection<Vec2> textureCoordinates, Collection<Vec3> vertexNormals, Map<String, List<int[][]>> groupObjects)
+	public ObjData(Collection<Vector3f> vertices, Collection<Vector2f> textureCoordinates, Collection<Vector3f> vertexNormals, Map<String, List<int[][]>> groupObjects)
 	{
 		this.vertices.addAll(vertices);
 		this.textureCoordinates.addAll(textureCoordinates);
@@ -99,17 +95,17 @@ public class ObjData
 				if (currentLine.startsWith("#") || currentLine.length() == 0) continue;
 				else if (currentLine.startsWith("v "))
 				{
-					Vec3 vertex = parseVertex(currentLine, lineCount);
+					Vector3f vertex = parseVertex(currentLine, lineCount);
 					if (vertex != null) vertices.add(vertex);
 				}
 				else if (currentLine.startsWith("vt "))
 				{
-					Vec2 textureCoordinate = parseTextureCoordinate(currentLine, lineCount);
+					Vector2f textureCoordinate = parseTextureCoordinate(currentLine, lineCount);
 					if (textureCoordinate != null) textureCoordinates.add(textureCoordinate);
 				}
 				else if (currentLine.startsWith("vn "))
 				{
-					Vec3 normal = parseVertexNormal(currentLine, lineCount);
+					Vector3f normal = parseVertexNormal(currentLine, lineCount);
 					if (normal != null) vertexNormals.add(normal);
 				}
 				else if (currentLine.startsWith("f "))
@@ -140,24 +136,20 @@ public class ObjData
 				while (groupObjects.containsKey(name = "default_" + defNum++));
 				groupObjects.put(name, mesh);
 			}
-		} catch (Exception e)
+		}
+		catch (Exception e)
 		{
 			throw new Exception("IO Exception reading model format", e);
-		} finally
+		}
+		finally
 		{
-			try
-			{
-				reader.close();
-			} catch (IOException e) {}
-			try
-			{
-				inputStream.close();
-			} catch (IOException e) {}
+			FileUtil.closeSafe(reader);
+			FileUtil.closeSafe(inputStream);
 		}
 		return groupObjects;
 	}
 
-	private Vec3 parseVertex(String line, int lineCount) throws Exception
+	private Vector3f parseVertex(String line, int lineCount) throws Exception
 	{
 		if (isValidVertexLine(line))
 		{
@@ -165,7 +157,7 @@ public class ObjData
 			String[] tokens = line.split(" ");
 			try
 			{
-				if (tokens.length == 3) return new Vec3(Float.parseFloat(tokens[0]), Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2]));
+				if (tokens.length == 3) return new Vector3f(Float.parseFloat(tokens[0]), Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2]));
 			} catch (NumberFormatException e)
 			{
 				throw new Exception(String.format("Number formatting error at line %d", lineCount), e);
@@ -178,7 +170,7 @@ public class ObjData
 		return null;
 	}
 
-	private Vec3 parseVertexNormal(String line, int lineCount) throws Exception
+	private Vector3f parseVertexNormal(String line, int lineCount) throws Exception
 	{
 		if (isValidVertexNormalLine(line))
 		{
@@ -186,7 +178,7 @@ public class ObjData
 			String[] tokens = line.split(" ");
 			try
 			{
-				if (tokens.length == 3) return new Vec3(Float.parseFloat(tokens[0]), Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2]));
+				if (tokens.length == 3) return new Vector3f(Float.parseFloat(tokens[0]), Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2]));
 			} catch (NumberFormatException e)
 			{
 				throw new Exception(String.format("Number formatting error at line %d", lineCount), e);
@@ -199,7 +191,7 @@ public class ObjData
 		return null;
 	}
 
-	private Vec2 parseTextureCoordinate(String line, int lineCount) throws Exception
+	private Vector2f parseTextureCoordinate(String line, int lineCount) throws Exception
 	{
 		if (isValidTextureCoordinateLine(line))
 		{
@@ -207,7 +199,7 @@ public class ObjData
 			String[] tokens = line.split(" ");
 			try
 			{
-				if (tokens.length == 2) return new Vec2(Float.parseFloat(tokens[0]), 1 - Float.parseFloat(tokens[1]));
+				if (tokens.length == 2) return new Vector2f(Float.parseFloat(tokens[0]), 1 - Float.parseFloat(tokens[1]));
 			} catch (NumberFormatException e)
 			{
 				throw new Exception(String.format("Number formatting error at line %d", lineCount), e);
@@ -439,13 +431,108 @@ public class ObjData
 		return groupObjectMatcher.matches();
 	}
 	
+	@FunctionalInterface
+	public static interface ITriangulator
+	{
+		public static final ITriangulator FAN = face -> {
+			if (face.length > 2)
+			{
+				int[][][] triangles = new int[face.length - 2][3][];
+				for (int i = 0; i < triangles.length; i++)
+				{
+					int[][] destination = triangles[i];
+					destination[0] = face[0];
+					destination[1] = face[i + 1];
+					destination[2] = face[i + 2];
+				}
+				return triangles;
+			}
+			else return new int[0][][];
+		};
+		
+		public static final ITriangulator STRIP = face -> {
+			if (face.length > 2)
+			{
+				int[][][] triangles = new int[face.length - 2][3][];
+				for (int i = 0; i < triangles.length; i++)
+				{
+					int[][] destination = triangles[i];
+					destination[0] = face[(i + 1) & ~1];
+					destination[1] = face[(i & ~1) + 1];
+					destination[2] = face[i + 2];
+				}
+				return triangles;
+			}
+			else return new int[0][][];
+		};
+		
+		public int[][][] triangulate(int[][] face);
+	}
+	
 	public ObjData optimize()
-	{ 
+	{
+		return optimize(ITriangulator.FAN, true, true);
+	}
+	
+	public ObjData optimize(ITriangulator triangulator)
+	{
+		return optimize(triangulator, true, true);
+	}
+	
+	public ObjData optimize(ITriangulator triangulator, boolean removeNonTriangles)
+	{
+		return optimize(triangulator, removeNonTriangles, true);
+	}
+	
+	public ObjData optimize(boolean removeEmptyGroups)
+	{
+		return optimize(ITriangulator.FAN, true, removeEmptyGroups);
+	}
+	
+	public ObjData optimize(ITriangulator triangulator, boolean removeNonTriangles, boolean removeEmptyGroups)
+	{
+		Map<String, List<int[][]>> processed = new LinkedHashMap<>();
+		//triangulate and remove points and lines - only triangles are supported, although points and lines can be simulated by using identical vertices (with some lighting issues) - they will be removed if removeNonTriangles is true.
+		groupObjects.forEach((name, mesh) -> {
+			List<int[][]> newMesh = new ArrayList<>();
+			for (int[][] face : mesh)
+			{
+				int[][][] triangles = triangulator.triangulate(face);
+				for (int[][] triangle : triangles)
+				{
+					if (removeNonTriangles)
+					{
+						Vector3f p0 = vertices.get(triangle[0][0]);
+						Vector3f p1 = vertices.get(triangle[1][0]);
+						Vector3f p2 = vertices.get(triangle[2][0]);
+						if ((p0.x() == p1.x() && p0.y() == p1.y() && p0.z() == p1.z()) || (p0.x() == p2.x() && p0.y() == p2.y() && p0.z() == p2.z()) || (p1.x() == p2.x() && p1.y() == p2.y() && p1.z() == p2.z())) //duplicate vertices are always points or lines
+						{
+							double x1 = p1.x() - p0.x();
+							double y1 = p1.y() - p0.y();
+							double z1 = p1.z() - p0.z();
+							double x2 = p2.x() - p0.x();
+							double y2 = p2.y() - p0.y();
+							double z2 = p2.z() - p0.z();
+							double x3 = y1 * z2 - y2 * z1;
+							double y3 = z1 * x2 - z2 * x1;
+							double z3 = x1 * y2 - x2 * y1;
+							double a = x3 * x3 + y3 * y3 + z3 * z3;
+							//a = x1 * x1 * (y2 * y2 + z2 * z2) + y1 * y1 * (x2 * x2 + z2 * z2) + z1 * z1 * (x2 * x2 + y2 * y2) - 2 * (x1 * y1 * x2 * y2 + x1 * z1 * x2 * z2 + y1 * z1 * y2 * z2);
+							//a = x_0^2y_1^2+x_0^2y_2^2+x_0^2z_1^2+x_0^2z_2^2-2x_0x_1y_0y_1+2x_0x_1y_0y_2+2x_0x_1y_1y_2-2x_0x_1y_2^2-2x_0x_1z_0z_1+2x_0x_1z_0z_2+2x_0x_1z_1z_2-2x_0x_1z_2^2+2x_0x_2y_0y_1-2x_0x_2y_0y_2-2x_0x_2y_1^2+2x_0x_2y_1y_2+2x_0x_2z_0z_1-2x_0x_2z_0z_2-2x_0x_2z_1^2+2x_0x_2z_1z_2+x_1^2y_0^2+x_1^2y_2^2+x_1^2z_0^2+x_1^2z_2^2-2x_1x_2y_0^2+2x_1x_2y_0y_1+2x_1x_2y_0y_2-2x_1x_2y_1y_2-2x_1x_2z_0^2+2x_1x_2z_0z_1+2x_1x_2z_0z_2-2x_1x_2z_1z_2+x_2^2y_0^2+x_2^2y_1^2+x_2^2z_0^2+x_2^2z_1^2+y_0^2z_1^2+y_0^2z_2^2-2y_0y_1x_2^2-2y_0y_1z_0z_1+2y_0y_1z_0z_2+2y_0y_1z_1z_2-2y_0y_1z_2^2-2y_0y_2x_1^2+2y_0y_2z_0z_1-2y_0y_2z_0z_2-2y_0y_2z_1^2+2y_0y_2z_1z_2+y_1^2z_0^2+y_1^2z_2^2-2y_1y_2x_0^2-2y_1y_2z_0^2+2y_1y_2z_0z_1+2y_1y_2z_0z_2-2y_1y_2z_1z_2+y_2^2z_0^2+y_2^2z_1^2-2z_0z_1x_2^2-2z_0z_1y_2^2-2z_0z_2x_1^2-2z_0z_2y_1^2-2z_1z_2x_0^2-2z_1z_2y_0^2
+							if (a != 0) newMesh.add(triangle); //don't add points or lines
+						}
+						else newMesh.add(triangle);
+					}
+					else newMesh.add(triangle);
+				}
+			}
+			processed.put(name, newMesh);
+		});
 		//find unused values
 		BitSet usedVerts = new BitSet(vertices.size());
 		BitSet usedTexs = new BitSet(textureCoordinates.size());
 		BitSet usedNorms = new BitSet(vertexNormals.size());
-		for (List<int[][]> mesh : groupObjects.values()) for (int[][] face : mesh) for (int[] vertData : face)
+		for (List<int[][]> mesh : processed.values()) for (int[][] face : mesh) for (int[] vertData : face)
 		{
 			usedVerts.set(vertData[0]);
 			if (vertData[1] >= 0) usedTexs.set(vertData[1]);
@@ -453,10 +540,10 @@ public class ObjData
 		}
 		//vertex optimization
 		Map<Integer, Integer> newVert = new HashMap<>();
-		List<Vec3> verts = new ArrayList<>();
+		List<Vector3f> verts = new ArrayList<>();
 		for (int i = 0; i < vertices.size(); i++) if (usedVerts.get(i))
 		{
-			Vec3 vert = vertices.get(i);
+			Vector3f vert = vertices.get(i);
 			int ind = verts.indexOf(vert);
 			if (ind < 0)
 			{
@@ -467,10 +554,10 @@ public class ObjData
 		}
 		//tex optimization
 		Map<Integer, Integer> newTex = new HashMap<>();
-		List<Vec2> texs = new ArrayList<>();
+		List<Vector2f> texs = new ArrayList<>();
 		for (int i = 0; i < textureCoordinates.size(); i++) if (usedTexs.get(i))
 		{
-			Vec2 tex = textureCoordinates.get(i);
+			Vector2f tex = textureCoordinates.get(i);
 			int ind = texs.indexOf(tex);
 			if (ind < 0)
 			{
@@ -481,10 +568,10 @@ public class ObjData
 		}
 		//normal optimization
 		Map<Integer, Integer> newNorm = new HashMap<>();
-		List<Vec3> norms = new ArrayList<>();
+		List<Vector3f> norms = new ArrayList<>();
 		for (int i = 0; i < vertexNormals.size(); i++) if (usedNorms.get(i))
 		{
-			Vec3 norm = vertexNormals.get(i);
+			Vector3f norm = vertexNormals.get(i);
 			int ind = norms.indexOf(norm);
 			if (ind < 0)
 			{
@@ -493,35 +580,36 @@ public class ObjData
 			}
 			newNorm.put(i, ind);
 		}
-		//index optimization
-		Map<String, List<int[][]>> objects = new LinkedHashMap<>(groupObjects.size());
-		for (Entry<String, List<int[][]>> entry : groupObjects.entrySet())
-		{
-			List<int[][]> oldMesh;
-			List<int[][]> newMesh;
-			objects.put(entry.getKey(), newMesh = new ArrayList<>((oldMesh = entry.getValue()).size()));
-			for (int i = 0; i < oldMesh.size(); i++)
+		//group/index optimization
+		Map<String, List<int[][]>> objects = new LinkedHashMap<>();
+		processed.forEach((name, oldMesh) -> {
+			if (!removeEmptyGroups || oldMesh.size() > 0)
 			{
-				int[][] oldFace;
-				int[][] newFace;
-				newMesh.add(newFace = new int[(oldFace = oldMesh.get(i)).length][]);
-				for (int j = 0; j < oldFace.length; j++)
+				List<int[][]> newMesh;
+				objects.put(name, newMesh = new ArrayList<>(oldMesh.size()));
+				for (int i = 0; i < oldMesh.size(); i++)
 				{
-					int[] oldVertData = oldFace[j];
-					int[] newVertData = newFace[j] = new int[3];
-					newVertData[0] = newVert.get(oldVertData[0]);
-					newVertData[1] = oldVertData[1] == -1 ? -1 : newTex.get(oldVertData[1]);
-					newVertData[2] = oldVertData[2] == -1 ? -1 : newNorm.get(oldVertData[2]);
+					int[][] oldFace;
+					int[][] newFace;
+					newMesh.add(newFace = new int[(oldFace = oldMesh.get(i)).length][]);
+					for (int j = 0; j < oldFace.length; j++)
+					{
+						int[] oldVertData = oldFace[j];
+						int[] newVertData = newFace[j] = new int[3];
+						newVertData[0] = newVert.get(oldVertData[0]);
+						newVertData[1] = oldVertData[1] == -1 ? -1 : newTex.get(oldVertData[1]);
+						newVertData[2] = oldVertData[2] == -1 ? -1 : newNorm.get(oldVertData[2]);
+					}
 				}
 			}
-		}
+		});
 		return new ObjData(verts, texs, norms, objects);
 	}
 	
 	@Override
 	public String toString()
 	{
-		StringBuilder str = new StringBuilder("#Model generated with MCAMC\n\n#Number of verticies: ");
+		StringBuilder str = new StringBuilder("#Model generated with Minecraft Model Studio\n\n#Number of verticies: ");
 		str.append(vertices.size());
 		str.append("\n#Number of texture coordinates: ");
 		str.append(textureCoordinates.size());
@@ -530,7 +618,7 @@ public class ObjData
 		str.append("\n#Number of groups: ");
 		str.append(groupObjects.size());
 		str.append("\n\n#Verticies\n");
-		for (Vec3 vec : vertices)
+		for (Vector3f vec : vertices)
 		{
 			str.append("v ");
 			str.append(vec.x());
@@ -541,7 +629,7 @@ public class ObjData
 			str.append('\n');
 		}
 		str.append("\n#Texture Coordinates\n");
-		for (Vec2 vec : textureCoordinates)
+		for (Vector2f vec : textureCoordinates)
 		{
 			str.append("vt ");
 			str.append(vec.x());
@@ -550,7 +638,7 @@ public class ObjData
 			str.append('\n');
 		}
 		str.append("\n#Normals\n");
-		for (Vec3 vec : vertexNormals)
+		for (Vector3f vec : vertexNormals)
 		{
 			str.append("vn ");
 			str.append(vec.x());

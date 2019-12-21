@@ -1,14 +1,19 @@
 package firemerald.mcms.gui.components;
 
-import firemerald.mcms.util.Cursors;
+import firemerald.mcms.window.api.Cursor;
 
 public class ComponentPanel extends ComponentPane
 {
-	private boolean enabled = true;
+	protected boolean enabled = true;
 	
-	public ComponentPanel(float x1, float y1, float x2, float y2)
+	public ComponentPanel(int x1, int y1, int x2, int y2)
 	{
 		super(x1, y1, x2, y2);
+	}
+	
+	public ComponentPanel(int x1, int y1, int x2, int y2, int margin)
+	{
+		super(x1, y1, x2, y2, margin);
 	}
 	
 	public boolean isEnabled()
@@ -24,7 +29,7 @@ public class ComponentPanel extends ComponentPane
 	public void disable()
 	{
 		enabled = false;
-		this.focused.onUnfocus();
+		if (this.focused != null) this.focused.onUnfocus();
 		this.focused = null;
 	}
 	
@@ -71,9 +76,9 @@ public class ComponentPanel extends ComponentPane
 	}
 
 	@Override
-	public void onDrag(float mx, float my)
+	public void onDrag(float mx, float my, int button)
 	{
-		if (enabled) super.onDrag(mx, my);
+		if (enabled) super.onDrag(mx, my, button);
 	}
 
 	@Override
@@ -83,8 +88,8 @@ public class ComponentPanel extends ComponentPane
 	}
 
 	@Override
-	public long getCursor(float mx, float my)
+	public Cursor getCursor(float mx, float my)
 	{
-		return enabled ? super.getCursor(mx, my) : Cursors.standard;
+		return enabled ? super.getCursor(mx, my) : Cursor.STANDARD;
 	}
 }

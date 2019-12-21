@@ -17,7 +17,8 @@ import org.apache.logging.log4j.Level;
 import org.lwjgl.system.MemoryUtil;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.util.FileUtils;
+import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.util.FileUtil;
 
 public class ReloadingTexture extends Texture
 {
@@ -42,8 +43,7 @@ public class ReloadingTexture extends Texture
 			try
 			{
 				BufferedImage img = ImageIO.read(in);
-				w = img.getWidth();
-				h = img.getHeight();
+		    	setSize(img.getWidth(), img.getHeight());
 		    	int[] pixels = new int[w * h];
 		    	img.getRGB(0, 0, w, h, pixels, 0, w);
 		    	if (data != null) MemoryUtil.memFree(data);
@@ -61,7 +61,7 @@ public class ReloadingTexture extends Texture
 			{
 				Main.LOGGER.log(Level.WARN, "Loading failed", e);
 			}
-			FileUtils.closeSafe(in);
+			FileUtil.closeSafe(in);
 		}
 		catch (FileNotFoundException e)
 		{
@@ -74,6 +74,13 @@ public class ReloadingTexture extends Texture
 	{
 		Main.instance.watcher.removeWatcher(file, reloader, StandardWatchEventKinds.ENTRY_MODIFY);
 		super.cleanUp();
+	}
+	
+	@Override
+	public void save(AbstractElement el)
+	{
+		super.save(el);
+		el.setString("file", file.toString());
 	}
 	
 	protected static class Reloader implements Consumer<WatchEvent<?>>

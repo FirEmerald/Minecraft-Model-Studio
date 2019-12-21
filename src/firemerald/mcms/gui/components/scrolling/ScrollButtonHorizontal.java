@@ -1,17 +1,19 @@
 package firemerald.mcms.gui.components.scrolling;
 
 import firemerald.mcms.gui.components.ComponentButton;
-import firemerald.mcms.model.Mesh;
-import firemerald.mcms.theme.DirectionButtonFormat;
+import firemerald.mcms.theme.EnumDirection;
+import firemerald.mcms.theme.ThemeElement;
+import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.util.mesh.Mesh;
 
 public abstract class ScrollButtonHorizontal extends ComponentButton
 {
 	public final IScrollableHorizontal scrollable;
 	public final Mesh outline = new Mesh();
-	public DirectionButtonFormat rect;
-	public final int direction;
+	public ThemeElement rect;
+	public final EnumDirection direction;
 	
-	public ScrollButtonHorizontal(float x1, float y1, float x2, float y2, int direction, IScrollableHorizontal scrollable)
+	public ScrollButtonHorizontal(int x1, int y1, int x2, int y2, EnumDirection direction, IScrollableHorizontal scrollable)
 	{
 		super(x1, y1, x2, y2);
 		this.scrollable = scrollable;
@@ -20,31 +22,34 @@ public abstract class ScrollButtonHorizontal extends ComponentButton
 	}
 	
 	@Override
-	public void setSize(float x1, float y1, float x2, float y2)
+	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		super.setSize(x1, y1, x2, y2);
-		float w = x2 - x1, h = y2 - y1;
-		outline.setMesh(0, 0, w, h, 0, 0, 0, 1, 1);
-		rect = new DirectionButtonFormat((int) (x2 - x1), (int) (y2 - y1), 1, direction);
+		outline.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
+		onGuiUpdate(GuiUpdate.THEME);
+	}
+	
+	@Override
+	public void onGuiUpdate(GuiUpdate reason)
+	{
+		if (reason == GuiUpdate.THEME)
+		{
+			if (rect != null) rect.release();
+			rect = getTheme().genScrollButton(x2 - x1, y2 - y1, 1, direction);
+		}
 	}
 
 	@Override
 	public void render(ButtonState state)
 	{
 		state.applyButtonEffects();
-		getTheme().bindScrollButton(rect);
+		rect.bind();
 		outline.render();
 		state.removeButtonEffects();
 	}
 	
 	@Override
 	public boolean canScrollH(float mx, float my)
-	{
-		return this.isEnabled();
-	}
-	
-	@Override
-	public boolean canScrollV(float mx, float my)
 	{
 		return this.isEnabled();
 	}

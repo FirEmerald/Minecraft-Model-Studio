@@ -1,47 +1,55 @@
 package firemerald.mcms.gui.decoration;
 
-import org.lwjgl.glfw.GLFW;
-
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.Component;
 import firemerald.mcms.shader.Shader;
 import firemerald.mcms.util.ClipboardUtil;
-import firemerald.mcms.util.Cursors;
-import firemerald.mcms.util.FontRenderer;
 import firemerald.mcms.util.TextureManager;
+import firemerald.mcms.util.font.FontRenderer;
+import firemerald.mcms.util.font.FormattedText;
+import firemerald.mcms.window.api.Cursor;
+import firemerald.mcms.window.api.Key;
+import firemerald.mcms.window.api.Modifier;
+import firemerald.mcms.window.api.MouseButtons;
 
 public class DecoText extends Component
 {
-	protected String unbrokenText = "";
+	protected FormattedText originalText = new FormattedText("", Main.instance.fontMsg);
+	protected FormattedText splitText;
 	protected String[] text = new String[0];
 	public int clickPos = 0, clickLine = 0;
 	public int selStart = 0, selStartLine = 0, selEnd = 0, selEndLine = 0;
-	public FontRenderer font;
 	protected float selX1, selX2;
 	public float clickTime = 0;
 	public int clickNum = 0;
 	public boolean clickFlag = false;
+	public FontRenderer font;
 	/*
 	 * sel1line, sel2line
 	 */
 	
-	public DecoText(float x1, float y1, float x2, float y2, FontRenderer font, String text)
+	public DecoText(int x1, int y1, int x2, int y2, String text)
 	{
-		this(x1, y1, x2, y2, font);
+		this(x1, y1, x2, y2, FormattedText.parse(text, Main.instance.fontMsg, Main.instance.getTheme().getTextColor(), false, false));
+	}
+	
+	public DecoText(int x1, int y1, int x2, int y2, FormattedText text)
+	{
+		this(x1, y1, x2, y2);
 		setText(text);
 	}
 	
-	public DecoText(float x1, float y1, float x2, float y2, FontRenderer font)
+	public DecoText(int x1, int y1, int x2, int y2)
 	{
 		super(x1, y1, x2, y2);
-		this.font = font;
+		this.font = Main.instance.fontMsg;
 	}
 	
 	@Override
-	public void setSize(float x1, float y1, float x2, float y2)
+	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		super.setSize(x1, y1, x2, y2);
-		setText(this.unbrokenText);
+		setText(this.originalText);
 		updatePos();
 	}
 	
@@ -59,25 +67,27 @@ public class DecoText extends Component
 		selX2 = selEndLine < text.length ? x1 + font.getStringWidth(text[selEndLine].substring(0, selEnd)) : 0;
 	}
 	
-	public void setText(String text)
+	public void setText(FormattedText text)
 	{
-		this.unbrokenText = text;
-		this.text = font.splitForWidth(text, x2 - x1);
+		this.font = text.font;
+		this.originalText = text;
+		this.splitText = text.copy().splitForWidth(x2 - x1);
+		this.text = splitText.getPlainText().split("\n"); //TODO fix
 		selStart = selStartLine = selEnd = selEndLine = 0;
 		clickPos = clickLine = 0;
 		clickFlag = true;
 	}
 	
-	public String getText()
+	public FormattedText getText()
 	{
-		return unbrokenText;
+		return originalText;
 	}
 
 	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
 		//OffY = 3
-		if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && text.length > 0)
+		if (button == MouseButtons.LEFT && text.length > 0)
 		{
 			clickFlag = false;
 			int[] pos = getTextPosition(mx, my);
@@ -163,36 +173,39 @@ public class DecoText extends Component
 	}
 
 	@Override
-	public void onDrag(float mx, float my)
+	public void onDrag(float mx, float my, int button)
 	{
-		int[] pos = getTextPosition(mx, my);
-		if (clickFlag)
+		if (button == MouseButtons.LEFT)
 		{
-			clickPos = selStart = selEnd = pos[0];
-			clickLine = selStartLine = selEndLine = pos[1];
+			int[] pos = getTextPosition(mx, my);
+			if (clickFlag)
+			{
+				clickPos = selStart = selEnd = pos[0];
+				clickLine = selStartLine = selEndLine = pos[1];
+			}
+			else if (pos[1] < clickLine || (pos[1] == clickLine && pos[0] < clickPos))
+			{
+				selStart = pos[0];
+				selStartLine = pos[1];
+				selEnd = clickPos;
+				selEndLine = clickLine;
+				clickTime = 0;
+			}
+			else if (pos[1] > clickLine || (pos[1] == clickLine && pos[0] > clickPos))
+			{
+				selStart = clickPos;
+				selStartLine = clickLine;
+				selEnd = pos[0];
+				selEndLine = pos[1];
+				clickTime = 0;
+			}
+			else
+			{
+				selStart = selEnd = pos[0];
+				selStartLine = selEndLine = pos[1];
+			}
+			updatePos();
 		}
-		else if (pos[1] < clickLine || (pos[1] == clickLine && pos[0] < clickPos))
-		{
-			selStart = pos[0];
-			selStartLine = pos[1];
-			selEnd = clickPos;
-			selEndLine = clickLine;
-			clickTime = 0;
-		}
-		else if (pos[1] > clickLine || (pos[1] == clickLine && pos[0] > clickPos))
-		{
-			selStart = clickPos;
-			selStartLine = clickLine;
-			selEnd = pos[0];
-			selEndLine = pos[1];
-			clickTime = 0;
-		}
-		else
-		{
-			selStart = selEnd = pos[0];
-			selStartLine = selEndLine = pos[1];
-		}
-		updatePos();
 	}
 
 	@Override
@@ -207,11 +220,7 @@ public class DecoText extends Component
 		Shader s = Main.instance.shader;
 		TextureManager texs = Main.instance.textureManager;
 		float y = y1 + 3;
-		for (String text : this.text)
-		{
-			font.drawTextLine(text, x1, y, getTheme().getTextColor(), false, false, false);
-			y += font.height;
-		}
+		FontRenderer.drawTextFormatted(splitText, x1, y1, false, false);
 		texs.unbindTexture();
 		if (selStartLine != selEndLine)
 		{
@@ -243,26 +252,28 @@ public class DecoText extends Component
 	public void onCharTyped(char chr) {}
 
 	@Override
-	public void onKeyPressed(int key, int scancode, int mods)
+	public void onKeyPressed(Key key, int scancode, int mods)
 	{
 		onKey(key, scancode, mods);
 	}
 
 	@Override
-	public void onKeyReleased(int key, int scancode, int mods) {}
+	public void onKeyReleased(Key key, int scancode, int mods) {}
 
 	@Override
-	public void onKeyRepeat(int key, int scancode, int mods) {}
+	public void onKeyRepeat(Key key, int scancode, int mods) {}
 	
-	public void onKey(int key, int scancode, int mods)
+	public void onKey(Key key, int scancode, int mods)
 	{
 		switch (key)
 		{
-		case GLFW.GLFW_KEY_C:
-			if ((mods & GLFW.GLFW_MOD_CONTROL) > 0) onCopy();
+		case C:
+			if ((mods & Modifier.CONTROL.flag) > 0) onCopy();
 			break;
-		case GLFW.GLFW_KEY_X:
-			if ((mods & GLFW.GLFW_MOD_CONTROL) > 0) onCopy();
+		case X:
+			if ((mods & Modifier.CONTROL.flag) > 0) onCopy();
+			break;
+		default:
 			break;
 		}
 	}
@@ -294,8 +305,8 @@ public class DecoText extends Component
 	}
 
 	@Override
-	public long getCursor(float mx, float my)
+	public Cursor getCursor(float mx, float my)
 	{
-		return Cursors.text;
+		return Cursor.TEXT;
 	}
 }

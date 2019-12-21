@@ -11,6 +11,10 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import org.apache.logging.log4j.Level;
+
+import firemerald.mcms.Main;
+
 public class ClipboardUtil
 {
 	public static final Clipboard CLIPBOARD = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -38,7 +42,7 @@ public class ClipboardUtil
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			Main.LOGGER.log(Level.WARN, "Couldn't grab text from clipboard", e);
 			return null;
 		} 
 	}
@@ -61,7 +65,7 @@ public class ClipboardUtil
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			Main.LOGGER.log(Level.WARN, "Couldn't grab image data from clipboard", e);
 			return null;
 		}
 	}
@@ -85,7 +89,7 @@ public class ClipboardUtil
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			Main.LOGGER.log(Level.WARN, "Could't grab rich text from clipboard", e);
 			return null;
 		} 
 	}
@@ -109,13 +113,13 @@ public class ClipboardUtil
 			}
 			catch (IOException e1)
 			{
-				e1.printStackTrace();
+				Main.LOGGER.log(Level.WARN, "Couldn't grab text from clipboard", e);
 				return null;
 			}
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			Main.LOGGER.log(Level.WARN, "Couldn't grab rich text from clipboard", e);
 			return null;
 		}
 	}
@@ -129,7 +133,7 @@ public class ClipboardUtil
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			Main.LOGGER.log(Level.WARN, "Couldn't convert binary data to a String", e);
 		}
 		return new String(data);
 	}

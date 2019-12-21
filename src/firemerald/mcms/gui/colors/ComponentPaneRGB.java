@@ -1,29 +1,36 @@
 package firemerald.mcms.gui.colors;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.gui.components.ComponentLabel;
+import firemerald.mcms.gui.components.ComponentFloatingLabel;
+import firemerald.mcms.gui.components.text.ComponentIncrementInt;
 import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.RGB;
-import firemerald.mcms.util.FontRenderer;
+import firemerald.mcms.util.font.FontRenderer;
 
 public class ComponentPaneRGB extends ComponentPaneColorPicker
 {
 	public final ColorPickerRGB rgbPicker;
 	public final ComponentTextInt rRGB, gRGB, bRGB;
 	
-	public ComponentPaneRGB(float x1, float y1, float x2, float y2, ColorModel color)
+	public ComponentPaneRGB(int x1, int y1, int x2, int y2, ColorModel color)
 	{
 		super(x1, y1, x2, y2);
 		RGB rgb = color.getRGB();
-		guiElements.add(rgbPicker = new ColorPickerRGB(0, 0, rgb));
+		this.addElement(rgbPicker = new ColorPickerRGB(0, 0, rgb));
 		FontRenderer font = Main.instance.fontMsg;
-		guiElements.add(new ComponentLabel(160, 00, 172, 20, font, "R"));
-		guiElements.add(rRGB = ComponentTextInt.makeIntControl(this, 172, 0, 44, 0, 0, 255, 1));
-		guiElements.add(new ComponentLabel(160, 20, 172, 40, font, "G"));
-		guiElements.add(gRGB = ComponentTextInt.makeIntControl(this, 172, 20, 44, 0, 0, 255, 1));
-		guiElements.add(new ComponentLabel(160, 40, 172, 60, font, "B"));
-		guiElements.add(bRGB = ComponentTextInt.makeIntControl(this, 172, 40, 44, 0, 0, 255, 1));
+		this.addElement(new ComponentFloatingLabel(160, 00, 172, 20, font, "R"));
+		this.addElement(rRGB = new ComponentTextInt(172, 0, 206, 20, font, 0, 255));
+		this.addElement(new ComponentIncrementInt(206, 0, rRGB, 1));
+		this.addElement(new ComponentIncrementInt(206, 10, rRGB, -1));
+		this.addElement(new ComponentFloatingLabel(160, 20, 172, 40, font, "G"));
+		this.addElement(gRGB = new ComponentTextInt(172, 20, 206, 40, font, 0, 255));
+		this.addElement(new ComponentIncrementInt(206, 20, gRGB, 1));
+		this.addElement(new ComponentIncrementInt(206, 30, gRGB, -1));
+		this.addElement(new ComponentFloatingLabel(160, 40, 172, 60, font, "B"));
+		this.addElement(bRGB = new ComponentTextInt(172, 40, 206, 60, font, 0, 255));
+		this.addElement(new ComponentIncrementInt(206, 40, bRGB, 1));
+		this.addElement(new ComponentIncrementInt(206, 50, bRGB, -1));
 		setColor(rgb);
 	}
 	
