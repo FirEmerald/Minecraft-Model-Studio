@@ -6,6 +6,7 @@ import java.util.Map;
 import org.joml.Matrix4d;
 
 import firemerald.mcms.api.model.Bone;
+import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.api.util.ISaveable;
 
 public interface IAnimation extends ISaveable
@@ -26,4 +27,8 @@ public interface IAnimation extends ISaveable
 	 * @return the animation's total length (use {@link Float#POSITIVE_INFINITY} for custom animations that have no specified length)
 	 */
 	public float getLength();
+	
+	public IAnimation cloneObject();
+	
+	public void reverseAnimation(IRigged<?> rig);
 } 

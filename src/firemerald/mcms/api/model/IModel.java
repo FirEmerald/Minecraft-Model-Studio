@@ -30,4 +30,6 @@ public interface IModel extends IRaytraceTarget, IRigged<IModel>
 	{
 		return "model";
 	}
+	
+	public IModel cloneObject();
 }

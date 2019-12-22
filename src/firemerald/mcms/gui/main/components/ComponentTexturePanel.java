@@ -16,6 +16,7 @@ import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.gui.main.components.items.ButtonOpenFileItem;
 import firemerald.mcms.gui.main.components.items.ButtonSaveFileItem;
 import firemerald.mcms.gui.main.components.texture.TextureViewer;
+import firemerald.mcms.gui.popups.GuiPopupCopy;
 import firemerald.mcms.texture.ReloadingTexture;
 import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.GuiUpdate;
@@ -34,6 +35,7 @@ public class ComponentTexturePanel extends ComponentPanelMain
 	public final ButtonItem16 newTexture;
 	public final ButtonOpenFileItem addTexture;
 	public final ButtonOpenFileItem loadTexture;
+	public final ButtonItem16 cloneTexture;
 	public final ButtonSaveFileItem saveTexture;
 	public final ButtonItem16 editTexture;
 	public final ButtonItem16 removeTexture;
@@ -74,13 +76,17 @@ public class ComponentTexturePanel extends ComponentPanelMain
 			//Main.instance.project.getTexture().load(file);
 			//Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
 		}));
-		this.addElement(saveTexture = new ButtonSaveFileItem(48, h - 16, Textures.ITEM_SAVE, "png", (file) -> {
+		this.addElement(cloneTexture = new ButtonItem16(48, h - 16, Textures.ITEM_COPY, () -> {
+			Project project = Main.instance.project;
+			new GuiPopupCopy(MiscUtil.ensureUnique(project.getTextureName(), project.getTextureNames()), (name) -> project.addTexture(name, project.getTexture().cloneObject())).activate();
+		}));
+		this.addElement(saveTexture = new ButtonSaveFileItem(64, h - 16, Textures.ITEM_SAVE, "png", (file) -> {
 			Main.instance.project.getTexture().saveTexture(file);
 		}));
-		this.addElement(editTexture = new ButtonItem16(64, h - 16, Textures.ITEM_EDIT, () -> System.out.println("edit texture")));
-		this.addElement(removeTexture = new ButtonItem16(80, h - 16, Textures.ITEM_REMOVE, () -> Main.instance.project.removeTexture()));
+		this.addElement(editTexture = new ButtonItem16(80, h - 16, Textures.ITEM_EDIT, () -> System.out.println("edit texture")));
+		this.addElement(removeTexture = new ButtonItem16(96, h - 16, Textures.ITEM_REMOVE, () -> Main.instance.project.removeTexture()));
 		newTexture.enabled = addTexture.enabled = true;
-		this.addElement(textureSelector = new SelectorButton(96, h - 16, w, h, Main.instance.project.getTextureNames().isEmpty() ? "no textures available" : Main.instance.project.getTextureName() == null ? "no texture selected" : Main.instance.project.getTextureName(), MiscUtil.array("none", Main.instance.project.getTextureNames()), (ind, value) -> {
+		this.addElement(textureSelector = new SelectorButton(112, h - 16, w, h, Main.instance.project.getTextureNames().isEmpty() ? "no textures available" : Main.instance.project.getTextureName() == null ? "no texture selected" : Main.instance.project.getTextureName(), MiscUtil.array("none", Main.instance.project.getTextureNames()), (ind, value) -> {
 			if (ind == 0)
 			{
 				Main.instance.project.setTexture(null);
@@ -109,10 +115,11 @@ public class ComponentTexturePanel extends ComponentPanelMain
 		newTexture.setSize(0, h - 16);
 		addTexture.setSize(16, h - 16);
 		loadTexture.setSize(32, h - 16);
-		saveTexture.setSize(48, h - 16);
-		editTexture.setSize(64, h - 16);
-		removeTexture.setSize(80, h - 16);
-		textureSelector.setSize(96, h - 16, w, h);
+		cloneTexture.setSize(48, h - 16);
+		saveTexture.setSize(64, h - 16);
+		editTexture.setSize(80, h - 16);
+		removeTexture.setSize(96, h - 16);
+		textureSelector.setSize(112, h - 16, w, h);
 	}
 	
 	@Override
@@ -122,10 +129,10 @@ public class ComponentTexturePanel extends ComponentPanelMain
 		if (reason == GuiUpdate.PROJECT || reason == GuiUpdate.TEXTURE)
 		{
 			Project project = Main.instance.project;
-			if (project.getTextureName() == null) loadTexture.enabled = saveTexture.enabled = editTexture.enabled = removeTexture.enabled = false;
+			if (project.getTextureName() == null) loadTexture.enabled = cloneTexture.enabled = saveTexture.enabled = editTexture.enabled = removeTexture.enabled = false;
 			else
 			{
-				loadTexture.enabled = saveTexture.enabled = editTexture.enabled = removeTexture.enabled = true;
+				loadTexture.enabled = cloneTexture.enabled = saveTexture.enabled = editTexture.enabled = removeTexture.enabled = true;
 				//TODO set load/save filter
 			}
 			textureSelector.setValues(MiscUtil.array("none", Main.instance.project.getTextureNames()));

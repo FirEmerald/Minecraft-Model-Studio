@@ -46,6 +46,19 @@ public class Texture
 		needsSet = true;
 	}
 	
+	public Texture(Texture from)
+	{
+		this();
+		data = MemoryUtil.memAlloc((this.w = from.w) * (this.h = from.h) * 4);
+		for (int i = 0; i < data.capacity(); i++) data.put(i, from.data.get(i));
+		needsSet = true;
+	}
+	
+	public Texture cloneObject()
+	{
+		return new Texture(this);
+	}
+	
 	public int getU(float u)
 	{
 		return (int) (u * w) % w;

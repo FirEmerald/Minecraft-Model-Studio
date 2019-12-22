@@ -219,4 +219,12 @@ public class MultiModel implements IModel
 	{
 		base.forEach(bone -> bone.updateTex());
 	}
+
+	@Override
+	public MultiModel cloneObject()
+	{
+		List<Bone> newBase = new ArrayList<>(this.base.size());
+		this.base.forEach(oldBase -> newBase.add(oldBase.cloneObject(null)));
+		return new MultiModel(newBase);
+	}
 }

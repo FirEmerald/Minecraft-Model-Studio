@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
+import firemerald.mcms.api.animation.Animation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.api.util.FileUtil.DataType;
@@ -27,6 +28,7 @@ import firemerald.mcms.gui.main.components.animation.PlaybackReverseButton;
 import firemerald.mcms.gui.main.components.animation.PlaybackStartButton;
 import firemerald.mcms.gui.main.components.items.ButtonOpenFileItem;
 import firemerald.mcms.gui.main.components.items.ButtonSaveFileItem;
+import firemerald.mcms.gui.popups.GuiPopupCopy;
 import firemerald.mcms.gui.popups.animation.GuiPopupEditAnimation;
 import firemerald.mcms.gui.popups.animation.GuiPopupLoadAnimation;
 import firemerald.mcms.gui.popups.animation.GuiPopupNewAnimation;
@@ -40,8 +42,10 @@ public class ComponentAnimationBar extends ComponentPanelMain
 	public final ButtonItem16 newAnimation;
 	public final ButtonItem16 addAnimation;
 	public final ButtonOpenFileItem loadAnimation;
+	public final ButtonItem16 cloneAnimation;
 	public final ButtonSaveFileItem saveAnimation;
 	public final ButtonItem16 editAnimation;
+	public final ButtonItem16 reverseAnimation;
 	public final ButtonItem16 removeAnimation;
 	public final SelectorButton animationSelector;
 	public final ComponentFramesBar framesBar;
@@ -79,6 +83,10 @@ public class ComponentAnimationBar extends ComponentPanelMain
 				e.printStackTrace();
 			}
 		}));
+		this.addElement(cloneAnimation = new ButtonItem16(48, 16, Textures.ITEM_COPY, () -> {
+			Project project = Main.instance.project;
+			new GuiPopupCopy(MiscUtil.ensureUnique(project.getAnimationName(), project.getAnimationNames()), (name) -> project.addAnimation(name, (Animation) project.getAnimation().cloneObject())).activate();
+		}));
 		this.addElement(saveAnimation = new ButtonSaveFileItem(0, 32, Textures.ITEM_SAVE, "anim;xml", (file) -> {
 			DataType dataType = FileUtil.getAppropriateDataType(file.toString());
 			AbstractElement root = dataType.newElement("animtion");
@@ -95,7 +103,11 @@ public class ComponentAnimationBar extends ComponentPanelMain
 		this.addElement(editAnimation = new ButtonItem16(16, 32, Textures.ITEM_EDIT, () -> {
 			new GuiPopupEditAnimation().activate();
 		}));
-		this.addElement(removeAnimation = new ButtonItem16(32, 32, Textures.ITEM_REMOVE, () -> Main.instance.project.removeAnimation()));
+		this.addElement(reverseAnimation = new ButtonItem16(32, 32, Textures.ITEM_REVERSE, () -> {
+			Main.instance.project.getAnimation().reverseAnimation(Main.instance.project.getCompletestRig());
+			Main.instance.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+		}));
+		this.addElement(removeAnimation = new ButtonItem16(48, 32, Textures.ITEM_REMOVE, () -> Main.instance.project.removeAnimation()));
 		newAnimation.enabled = addAnimation.enabled = true;
 		this.addElement(animationSelector = new SelectorButton(0, 0, 160, 16, Main.instance.project.getAnimationNames().isEmpty() ? "no animations available" : Main.instance.project.getAnimationName() == null ? "no animation" : Main.instance.project.getAnimationName(), Main.instance.project.getAnimationNames().isEmpty() ? new String[0] : MiscUtil.array("no animation", Main.instance.project.getAnimationNames()), (ind, value) -> {
 			Main.instance.animTime = 0;
@@ -176,8 +188,8 @@ public class ComponentAnimationBar extends ComponentPanelMain
 		if (reason == GuiUpdate.PROJECT || reason == GuiUpdate.ANIMATION)
 		{
 			Project project = Main.instance.project;
-			if (project.getAnimationName() == null) loadAnimation.enabled = saveAnimation.enabled = editAnimation.enabled = removeAnimation.enabled = false;
-			else loadAnimation.enabled = saveAnimation.enabled = editAnimation.enabled = removeAnimation.enabled = true;
+			if (project.getAnimationName() == null) loadAnimation.enabled = cloneAnimation.enabled = saveAnimation.enabled = editAnimation.enabled = reverseAnimation.enabled = removeAnimation.enabled = false;
+			else loadAnimation.enabled = cloneAnimation.enabled = saveAnimation.enabled = editAnimation.enabled = reverseAnimation.enabled = removeAnimation.enabled = true;
 			animationSelector.setValues(Main.instance.project.getAnimationNames().isEmpty() ? new String[0] : MiscUtil.array("none", project.getAnimationNames()));
 			animationSelector.setText(project.getAnimationNames().isEmpty() ? "no animations available" : project.getAnimationName() == null ? "no animation selected" : project.getAnimationName());
 		}

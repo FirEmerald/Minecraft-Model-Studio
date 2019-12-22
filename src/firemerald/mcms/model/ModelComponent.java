@@ -56,14 +56,27 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	
 	public ModelComponent(String name)
 	{
-		parent = null;
-		this.name = name;
+		this(null, name);
 	}
 	
 	public ModelComponent(IComponentParent parent, String name)
 	{
-		(this.parent = parent).getChildrenComponents().add(this);
+		if ((this.parent = parent) != null) parent.getChildrenComponents().add(this);
 		this.name = name;
+	}
+	
+	public ModelComponent(IComponentParent parent, ModelComponent from)
+	{
+		this(parent, from.name);
+		this.visible = from.visible;
+		this.childrenVisible = from.childrenVisible;
+		this.position.set(from.position);
+		this.offset.set(from.offset);
+		this.texU = from.texU;
+		this.texV = from.texV;
+		this.texSizeU = from.texSizeU;
+		this.texSizeV = from.texSizeV;
+		this.transformation = new Matrix4d(from.transformation);
 	}
 	
 	public Matrix4d transformation()
@@ -647,4 +660,13 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	{
 		return this.position;
 	}
+	
+	public ModelComponent cloneObject(IComponentParent clonedParent)
+	{
+		ModelComponent newComponent = cloneSelf(clonedParent);
+		this.children.forEach(child -> child.cloneObject(newComponent));
+		return newComponent;
+	}
+	
+	public abstract ModelComponent cloneSelf(IComponentParent clonedParent);
 }

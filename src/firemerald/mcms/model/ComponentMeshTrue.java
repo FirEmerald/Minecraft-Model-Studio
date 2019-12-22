@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Level;
 import firemerald.mcms.Main;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IModel;
+import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
 import firemerald.mcms.util.mesh.Mesh;
 
@@ -25,6 +26,13 @@ public class ComponentMeshTrue extends ComponentMesh
 		super(mesh, parent, name);
 		origUV = mesh.getTexs();
 		newUV = new float[origUV.length];
+	}
+	
+	public ComponentMeshTrue(IComponentParent parent, ComponentMeshTrue from)
+	{
+		super(parent, from);
+		this.origUV = MiscUtil.copy(from.origUV);
+		this.newUV = MiscUtil.copy(from.newUV);
 	}
 
 	@Override
@@ -113,5 +121,11 @@ public class ComponentMeshTrue extends ComponentMesh
 			return mesh;
 		}
 		else return null;
+	}
+
+	@Override
+	public ComponentMeshTrue cloneSelf(IComponentParent clonedParent)
+	{
+		return new ComponentMeshTrue(clonedParent, this);
 	}
 }

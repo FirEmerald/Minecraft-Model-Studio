@@ -18,9 +18,15 @@ public interface IRigged<T extends IRigged<?>> extends ISaveable, IEditableParen
 	public default Map<String, Matrix4d> getPose(AnimationState... anims)
 	{
 		Map<String, Matrix4d> map = new HashMap<>();
-		for (Bone base : this.getRootBones()) base.setDefTransform(map);
+		for (Bone base : this.getRootBones()) iteratePose(base, map);
 		for (AnimationState state : anims) map = state.anim.getBones(map, state.time, getAllBones());
 		return map;
+	}
+	
+	public default void iteratePose(Bone bone, Map<String, Matrix4d> pose)
+	{
+		pose.put(bone.name, bone.defaultTransform.getTransformation());
+		bone.children.forEach(child -> iteratePose(child, pose));
 	}
 	
 	public List<Bone> getRootBones();

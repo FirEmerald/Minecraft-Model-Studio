@@ -178,4 +178,11 @@ public class Model implements IModel
 	{
 		base.updateTex();
 	}
+
+	@Override
+	public Model cloneObject()
+	{
+		Bone newBase = this.base.cloneObject(null);
+		return new Model(newBase);
+	}
 }

@@ -105,4 +105,18 @@ public class MiscUtil
 		System.arraycopy(append, 0, ret, 1, append.length);
 		return ret;
 	}
+    
+    public static float[] copy(float[] toCopy)
+    {
+    	float[] res = new float[toCopy.length];
+    	System.arraycopy(toCopy, 0, res, 0, toCopy.length);
+    	return res;
+    }
+    
+    public static int[] copy(int[] toCopy)
+    {
+    	int[] res = new int[toCopy.length];
+    	System.arraycopy(toCopy, 0, res, 0, toCopy.length);
+    	return res;
+    }
 }

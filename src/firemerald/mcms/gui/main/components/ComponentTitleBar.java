@@ -10,6 +10,8 @@ import java.io.Writer;
 import java.util.function.Supplier;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.Project;
+import firemerald.mcms.api.animation.AnimationState;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.StandardButton;
@@ -104,7 +106,7 @@ public class ComponentTitleBar extends ComponentPanelMain
         			try
         			{
         				writer = new FileWriter(file);
-        				writer.write(RenderObjectComponents.createObj(Main.instance.project.getModel()).toString());
+        				writer.write(RenderObjectComponents.createObj(Main.instance.project.getModel(), Main.instance.project.getModel().getPose()).toString());
         			}
         			catch (IOException e)
         			{
@@ -115,6 +117,32 @@ public class ComponentTitleBar extends ComponentPanelMain
         		((GuiPopup) Main.instance.gui).deactivate();
         	});
         	menu.add(exportModel);
+        	MenuItem exportPosedModel = new MenuItem("Export Posed Model");
+        	if (Main.instance.project.getModel() == null) exportPosedModel.setEnabled(false);
+        	else exportPosedModel.addActionListener(action -> {
+        		File file = FileUtils.getSaveFile("obj", "");
+        		if (file != null)
+        		{
+        			Writer writer = null;
+        			try
+        			{
+        				writer = new FileWriter(file);
+        				Main main = Main.instance;
+        				Project project = main.project;
+        				AnimationState[] anims;
+        				if (project.getAnimation() != null) anims = new AnimationState[] {new AnimationState(project.getAnimation(), main.animTime)};
+        				else anims = new AnimationState[0];
+        				writer.write(RenderObjectComponents.createObj(project.getModel(), project.getModel().getPose(anims)).toString());
+        			}
+        			catch (IOException e)
+        			{
+        				Main.LOGGER.warn("Couldn't export model to " + file, e);
+        			}
+        			FileUtil.closeSafe(writer);
+        		}
+        		((GuiPopup) Main.instance.gui).deactivate();
+        	});
+        	menu.add(exportPosedModel);
             return menu;
         }));
         this.addElement(textureMenu = new TitleButton(192, 0, 256, 16, 1, 0, "Texture", () -> {

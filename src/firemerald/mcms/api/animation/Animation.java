@@ -14,6 +14,7 @@ import firemerald.mcms.Project;
 import firemerald.mcms.api.API;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.Bone;
+import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.api.model.ITransformsProvider;
 import firemerald.mcms.gui.main.components.animation.ComponentKeyFrame;
 import firemerald.mcms.util.GuiUpdate;
@@ -339,5 +340,73 @@ public class Animation implements IAnimation
 			main.gui.onGuiUpdate(GuiUpdate.ANIMATION);
 			if (main.getEditing() instanceof ComponentKeyFrame) main.setEditing(main.getEditing());
 		}
+	}
+	
+	@Override
+	public Animation cloneObject()
+	{
+		Map<String, NavigableMap<Float, Transformation>> newAnimation = new HashMap<>();
+		this.animation.forEach((bone, anim) -> {
+			NavigableMap<Float, Transformation> newAnim = new TreeMap<>();
+			newAnimation.put(bone, newAnim);
+			anim.forEach((time, transform) -> {
+				newAnim.put(time, transform.copy());
+			});
+		});
+		return new Animation(newAnimation, this.length, this.loop, this.relative);
+	}
+
+	@Override
+	public void reverseAnimation(IRigged<?> rig)
+	{
+		this.animation.forEach((name, anim) -> {
+			if (!anim.isEmpty())
+			{
+				NavigableMap<Float, Transformation> newAnim = new TreeMap<>();
+				anim.forEach((time, transform) -> {
+					newAnim.put(length - time, transform.copy());
+				});
+				if (rig != null)
+				{
+					Bone bone = rig.getBone(name);
+					if (bone != null)
+					{
+						Transformation def = this.relative ? new Transformation() : bone.defaultTransform;
+						if (anim.get(length) == null) //lacks final keyframe
+						{
+							Transformation current = anim.lowerEntry(length).getValue();
+							if (!current.equals(def)) //needs initial set
+							{
+								newAnim.put(0f, current.copy());
+							}
+						}
+						if (anim.get(0f) == null) //lacks initial keyframe
+						{
+							Transformation current = anim.higherEntry(0f).getValue();
+							if (!current.equals(def)) //needs final set
+							{
+								newAnim.put(length, def.copy());
+							}
+						}
+						Float cur = -1f;
+						Entry<Float, Transformation> entry;
+						while ((entry = newAnim.higherEntry(cur)) != null && entry.getValue().equals(def)) newAnim.remove(cur = entry.getKey()); //remove redundant starting frames
+					}
+				}
+				if (!newAnim.isEmpty())
+				{
+					Entry<Float, Transformation> lastEntry = newAnim.lastEntry();
+					Float cur = lastEntry.getKey();
+					Entry<Float, Transformation> entry;
+					while ((entry = newAnim.lowerEntry(cur)) != null && entry.getValue().equals(lastEntry.getValue())) //remove redundant ending frames
+					{
+						newAnim.remove(cur);
+						cur = (lastEntry = entry).getKey();
+					}
+				}
+				anim.clear();
+				anim.putAll(newAnim);
+			}
+		});
 	}
 }

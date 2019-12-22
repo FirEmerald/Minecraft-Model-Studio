@@ -25,6 +25,12 @@ public abstract class ComponentMesh extends ModelComponent
 		super(parent, name);
 		this.mesh = mesh;
 	}
+	
+	public ComponentMesh(IComponentParent parent, ComponentMesh from)
+	{
+		super(parent, from);
+		this.mesh = from.mesh.copy();
+	}
 
 	@Override
 	public void doRender()

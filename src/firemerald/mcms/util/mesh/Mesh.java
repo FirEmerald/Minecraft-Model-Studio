@@ -12,6 +12,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.util.MiscUtil;
 
 public class Mesh
 {
@@ -526,5 +527,10 @@ public class Mesh
     		else if ((numIndices % stride) != 0) return false;
     		else return true;
     	}
+    }
+    
+    public Mesh copy()
+    {
+    	return new Mesh(MiscUtil.copy(this.verts), MiscUtil.copy(this.texs), MiscUtil.copy(this.norms), MiscUtil.copy(this.inds), this.drawMode, this.usage);
     }
 }

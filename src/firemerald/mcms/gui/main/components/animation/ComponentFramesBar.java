@@ -100,9 +100,11 @@ public class ComponentFramesBar extends ScrollableComponentPane //TODO bones not
 	@Override
 	public void onScrolled()
 	{
+		int scroll = (int) Math.floor(this.scroll);
 		timeStamps.forEach(timeStamp -> {
-			timeStamp.setSize(timeStamp.x1, (int) scroll, timeStamp.x2, (int) (scroll + 16));
+			timeStamp.setSize(timeStamp.x1, scroll, timeStamp.x2, scroll + 16);
 		});
+		seeker.setSize(seeker.x1, scroll, seeker.x2, scroll + 16);
 	}
 	
 	@Override

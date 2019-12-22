@@ -110,6 +110,21 @@ public class ComponentBox extends ComponentMesh
 		init();
 	}
 	
+	public ComponentBox(IComponentParent parent, ComponentBox from)
+	{
+		super(parent, from);
+		this.lengthX = from.lengthX;
+		this.lengthY = from.lengthY;
+		this.lengthZ = from.lengthZ;
+		this.mirror = from.mirror;
+		this.enableUp = from.enableUp;
+		this.enableDown = from.enableDown;
+		this.enableNorth = from.enableNorth;
+		this.enableEast = from.enableEast;
+		this.enableSouth = from.enableSouth;
+		this.enableWest = from.enableWest;
+	}
+	
 	private void init()
 	{
 		lengthX = lengthY = lengthZ = .0625f;
@@ -615,5 +630,11 @@ public class ComponentBox extends ComponentMesh
 		m.render();
 		m.cleanUp();
 		Main.instance.shader.setColor(1, 1, 1, 1);
+	}
+
+	@Override
+	public ComponentBox cloneSelf(IComponentParent clonedParent)
+	{
+		return new ComponentBox(clonedParent, this);
 	}
 }

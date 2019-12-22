@@ -16,8 +16,10 @@ import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.gui.main.components.elements.ComponentEditSelector;
 import firemerald.mcms.gui.main.components.items.ButtonOpenFileItem;
 import firemerald.mcms.gui.main.components.items.ButtonSaveFileItem;
+import firemerald.mcms.gui.popups.GuiPopupCopy;
 import firemerald.mcms.gui.popups.model.GuiPopupModel;
 import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
 
 public class ComponentElementsPanel extends ComponentPanelMain
@@ -32,6 +34,7 @@ public class ComponentElementsPanel extends ComponentPanelMain
 	public final ButtonItem16 newModel;
 	public final ButtonOpenFileItem addModel;
 	public final ButtonOpenFileItem loadModel;
+	public final ButtonItem16 cloneModel;
 	public final ButtonSaveFileItem saveModel;
 	public final ButtonItem16 editModel;
 	public final ButtonItem16 removeModel;
@@ -53,12 +56,16 @@ public class ComponentElementsPanel extends ComponentPanelMain
 		this.addElement(newModel = new ButtonItem16(0, h - 16, Textures.ITEM_NEW, () -> new GuiPopupModel(false).activate()));
 		this.addElement(addModel = new ButtonOpenFileItem(16, h - 16, Textures.ITEM_ADD, "obj", (file) -> System.out.println("add model: " + file)));
 		this.addElement(loadModel = new ButtonOpenFileItem(32, h - 16, Textures.ITEM_LOAD, "obj", (file) -> System.out.println("load model: " + file)));
-		this.addElement(saveModel = new ButtonSaveFileItem(48, h - 16, Textures.ITEM_SAVE, "obj", (file) -> System.out.println("save model: " + file)));
-		this.addElement(editModel = new ButtonItem16(64, h - 16, Textures.ITEM_EDIT, () -> new GuiPopupModel(true).activate()));
-		this.addElement(removeModel = new ButtonItem16(80, h - 16, Textures.ITEM_REMOVE, () -> Main.instance.project.removeModel()));
+		this.addElement(cloneModel = new ButtonItem16(48, h - 16, Textures.ITEM_COPY, () -> {
+			Project project = Main.instance.project;
+			new GuiPopupCopy(MiscUtil.ensureUnique(project.getModelName(), project.getModelNames()), (name) -> project.addModel(name, project.getModel().cloneObject())).activate();
+		}));
+		this.addElement(saveModel = new ButtonSaveFileItem(64, h - 16, Textures.ITEM_SAVE, "obj", (file) -> System.out.println("save model: " + file)));
+		this.addElement(editModel = new ButtonItem16(80, h - 16, Textures.ITEM_EDIT, () -> new GuiPopupModel(true).activate()));
+		this.addElement(removeModel = new ButtonItem16(96, h - 16, Textures.ITEM_REMOVE, () -> Main.instance.project.removeModel()));
 		newModel.enabled = addModel.enabled = true;
 		Project project = Main.instance.project;
-		this.addElement(modelSelector = new SelectorButton(96, h - 16, w, h, project.getModelName() == null ? project.useBackingSkeleton() ? "model skeleton" : "no model selected" : project.getModelName(), allModelNames(project), (ind, value) -> {
+		this.addElement(modelSelector = new SelectorButton(112, h - 16, w, h, project.getModelName() == null ? project.useBackingSkeleton() ? "model skeleton" : "no model selected" : project.getModelName(), allModelNames(project), (ind, value) -> {
 			Project proj = Main.instance.project;
 			if (proj.useBackingSkeleton() && ind == 0) proj.setModel(null);
 			else proj.setModel(value);
@@ -79,10 +86,11 @@ public class ComponentElementsPanel extends ComponentPanelMain
 		newModel.setSize(0, h - 16);
 		addModel.setSize(16, h - 16);
 		loadModel.setSize(32, h - 16);
-		saveModel.setSize(48, h - 16);
-		editModel.setSize(64, h - 16);
-		removeModel.setSize(80, h - 16);
-		modelSelector.setSize(96, h - 16, w, h);
+		cloneModel.setSize(48, h - 16);
+		saveModel.setSize(64, h - 16);
+		editModel.setSize(80, h - 16);
+		removeModel.setSize(96, h - 16);
+		modelSelector.setSize(112, h - 16, w, h);
 		// TODO components
 	}
 	
@@ -93,8 +101,8 @@ public class ComponentElementsPanel extends ComponentPanelMain
 		if (reason == GuiUpdate.PROJECT || reason == GuiUpdate.MODEL)
 		{
 			Project project = Main.instance.project;
-			if (project.getModelName() == null) loadModel.enabled = saveModel.enabled = editModel.enabled = removeModel.enabled = false;
-			else loadModel.enabled = saveModel.enabled = editModel.enabled = removeModel.enabled = true;
+			if (project.getModelName() == null) loadModel.enabled = cloneModel.enabled = saveModel.enabled = editModel.enabled = removeModel.enabled = false;
+			else loadModel.enabled = cloneModel.enabled = saveModel.enabled = editModel.enabled = removeModel.enabled = true;
 			modelSelector.setValues(allModelNames(project));
 			modelSelector.setText(project.getModelName() == null ? project.useBackingSkeleton() ? "model skeleton" : "no model selected" : project.getModelName());
 		}

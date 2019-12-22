@@ -153,4 +153,15 @@ public class Transformation
 		Vector3f vec = new Vector3f(a.translation.x() + (b.translation.x() - a.translation.x()) * mix, a.translation.y() + (b.translation.y() - a.translation.y()) * mix, a.translation.z() + (b.translation.z() - a.translation.z()) * mix);
 		return new Transformation(q, vec);
 	}
+	
+	@Override
+	public boolean equals(Object o)
+	{
+		if (o instanceof Transformation)
+		{
+			Transformation t = (Transformation) o;
+			return t.translation.equals(translation) && t.rotation.getQuaternion().equals(rotation.getQuaternion());
+		}
+		else return false;
+	}
 }

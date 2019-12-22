@@ -93,13 +93,13 @@ public class Bone implements IRaytraceTarget, IModelEditable, ITransformed
 		}
 		return result;
 	}
-	
+	/*
 	@Override
 	public String toString()
 	{
 		return name + ":" + this.getClass().toString();
 	}
-
+	*/
 	private ComponentFloatingLabel labelName;
 	private ComponentText textName;
 	private ComponentFloatingLabel labelPos;
@@ -504,5 +504,12 @@ public class Bone implements IRaytraceTarget, IModelEditable, ITransformed
 	public Transformation getDefaultTransformation()
 	{
 		return this.defaultTransform;
+	}
+	
+	public Bone cloneObject(Bone clonedParent)
+	{
+		Bone newBone = new Bone(this.name, this.defaultTransform.copy(), clonedParent);
+		this.children.forEach(child -> child.cloneObject(newBone));
+		return newBone;
 	}
 }

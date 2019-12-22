@@ -208,6 +208,11 @@ public class Project
 		return model == null ? useBackingSkeleton ? skeleton : null : model;
 	}
 	
+	public IRigged<?> getCompletestRig()
+	{
+		return useBackingSkeleton ? skeleton : model == null ? null : model;
+	}
+	
 	public ISkeleton getSkeleton()
 	{
 		return useBackingSkeleton ? skeleton : null;
@@ -570,7 +575,7 @@ public class Project
 			try //save model
 			{
 				writer = new FileWriter(new File(dir, name + ".obj"));
-				writer.write(RenderObjectComponents.createObj(model).toString());
+				writer.write(RenderObjectComponents.createObj(model, model.getPose()).toString());
 			}
 			catch (IOException e)
 			{

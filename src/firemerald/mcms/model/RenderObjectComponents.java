@@ -73,21 +73,19 @@ public class RenderObjectComponents extends Bone implements IComponentParent
 		for (ModelComponent component : components) component.addToObjModel(trans, obj, mesh);
 	}
 	
-	public static ObjData createObj(IModel model)
+	public static ObjData createObj(IModel model, Map<String, Matrix4d> pose)
 	{
 		ObjData obj = new ObjData();
-		for (Bone bone : model.getRootBones()) addToObj(bone, obj, new Matrix4d());
+		Matrix4d ident = new Matrix4d();
+		for (Bone bone : model.getRootBones()) addToObj(bone, obj, ident, pose);
 		return obj;
 	}
 	
-	private static void addToObj(Bone bone, ObjData obj, Matrix4d transformation)
+	private static void addToObj(Bone bone, ObjData obj, Matrix4d parentTransform, Map<String, Matrix4d> pose)
 	{
-		Matrix4d trans = new Matrix4d(transformation);
-		//trans.mul(bone.defaultTransform.getTransformation());
-		trans.translate(bone.defaultTransform.translation);
-		trans.mul(bone.defaultTransform.rotation.getQuaternion().get(new Matrix4d()));
-		if (bone instanceof RenderObjectComponents) ((RenderObjectComponents) bone).addToObj(trans, obj);
-		for (Bone bone2 : bone.children) addToObj(bone2, obj, trans);
+		Matrix4d transform = parentTransform.mul(pose.get(bone.name), new Matrix4d());
+		if (bone instanceof RenderObjectComponents) ((RenderObjectComponents) bone).addToObj(transform, obj);
+		for (Bone bone2 : bone.children) addToObj(bone2, obj, transform, pose);
 	}
 	
 	@Override
@@ -253,5 +251,14 @@ public class RenderObjectComponents extends Bone implements IComponentParent
 	{
 		getChildrenComponents().forEach(component -> component.updateTex());
 		super.updateTex();
+	}
+	
+	@Override
+	public RenderObjectComponents cloneObject(Bone clonedParent)
+	{
+		final RenderObjectComponents cloned = new RenderObjectComponents(this.name, this.defaultTransform.copy(), clonedParent);
+		this.components.forEach(component -> component.cloneObject(cloned));
+		this.children.forEach(child -> child.cloneObject(cloned));
+		return cloned;
 	}
 }
