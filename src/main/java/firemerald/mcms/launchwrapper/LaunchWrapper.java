@@ -1,0 +1,250 @@
+package firemerald.mcms.launchwrapper;
+
+import firemerald.mcms.plugin.CoreModdingClassLoader;
+import firemerald.mcms.util.PrintStreamLogger;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
+
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class LaunchWrapper
+{
+	protected static final Logger LOGGER;
+	private static ProgressBars progressBars;
+	private static int item;
+	
+	static
+	{
+		System.setProperty("log4j.configurationFile", "assets/mcms/log4j2.xml");
+		LOGGER = LogManager.getLogger("LaunchWrapper"); //the main logger
+		if (!(System.out instanceof PrintStreamLogger))
+		{
+			Logger stdOut = LogManager.getLogger("STDOUT"); //the logger for System.out
+			System.setOut(new PrintStreamLogger(System.out, stdOut, Level.INFO)); //replace the default output stream with one that goes to the logger
+		}
+		if (!(System.err instanceof PrintStreamLogger))
+		{
+			Logger stdErr = LogManager.getLogger("STDERR"); //the logger for System.err
+			System.setErr(new PrintStreamLogger(System.err, stdErr, Level.ERROR)); //replace the default error stream with one that goes to the logger
+		}
+	}
+	
+	public static void main(String[] args)
+	{
+		progressBars = new ProgressBars(20);
+		final String lwjglVersion = "3.2.3";
+		final String log4jVersion = "2.13.3";
+		final String objectWebASMVersion = "6.2.1";
+		EnumOS os = EnumOS.getOS();
+		List<URL> jars = new ArrayList<>();
+		jars.add(LaunchWrapper.class.getProtectionDomain().getCodeSource().getLocation());
+		downloadMaven("junit", "junit", "3.8.1", jars, new byte[]{31, 64, -5, 120, 42, 79, 44, -9, -113, 22, 29, 50, 103, 15, 122, 58});
+		downloadJar("https://github.com/imcdonagh/image4j/releases/download/0.7.2/image4j-0.7.2.jar", "github/image4j/0.7.2/image4j-0.7.2.jar", jars, new byte[]{64, -116, -4, 64, -45, -112, 16, -20, -46, 64, -114, -11, 18, 71, -20, -116});
+		downloadMaven("org.apache.logging.log4j", "log4j-core", log4jVersion, jars, new byte[]{-52, 125, 85, -19, 105, -52, 95, -45, 64, 53, -79, 92, 110, -33, 121, -96});
+		downloadMaven("org.apache.logging.log4j", "log4j-api", log4jVersion, jars, new byte[]{35, 107, -103, 105, -33, 107, 57, 78, -120, 40, 58, -97, -127, 59, -101, -107});
+		downloadLWJGL("org.lwjgl", "lwjgl", lwjglVersion, os, jars, new byte[]{46, -52, 118, -27, -58, 29, -52, -47, -24, 47, -122, 116, -128, 6, 71, 59}, new byte[]{97, 10, 70, -109, -21, 97, 113, 28, -45, 30, -2, 53, 98, -60, 13, -41});
+		downloadLWJGL("org.lwjgl", "lwjgl-glfw", lwjglVersion, os, jars, new byte[]{-114, 70, 111, -41, -87, 97, -74, -96, 2, 82, -71, -15, 98, -45, -1, 99}, new byte[]{48, 119, 51, -35, -42, 42, 34, 120, -96, 103, 122, 99, -109, -67, -61, -87});
+		downloadMaven("org.lwjgl", "lwjgl-jawt", lwjglVersion, jars, new byte[]{125, -40, -104, -35, 43, -8, 23, 72, -22, -41, 101, -26, -58, 86, -20, -79});
+		downloadLWJGL("org.lwjgl", "lwjgl-nfd", lwjglVersion, os, jars, new byte[]{-50, -59, -72, -16, -106, 92, -90, 9, -13, -27, -118, -61, -32, 67, -35, -98}, new byte[]{-3, 3, -19, -113, 58, 1, -7, -114, -78, 42, 101, 2, -102, 64, -117, -61});
+		downloadLWJGL("org.lwjgl", "lwjgl-opengl", lwjglVersion, os, jars, new byte[]{-89, 116, 51, -115, -63, -1, -13, -81, 62, -91, 106, -99, -34, 106, 113, -49}, new byte[]{51, 77, 83, -112, 93, 103, -2, -11, -117, -37, -124, -65, -127, -14, -114, -8});
+		downloadMaven("com.google.code.gson", "gson", "2.8.5", jars, new byte[]{8, -111, 4, -53, -112, -40, -76, -31, -86, 0, -79, -11, -6, -17, 7, 66});
+		downloadMaven("org.lwjglx", "lwjgl3-awt", "0.1.1", jars, new byte[]{-113, -44, -117, -104, 4, 89, 23, -56, -73, 9, 34, 10, -9, -103, 97, -65});
+		downloadMaven("org.joml", "joml", "1.9.16", jars, new byte[]{119, -11, 11, -67, 51, -115, -117, -73, -71, 108, -54, 52, -68, -100, -88, 24});
+		downloadMaven("org.ow2.asm", "asm", objectWebASMVersion, jars, new byte[]{19, -83, 124, 11, 44, -50, 120, -97, -11, 74, -70, -64, 69, 122, 72, 29});
+		downloadMaven("org.ow2.asm", "asm-commons", objectWebASMVersion, jars, new byte[]{-26, 34, 80, -17, -8, 3, 36, -21, 87, 91, -112, 78, 81, -106, 0, 114});
+		downloadMaven("org.ow2.asm", "asm-analysis", objectWebASMVersion, jars, new byte[]{31, -48, -57, -35, 64, -51, -22, 56, 71, 5, -30, 120, 70, -36, -90, -53});
+		downloadMaven("org.ow2.asm", "asm-tree", objectWebASMVersion, jars, new byte[]{-58, -62, -99, -73, 112, -26, 29, -17, -34, 27, -63, 79, -45, -123, -9, 112});
+		progressBars.dispose();
+		progressBars = null;
+		@SuppressWarnings("resource")
+		CoreModdingClassLoader classLoader = new CoreModdingClassLoader((URL[])jars.toArray(new URL[jars.size()]), LOGGER);
+		LOGGER.info("Launching wrapped MCMS");
+		try
+		{
+			classLoader.loadClass("firemerald.mcms.plugin.PluginLoader").getMethod("main", String[].class).invoke(null, new Object[] {args});
+		}
+		catch (Throwable e)
+		{
+			LOGGER.fatal("MCMS crashed", e);
+		}
+		LOGGER.debug("Main thread exit");
+		System.exit(0);
+	}
+	
+	public static void downloadLWJGL(String groupId, String artifactId, String version, EnumOS os, List<URL> jars, byte[] md5jar, byte[] md5native)
+	{
+		downloadMaven(groupId, artifactId, version, jars, md5jar);
+		downloadMaven(groupId, artifactId, version, os.lwjglNatives, jars, md5native);
+	}
+	
+	public static void downloadMaven(String groupId, String artifactId, String version, List<URL> jars, byte[] md5)
+	{
+		downloadMaven(groupId, artifactId, version, (String)null, jars, md5);
+	}
+	
+	public static void downloadMaven(String groupId, String artifactId, String version, String classifier, List<URL> jars, byte[] md5)
+	{
+		downloadMaven("https://repo1.maven.org/maven2", groupId, artifactId, version, classifier, jars, md5);
+	}
+	
+	public static void downloadMaven(String repository, String groupId, String artifactId, String version, String classifier, List<URL> jars, byte[] md5)
+	{
+		StringBuilder builder = (new StringBuilder(groupId.replace('.', '/'))).append('/').append(artifactId).append('/').append(version).append('/').append(artifactId).append('-').append(version);
+		if (classifier != null) builder.append('-').append(classifier);
+		String file = builder.append(".jar").toString();
+		downloadJar(repository + "/" + file, file, jars, md5);
+	}
+	
+	public static void downloadJar(String url, String des, List<URL> jars, byte[] md5)
+	{
+		boolean download = true;
+		byte[] bytes = new byte[4096];
+		File file = new File("libs/" + des);
+		int read;
+		if (file.exists())
+		{
+			progressBars.setProgress("Verifying " + file, item);
+			FileInputStream in = null;
+			try
+			{
+				in = new FileInputStream(file);
+				MessageDigest digest = MessageDigest.getInstance("MD5");
+				int total = 0;
+				progressBars.setSubProgress("0 bytes");
+				while((read = in.read(bytes)) > 0)
+				{
+					progressBars.setSubProgress((total += read) + " bytes");
+					digest.update(bytes, 0, read);
+				}
+				byte[] got = digest.digest();
+				LOGGER.debug(file + " MD5: " + convertByteArrayToString(got));
+				if (got.length != md5.length) LOGGER.warn("Invalid MD5 for " + des + " library, was " + convertByteArrayToHexString(got) + ", should be " + convertByteArrayToHexString(md5));
+				else
+				{
+					download = false;
+					for(int i = 0; i < got.length; i++)
+					{
+						if (got[i] != md5[i])
+						{
+							download = true;
+							LOGGER.warn("Invalid MD5 for " + des + " library, was " + convertByteArrayToHexString(got) + ", should be " + convertByteArrayToHexString(md5));
+							break;
+						}
+					}
+					if (!download) LOGGER.info(des + " MD5 passed");
+				}
+			}
+			catch (NoSuchAlgorithmException | IOException e)
+			{
+				LOGGER.warn("Couldn't retrieve " + des + " MD5", e);
+			}
+			if (in != null) try
+			{
+				in.close();
+			}
+			catch (IOException var16) {}
+		}
+		if (download)
+		{
+			progressBars.setProgress("Downloading " + url, item);
+			LOGGER.info("Downloading " + url + " to " + file.getAbsolutePath());
+			InputStream in = null;
+			FileOutputStream out = null;
+			try
+			{
+				URL jomlURL = new URL(url);
+				file.getParentFile().mkdirs();
+				file.createNewFile();
+				in = jomlURL.openStream();
+				MessageDigest digest = MessageDigest.getInstance("MD5");
+				out = new FileOutputStream(file);
+				int downloaded = 0;
+				progressBars.setSubProgress("0 bytes");
+				while((read = in.read(bytes)) > 0)
+				{
+					progressBars.setSubProgress((downloaded += read) + " bytes");
+					out.write(bytes, 0, read);
+					digest.update(bytes, 0, read);
+					LOGGER.debug(downloaded + " bytes");
+				}
+				LOGGER.info("downloaded " + url + " successfully");
+				byte[] got = digest.digest();
+				LOGGER.debug(url + " MD5: " + convertByteArrayToString(got));
+				if (got.length != md5.length) LOGGER.warn("Invalid MD5 for " + des + " library, was " + convertByteArrayToHexString(got) + ", should be " + convertByteArrayToHexString(md5));
+				else
+				{
+					download = false;
+					for(int i = 0; i < got.length; i++)
+					{
+						if (got[i] != md5[i])
+						{
+							download = true;
+							LOGGER.warn("Invalid MD5 for " + des + " library, was " + convertByteArrayToHexString(got) + ", should be " + convertByteArrayToHexString(md5));
+							break;
+						}
+					}
+					if (!download) LOGGER.info(des + " MD5 passed");
+				}
+			}
+			catch (Exception e)
+			{
+				LOGGER.error("Couldn't download " + des + " library", e);
+			}
+			if (in != null) try
+			{
+				in.close();
+			}
+			catch (IOException E) {}
+			if (out != null) try
+			{
+				out.close();
+			}
+			catch (IOException E) {}
+		}
+		if (file.exists()) try
+		{
+			jars.add(file.toURI().toURL());
+		}
+		catch (MalformedURLException E)
+		{
+			LOGGER.error("Could not add " + des + " library", E);
+		}
+		item++;
+		progressBars.setProgress("Downloaded " + url, item);
+	}
+	
+	private static String convertByteArrayToHexString(byte[] arrayBytes)
+	{
+		StringBuffer stringBuffer = new StringBuffer();
+		for (byte b : arrayBytes) stringBuffer.append(Integer.toString(b & 255, 16));
+		return stringBuffer.toString();
+	}
+	
+	/** /
+	private static String convertByteArrayToCodeString(byte[] arrayBytes)
+	{
+		StringJoiner joiner = new StringJoiner(", ");
+	    for (byte b : arrayBytes) joiner.add(Byte.toString(b));
+	    return "new byte[] {" + joiner.toString() + "}";
+	}
+	/**/
+	private static String convertByteArrayToString(byte[] arrayBytes)
+	{
+		StringJoiner joiner = new StringJoiner(", ");
+	    for (byte b : arrayBytes) joiner.add(Byte.toString(b));
+	    return joiner.toString();
+	}
+}
