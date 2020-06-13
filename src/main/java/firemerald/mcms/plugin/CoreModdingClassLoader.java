@@ -57,7 +57,7 @@ public class CoreModdingClassLoader extends URLClassLoader
 			InputStream classData = getResourceAsStream(name.replace('.', '/') + ".class");
 			if (classData == null)
 			{
-				throw new ClassNotFoundException("class " + name + " is not findable");
+				throw new ClassNotFoundException(name);
 			}
 			byte[] array;
 			byte[] prev = array = new byte[0];

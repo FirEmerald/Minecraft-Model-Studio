@@ -2,7 +2,10 @@ package firemerald.mcms.model;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
 
 import org.joml.Matrix3d;
 import org.joml.Matrix4d;
@@ -28,14 +31,61 @@ import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.shader.Shader;
 import firemerald.mcms.util.ObjUtil;
+import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.mesh.Mesh;
 
 /**
- * @author test
+ * @author FirEmerald
  *
  */
 public abstract class ModelComponent implements IRaytraceTarget, IComponentParent //TODO fix offset calculation TODO add registry
 {
+	private static final Map<String, BiFunction<IComponentParent, AbstractElement, ModelComponent>> COMPONENT_TYPES = new HashMap<>();
+
+	/**
+	 * Register a ModelComponent type
+	 * 
+	 * @param name the component's name - the component's XML name <i>must</i> be {domain}:{path with "/"'s replaced with "."'s} or it will not load properly!
+	 * @param constructor the constructor lambda - constructs the component. see the static constructor below for examples.
+	 * 
+	 * @return if the component was registered
+	 */
+	public static boolean registerComponentType(ResourceLocation name, BiFunction<IComponentParent, AbstractElement, ModelComponent> constructor)
+	{
+		return registerComponentType(name.toString().replace('/', '.'), constructor);
+	}
+	
+	private static boolean registerComponentType(String name, BiFunction<IComponentParent, AbstractElement, ModelComponent> constructor)
+	{
+		if (COMPONENT_TYPES.containsKey(name)) return false;
+		else
+		{
+			COMPONENT_TYPES.put(name, constructor);
+			return true;
+		}
+	}
+	
+	public static ModelComponent construct(String name, IComponentParent parent, AbstractElement element)
+	{
+		BiFunction<IComponentParent, AbstractElement, ModelComponent> constructor = COMPONENT_TYPES.get(name);
+		if (constructor == null) return null;
+		else return constructor.apply(parent, element);
+	}
+	
+	static
+	{
+		registerComponentType("box", (parent, element) -> {
+			ComponentBox box = new ComponentBox(parent, element.getString("name", "unnamed box"));
+			box.loadFromXML(element);
+			return box;
+		});
+		registerComponentType("mesh", (parent, element) -> {
+			ComponentMeshTrue mesh = new ComponentMeshTrue(new Mesh(), parent, element.getString("name", "unnamed mesh"));
+			mesh.loadFromXML(element);
+			return mesh;
+		});
+	}
+	
 	public boolean visible = true, childrenVisible = true;
 	protected String name;
 	public IComponentParent parent;
@@ -611,22 +661,8 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	
 	public static boolean loadComponent(IComponentParent parent, AbstractElement el)
 	{
-		switch (el.getName())
-		{
-		case "box":
-		{
-			ComponentBox box = new ComponentBox(parent, el.getString("name", "unnamed box"));
-			box.loadFromXML(el);
-			return true;
-		}
-		case "mesh":
-		{
-			ComponentMeshTrue mesh = new ComponentMeshTrue(new Mesh(), parent, el.getString("name", "unnamed mesh"));
-			mesh.loadFromXML(el);
-			return true;
-		}
-		default: return false;
-		}
+		ModelComponent component = ModelComponent.construct(el.getName(), parent, el);
+		return component != null;
 	}
 	
 	@Override

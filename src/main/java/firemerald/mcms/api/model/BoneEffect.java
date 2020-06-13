@@ -22,7 +22,15 @@ import firemerald.mcms.util.function.TriFunction;
 public abstract class BoneEffect implements IModelEditable
 {
 	private static final Map<String, TriFunction<Bone, AbstractElement, Float, BoneEffect>> EFFECT_TYPES = new HashMap<>();
-	
+
+	/**
+	 * Register a Bone Effect type
+	 * 
+	 * @param name the bone effect's name - the bone effect's XML name <i>must</i> be {domain}:{path with "/"'s replaced with "."'s} or it will not load properly!
+	 * @param constructor the constructor lambda - constructs the bone effect. see the static constructor below for examples.
+	 * 
+	 * @return if the bone effect was registered
+	 */
 	public static boolean registerBoneType(ResourceLocation name, TriFunction<Bone, AbstractElement, Float, BoneEffect> constructor)
 	{
 		return registerBoneType(name.toString().replace(':', '-').replace('/', '_'), constructor);

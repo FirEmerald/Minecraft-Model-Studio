@@ -38,7 +38,15 @@ import firemerald.mcms.util.function.TriFunction;
 public class Bone implements IRaytraceTarget, IModelEditable, ITransformed
 {
 	private static final Map<String, TriFunction<Bone, AbstractElement, Float, Bone>> BONE_TYPES = new HashMap<>();
-	
+
+	/**
+	 * Register a Bone type
+	 * 
+	 * @param name the bone's name - the bone's XML name <i>must</i> be {domain}:{path with "/"'s replaced with "."'s} or it will not load properly!
+	 * @param constructor the constructor lambda - constructs the bone. see the static constructor below for examples.
+	 * 
+	 * @return if the bone was registered
+	 */
 	public static boolean registerBoneType(ResourceLocation name, TriFunction<Bone, AbstractElement, Float, Bone> constructor)
 	{
 		return registerBoneType(name.toString().replace(':', '-').replace('/', '_'), constructor);

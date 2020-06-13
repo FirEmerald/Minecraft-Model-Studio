@@ -8,8 +8,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ public class LaunchWrapper
 	protected static final Logger LOGGER;
 	private static ProgressBars progressBars;
 	private static int item;
+	private static boolean isMDK = false;
 	
 	static
 	{
@@ -44,44 +47,57 @@ public class LaunchWrapper
 	
 	public static void main(String[] args)
 	{
-		progressBars = new ProgressBars(20);
-		final String lwjglVersion = "3.2.3";
-		final String log4jVersion = "2.13.3";
-		final String objectWebASMVersion = "6.2.1";
-		EnumOS os = EnumOS.getOS();
+		isMDK = System.getProperty("isMDK").equalsIgnoreCase("true");
 		List<URL> jars = new ArrayList<>();
-		jars.add(LaunchWrapper.class.getProtectionDomain().getCodeSource().getLocation());
-		downloadMaven("junit", "junit", "3.8.1", jars, new byte[]{31, 64, -5, 120, 42, 79, 44, -9, -113, 22, 29, 50, 103, 15, 122, 58});
-		downloadJar("https://github.com/imcdonagh/image4j/releases/download/0.7.2/image4j-0.7.2.jar", "github/image4j/0.7.2/image4j-0.7.2.jar", jars, new byte[]{64, -116, -4, 64, -45, -112, 16, -20, -46, 64, -114, -11, 18, 71, -20, -116});
-		downloadMaven("org.apache.logging.log4j", "log4j-core", log4jVersion, jars, new byte[]{-52, 125, 85, -19, 105, -52, 95, -45, 64, 53, -79, 92, 110, -33, 121, -96});
-		downloadMaven("org.apache.logging.log4j", "log4j-api", log4jVersion, jars, new byte[]{35, 107, -103, 105, -33, 107, 57, 78, -120, 40, 58, -97, -127, 59, -101, -107});
-		downloadLWJGL("org.lwjgl", "lwjgl", lwjglVersion, os, jars, new byte[]{46, -52, 118, -27, -58, 29, -52, -47, -24, 47, -122, 116, -128, 6, 71, 59}, new byte[]{97, 10, 70, -109, -21, 97, 113, 28, -45, 30, -2, 53, 98, -60, 13, -41});
-		downloadLWJGL("org.lwjgl", "lwjgl-glfw", lwjglVersion, os, jars, new byte[]{-114, 70, 111, -41, -87, 97, -74, -96, 2, 82, -71, -15, 98, -45, -1, 99}, new byte[]{48, 119, 51, -35, -42, 42, 34, 120, -96, 103, 122, 99, -109, -67, -61, -87});
-		downloadMaven("org.lwjgl", "lwjgl-jawt", lwjglVersion, jars, new byte[]{125, -40, -104, -35, 43, -8, 23, 72, -22, -41, 101, -26, -58, 86, -20, -79});
-		downloadLWJGL("org.lwjgl", "lwjgl-nfd", lwjglVersion, os, jars, new byte[]{-50, -59, -72, -16, -106, 92, -90, 9, -13, -27, -118, -61, -32, 67, -35, -98}, new byte[]{-3, 3, -19, -113, 58, 1, -7, -114, -78, 42, 101, 2, -102, 64, -117, -61});
-		downloadLWJGL("org.lwjgl", "lwjgl-opengl", lwjglVersion, os, jars, new byte[]{-89, 116, 51, -115, -63, -1, -13, -81, 62, -91, 106, -99, -34, 106, 113, -49}, new byte[]{51, 77, 83, -112, 93, 103, -2, -11, -117, -37, -124, -65, -127, -14, -114, -8});
-		downloadMaven("com.google.code.gson", "gson", "2.8.5", jars, new byte[]{8, -111, 4, -53, -112, -40, -76, -31, -86, 0, -79, -11, -6, -17, 7, 66});
-		downloadMaven("org.lwjglx", "lwjgl3-awt", "0.1.1", jars, new byte[]{-113, -44, -117, -104, 4, 89, 23, -56, -73, 9, 34, 10, -9, -103, 97, -65});
-		downloadMaven("org.joml", "joml", "1.9.16", jars, new byte[]{119, -11, 11, -67, 51, -115, -117, -73, -71, 108, -54, 52, -68, -100, -88, 24});
-		downloadMaven("org.ow2.asm", "asm", objectWebASMVersion, jars, new byte[]{19, -83, 124, 11, 44, -50, 120, -97, -11, 74, -70, -64, 69, 122, 72, 29});
-		downloadMaven("org.ow2.asm", "asm-commons", objectWebASMVersion, jars, new byte[]{-26, 34, 80, -17, -8, 3, 36, -21, 87, 91, -112, 78, 81, -106, 0, 114});
-		downloadMaven("org.ow2.asm", "asm-analysis", objectWebASMVersion, jars, new byte[]{31, -48, -57, -35, 64, -51, -22, 56, 71, 5, -30, 120, 70, -36, -90, -53});
-		downloadMaven("org.ow2.asm", "asm-tree", objectWebASMVersion, jars, new byte[]{-58, -62, -99, -73, 112, -26, 29, -17, -34, 27, -63, 79, -45, -123, -9, 112});
-		progressBars.dispose();
-		progressBars = null;
-		@SuppressWarnings("resource")
-		CoreModdingClassLoader classLoader = new CoreModdingClassLoader((URL[])jars.toArray(new URL[jars.size()]), LOGGER);
+		for (String source : System.getProperty("java.class.path").split(System.getProperty("path.separator")))
+		{
+			try
+			{
+				jars.add(new File(source).toURI().toURL());
+			}
+			catch (MalformedURLException e)
+			{
+				LOGGER.error("Couldn't grab classpath source " + source + " for coremodding, this may cause issues and/or crashes", e);
+			}
+		}
+		if (!isMDK)
+		{
+			progressBars = new ProgressBars("Verifying libraries", 20);
+			final String lwjglVersion = "3.2.3";
+			final String log4jVersion = "2.13.3";
+			final String objectWebASMVersion = "6.2.1";
+			EnumOS os = EnumOS.getOS();
+			downloadMaven("junit", "junit", "3.8.1", jars, new byte[]{31, 64, -5, 120, 42, 79, 44, -9, -113, 22, 29, 50, 103, 15, 122, 58});
+			downloadJar("https://github.com/imcdonagh/image4j/releases/download/0.7.2/image4j-0.7.2.jar", "github/image4j/0.7.2/image4j-0.7.2.jar", jars, new byte[]{64, -116, -4, 64, -45, -112, 16, -20, -46, 64, -114, -11, 18, 71, -20, -116});
+			downloadMaven("org.apache.logging.log4j", "log4j-core", log4jVersion, jars, new byte[]{-52, 125, 85, -19, 105, -52, 95, -45, 64, 53, -79, 92, 110, -33, 121, -96});
+			downloadMaven("org.apache.logging.log4j", "log4j-api", log4jVersion, jars, new byte[]{35, 107, -103, 105, -33, 107, 57, 78, -120, 40, 58, -97, -127, 59, -101, -107});
+			downloadLWJGL("org.lwjgl", "lwjgl", lwjglVersion, os, jars, new byte[]{46, -52, 118, -27, -58, 29, -52, -47, -24, 47, -122, 116, -128, 6, 71, 59}, new byte[]{97, 10, 70, -109, -21, 97, 113, 28, -45, 30, -2, 53, 98, -60, 13, -41});
+			downloadLWJGL("org.lwjgl", "lwjgl-glfw", lwjglVersion, os, jars, new byte[]{-114, 70, 111, -41, -87, 97, -74, -96, 2, 82, -71, -15, 98, -45, -1, 99}, new byte[]{48, 119, 51, -35, -42, 42, 34, 120, -96, 103, 122, 99, -109, -67, -61, -87});
+			downloadMaven("org.lwjgl", "lwjgl-jawt", lwjglVersion, jars, new byte[]{125, -40, -104, -35, 43, -8, 23, 72, -22, -41, 101, -26, -58, 86, -20, -79});
+			downloadLWJGL("org.lwjgl", "lwjgl-nfd", lwjglVersion, os, jars, new byte[]{-50, -59, -72, -16, -106, 92, -90, 9, -13, -27, -118, -61, -32, 67, -35, -98}, new byte[]{-3, 3, -19, -113, 58, 1, -7, -114, -78, 42, 101, 2, -102, 64, -117, -61});
+			downloadLWJGL("org.lwjgl", "lwjgl-opengl", lwjglVersion, os, jars, new byte[]{-89, 116, 51, -115, -63, -1, -13, -81, 62, -91, 106, -99, -34, 106, 113, -49}, new byte[]{51, 77, 83, -112, 93, 103, -2, -11, -117, -37, -124, -65, -127, -14, -114, -8});
+			downloadMaven("com.google.code.gson", "gson", "2.8.5", jars, new byte[]{8, -111, 4, -53, -112, -40, -76, -31, -86, 0, -79, -11, -6, -17, 7, 66});
+			downloadMaven("org.lwjglx", "lwjgl3-awt", "0.1.1", jars, new byte[]{-113, -44, -117, -104, 4, 89, 23, -56, -73, 9, 34, 10, -9, -103, 97, -65});
+			downloadMaven("org.joml", "joml", "1.9.16", jars, new byte[]{119, -11, 11, -67, 51, -115, -117, -73, -71, 108, -54, 52, -68, -100, -88, 24});
+			downloadMaven("org.ow2.asm", "asm", objectWebASMVersion, jars, new byte[]{19, -83, 124, 11, 44, -50, 120, -97, -11, 74, -70, -64, 69, 122, 72, 29});
+			downloadMaven("org.ow2.asm", "asm-commons", objectWebASMVersion, jars, new byte[]{-26, 34, 80, -17, -8, 3, 36, -21, 87, 91, -112, 78, 81, -106, 0, 114});
+			downloadMaven("org.ow2.asm", "asm-analysis", objectWebASMVersion, jars, new byte[]{31, -48, -57, -35, 64, -51, -22, 56, 71, 5, -30, 120, 70, -36, -90, -53});
+			downloadMaven("org.ow2.asm", "asm-tree", objectWebASMVersion, jars, new byte[]{-58, -62, -99, -73, 112, -26, 29, -17, -34, 27, -63, 79, -45, -123, -9, 112});
+			progressBars.dispose();
+			progressBars = null;
+		}
+		else LOGGER.info("MDK detected.");
+		CoreModdingClassLoader classLoader = new CoreModdingClassLoader(jars.toArray(new URL[jars.size()]), LOGGER);
 		LOGGER.info("Launching wrapped MCMS");
 		try
 		{
-			classLoader.loadClass("firemerald.mcms.plugin.PluginLoader").getMethod("main", String[].class).invoke(null, new Object[] {args});
+			classLoader.loadClass("firemerald.mcms.plugin.PluginLoader").getMethod("launchGame", String[].class).invoke(null, new Object[] {args});
 		}
 		catch (Throwable e)
 		{
 			LOGGER.fatal("MCMS crashed", e);
 		}
 		LOGGER.debug("Main thread exit");
-		System.exit(0);
 	}
 	
 	public static void downloadLWJGL(String groupId, String artifactId, String version, EnumOS os, List<URL> jars, byte[] md5jar, byte[] md5native)
@@ -111,7 +127,7 @@ public class LaunchWrapper
 	public static void downloadJar(String url, String des, List<URL> jars, byte[] md5)
 	{
 		boolean download = true;
-		byte[] bytes = new byte[4096];
+		byte[] bytes = new byte[256 * 1024];
 		File file = new File("libs/" + des);
 		int read;
 		if (file.exists())
@@ -123,10 +139,13 @@ public class LaunchWrapper
 				in = new FileInputStream(file);
 				MessageDigest digest = MessageDigest.getInstance("MD5");
 				int total = 0;
-				progressBars.setSubProgress("0 bytes");
+				int size = (int) file.length();
+				progressBars.setSecondaryMax(size);
+				progressBars.setSubProgress("0%", 0);
 				while((read = in.read(bytes)) > 0)
 				{
-					progressBars.setSubProgress((total += read) + " bytes");
+					total += read;
+					progressBars.setSubProgress((100 * total / size) + "%", total);
 					digest.update(bytes, 0, read);
 				}
 				byte[] got = digest.digest();
@@ -166,19 +185,33 @@ public class LaunchWrapper
 			try
 			{
 				URL jomlURL = new URL(url);
+				int size;
+				try
+				{
+					size = getFileSize(jomlURL);
+				}
+				catch (IOException e)
+				{
+					size = -1;
+					LOGGER.warn("Couldn't grab file size of " + url, e);
+				}
+				progressBars.setSecondaryMax(size);
 				file.getParentFile().mkdirs();
 				file.createNewFile();
 				in = jomlURL.openStream();
 				MessageDigest digest = MessageDigest.getInstance("MD5");
 				out = new FileOutputStream(file);
 				int downloaded = 0;
-				progressBars.setSubProgress("0 bytes");
+				if (size > 0) progressBars.setSubProgress("0%", 0);
+				else progressBars.setSubProgress("0 bytes", 0);
 				while((read = in.read(bytes)) > 0)
 				{
-					progressBars.setSubProgress((downloaded += read) + " bytes");
+					downloaded += read;
+					if (size > 0) progressBars.setSubProgress((100 * downloaded / size) + "%", downloaded);
+					else progressBars.setSubProgress(downloaded + " bytes", downloaded);
 					out.write(bytes, 0, read);
 					digest.update(bytes, 0, read);
-					LOGGER.debug(downloaded + " bytes");
+					//LOGGER.debug(downloaded + " bytes");
 				}
 				LOGGER.info("downloaded " + url + " successfully");
 				byte[] got = digest.digest();
@@ -224,6 +257,26 @@ public class LaunchWrapper
 		}
 		item++;
 		progressBars.setProgress("Downloaded " + url, item);
+	}
+	
+	private static int getFileSize(URL url) throws IOException
+	{
+		URLConnection conn = null;
+		try
+		{
+			conn = url.openConnection();
+			if (conn instanceof HttpURLConnection) ((HttpURLConnection) conn).setRequestMethod("HEAD");
+			conn.getInputStream();
+			return conn.getContentLength();
+		}
+		catch (IOException e)
+		{
+			throw e;
+		}
+		finally
+		{
+			if (conn instanceof HttpURLConnection)((HttpURLConnection) conn).disconnect();
+		}
 	}
 	
 	private static String convertByteArrayToHexString(byte[] arrayBytes)

@@ -22,6 +22,7 @@ import org.lwjgl.opengl.GL;
 
 import firemerald.mcms.api.animation.AnimationState;
 import firemerald.mcms.api.util.RaytraceResult;
+import firemerald.mcms.events.ApplicationEvent;
 import firemerald.mcms.events.EventBus;
 import firemerald.mcms.gui.GuiScreen;
 import firemerald.mcms.gui.main.GuiMain;
@@ -29,6 +30,7 @@ import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.gui.popups.GuiPopupUnsavedChanges;
 import firemerald.mcms.model.EditorPanes;
 import firemerald.mcms.model.IModelEditable;
+import firemerald.mcms.plugin.PluginLoader;
 import firemerald.mcms.shader.Shader;
 import firemerald.mcms.texture.BlendMode;
 import firemerald.mcms.texture.Color;
@@ -59,8 +61,8 @@ public class Main
 {
 	//public static final String VERSION = "0.0.0.0";
 	public static final String ID = "mcms";
-	public static final String VERSION = "Alpha 18";
-	public static final String BUILD_DATE = "06/04/2020 19:25";
+	public static final String VERSION = "Alpha 16";
+	public static final String BUILD_DATE = "06/12/2020 19:34";
 	public static final Logger LOGGER;
 	public static Main instance;
 	public static final int MIN_W = 640, MIN_H = 480;
@@ -259,6 +261,8 @@ public class Main
 	@SuppressWarnings("deprecation")
 	public void run(String[] args)
 	{
+		PluginLoader.INSTANCE.constructPlugins();
+		EVENT_BUS.post(new ApplicationEvent.PreInitilization());
 		try
 		{
 			watcher = new FileWatcher();
@@ -455,6 +459,8 @@ public class Main
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(1, 0, 0), new RGB(0, 1, 1), new RGB(1, 1, 1), "red");
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(0, 1, 0), new RGB(1, 0, 1), new RGB(1, 1, 1), "green");
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(0, 0, 1), new RGB(1, 1, 0), new RGB(1, 1, 1), "blue");
+		EVENT_BUS.post(new ApplicationEvent.Initilization());
+		EVENT_BUS.post(new ApplicationEvent.PostInitilization());
 		if (args.length > 0)
 		{
 			File file = new File(args[0]);

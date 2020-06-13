@@ -12,7 +12,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -263,7 +262,7 @@ public class PluginLoader
 			}
 			catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException e)
 			{
-				e.printStackTrace();
+				LOGGER.error("Could not instantiate plugin " + className, e);
 			}
 		});
 		activePlugin = MCMSPlugin.INSTANCE;
@@ -274,7 +273,7 @@ public class PluginLoader
 		});
 	}
 	
-	public static void main(String[] args)
+	public static void launchGame(String[] args)
 	{
 		INSTANCE.getPlugins();
 		INSTANCE.constructCoreMods();
@@ -286,9 +285,8 @@ public class PluginLoader
 		coreMods = new LinkedHashMap<>();
 		plugins = new LinkedHashMap<>();
 		this.loadedPlugins.put(MCMSPlugin.INSTANCE.pluginID(), MCMSPlugin.INSTANCE);
-		findClasspathFiles((URLClassLoader) Thread.currentThread().getContextClassLoader());
-		getPlugins(new File("plugins"));
 		URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();
+		findClasspathFiles(classLoader);
 		this.pluginCandidates.forEach((candidate) ->
 		{
 			try
@@ -301,6 +299,7 @@ public class PluginLoader
 			}
 		});
 		this.pluginCandidates.forEach((candidate) -> getPlugins(candidate));
+		getPlugins(new File("plugins"));
 	}
 	
 	private void getPlugins(File directory)
@@ -326,6 +325,7 @@ public class PluginLoader
 	
 	private void addPlugin(String pluginID, IPlugin plugin)
 	{
+		LOGGER.debug("Adding plugin with id " + pluginID + " and class " + plugin.getClass());
 		activePlugin = plugin;
 		loadedPlugins.put(pluginID, plugin);
 		Main.instance.EVENT_BUS.registerListeners(plugin);
@@ -333,7 +333,7 @@ public class PluginLoader
 	
 	public IPlugin activePlugin = MCMSPlugin.INSTANCE;
 	
-    private static final List<String> STANDARD_LIBRARIES = Collections.unmodifiableList(Arrays.asList(
+    private static final List<String> STANDARD_LIBRARIES = Arrays.asList(
     		//JRE libraries
     		"javaagent-shaded.jar",
     	    "resources.jar",
@@ -391,7 +391,7 @@ public class PluginLoader
     	    "lwjgl-nfd-3.2.3-natives-macos.jar",
     	    "lwjgl-opengl-3.2.3-natives-macos.jar",
     	    //Referenced Libraries
-    	    "org.eclipse.jdt.annotation_2.2.300.v20190328-1431.jar"));
+    	    "org.eclipse.jdt.annotation_2.2.300.v20190328-1431.jar");
 
     private File[] getParentSources(URL[] urls)
     {
@@ -446,8 +446,7 @@ public class PluginLoader
                 }
             	str.append("\",");
             }
-            //System.out.println(str.toString());
-            //System.exit(0);
+        	LOGGER.debug(str.toString());
         }
     }
 }

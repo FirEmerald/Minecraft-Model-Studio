@@ -233,7 +233,7 @@ public class EventBus
 		long time = System.nanoTime();
 		List<Stream<ListenerInfo>> streams = new ArrayList<>();
 		Class<?> clazz = event.getClass();
-		while (clazz != EVENT_SUPER);
+		while (clazz != EVENT_SUPER)
 		{
 			ArrayList<ListenerInfo> listeners;
 			if ((listeners = this.listeners.get(clazz)) != null) streams.add(listeners.stream());
