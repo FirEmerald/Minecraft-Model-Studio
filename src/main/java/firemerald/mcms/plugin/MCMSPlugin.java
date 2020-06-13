@@ -1,6 +1,8 @@
 package firemerald.mcms.plugin;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.util.ResourceLocation;
+import firemerald.mcms.util.font.Formatting;
 
 /**
  * This is the IPlugin for the application's data.
@@ -28,28 +30,30 @@ public class MCMSPlugin implements IPlugin
 	{
 		return Main.VERSION;
 	}
+	
+	public static final ResourceLocation ICON = new ResourceLocation(Main.ID, "icon.png");
 
 	@Override
-	public String thumbnail() //TODO
+	public ResourceLocation thumbnail()
 	{
-		return "mcms_icon";
+		return ICON;
 	}
 
 	@Override
 	public String description()
 	{
-		return "The base program";
+		return "Modeling Studio for Minecraft";
 	}
 
 	@Override
 	public String author()
 	{
-		return "FirEmerald";
+		return Formatting.FIREMERALD;
 	}
 
 	@Override
 	public String[] credits()
 	{
-		return new String[] {"FirEmerald"};
+		return null;
 	}
 }

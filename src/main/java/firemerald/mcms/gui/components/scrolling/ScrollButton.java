@@ -51,7 +51,7 @@ public abstract class ScrollButton extends ComponentButton
 	@Override
 	public boolean canScrollV(float mx, float my)
 	{
-		return this.isEnabled();
+		return true;
 	}
 
 	@Override

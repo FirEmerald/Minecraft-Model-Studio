@@ -58,6 +58,11 @@ public class ComponentPane extends GuiElementContainer implements IComponent
 	@Override
 	public void onUnfocus()
 	{
+		if (this.focused != null)
+		{
+			this.focused.onUnfocus();
+			this.focused = null;
+		}
 		this.isFocused = false;
 	}
 	
@@ -65,17 +70,6 @@ public class ComponentPane extends GuiElementContainer implements IComponent
 	public boolean contains(float x, float y)
 	{
 		return (x >= x1 && y >= y1 && x < x2 && y < y2);
-	}
-
-	@Override
-	public void tick(float mx, float my, float deltaTime)
-	{
-		if (!isFocused && focused != null)
-		{
-			focused.onUnfocus();
-			focused = null;
-		}
-		super.tick(mx - ex1, my - ey1, deltaTime);
 	}
 
 	@Override

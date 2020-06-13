@@ -1,5 +1,7 @@
 package firemerald.mcms.plugin;
 
+import firemerald.mcms.util.ResourceLocation;
+
 /**
  * You should implement this interface on your plugin file.<br>
  * This would be the main plugin file, generally where you initialize it, hook in to events, ect.<br>
@@ -42,7 +44,7 @@ public interface IPlugin
 	 * 
 	 * @return the resource location for the plugin's thumbnail, or null for none.
 	 */
-	public String thumbnail();
+	public ResourceLocation thumbnail();
 	
 	/**
 	 * The description for this plugin - a summary of what it does.<br>

@@ -51,7 +51,7 @@ public abstract class ScrollButtonHorizontal extends ComponentButton
 	@Override
 	public boolean canScrollH(float mx, float my)
 	{
-		return this.isEnabled();
+		return true;
 	}
 
 	@Override

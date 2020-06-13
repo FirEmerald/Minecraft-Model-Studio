@@ -304,7 +304,7 @@ public class DecoText extends Component
 	public void onUnfocus()
 	{
 		super.onUnfocus();
-		selStart = selEnd = 0;
+		selStartLine = selEndLine = selStart = selEnd = 0;
 	}
 
 	@Override

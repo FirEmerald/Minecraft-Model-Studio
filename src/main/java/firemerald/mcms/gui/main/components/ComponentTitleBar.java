@@ -16,6 +16,7 @@ import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.main.GuiMain;
+import firemerald.mcms.gui.plugins.GuiPopupPlugins;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.gui.popups.GuiPopupMenu;
 import firemerald.mcms.gui.popups.GuiPopupMessageOK;
@@ -211,6 +212,12 @@ public class ComponentTitleBar extends ComponentPanelMain
         		new GuiPopupMessageOK(new FormattedText("Minecraft Model Studio, by ", getTheme().getTextColor(), Main.instance.fontMsg).append("Fir", Color.RED).append("E", Color.YELLOW).append("merald", Color.GREEN).append(".\n\nBuild ", getTheme().getTextColor()).append(Main.VERSION, Color.BLUE).append(", on ", getTheme().getTextColor()).append(Main.BUILD_DATE, Color.BLUE)).activate();
         	});
         	menu.add(theme);
+        	MenuItem plugins = new MenuItem("Plugins");
+        	plugins.addActionListener(action -> {
+        		((GuiPopup) Main.instance.gui).deactivate();
+        		new GuiPopupPlugins().activate();
+        	});
+        	menu.add(plugins);
             return menu;
         }));
 		// TODO components

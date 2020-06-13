@@ -80,32 +80,8 @@ public class GuiPopupSelector extends GuiPopup
 	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
-		if (button == MouseButtons.LEFT)
-		{
-			IComponent preFocused = focused;
-			focused = null;
-			IGuiElement[] elements = getElementsCopy();
-			for (int i = elements.length - 1; i >= 0; i--)
-			{
-				IGuiElement element = elements[i];
-				if (element instanceof IComponent)
-				{
-					IComponent c = (IComponent) element;
-					if (c.contains(mx, my))
-					{
-						focused = c;
-						break;
-					}
-				}
-			}
-			if (preFocused != focused)
-			{
-				if (preFocused != null) preFocused.onUnfocus();
-				if (focused != null) focused.onFocus();
-			}
-		}
-		if (focused != null) focused.onMousePressed(mx, my, button, mods);
-		else cancel();
+		super.onMousePressed(mx, my, button, mods);
+		if (button == MouseButtons.LEFT && this.focused == null) deactivate();
 	}
 	
 	@Override
