@@ -8,7 +8,7 @@ import org.eclipse.jdt.annotation.Nullable;
 /**
  * This interface denotes a plugin that also involves coremodding.<br>
  * Keep in mind that this extends {@link IPlugin} and you should not, <bold>UNDER ANY CIRCUMSTANCES<bold>, also implement IPlugin yourself.<br>
- * Also remember that this will be constructed before the game is launched.
+ * Also remember that this will be constructed before the game is launched. Avoid using <i>any</i> MCMS classes in the class - use a proxy instead.
  * using an interface that extends this one does NOT allow the plugin loader to automatically load it.
  * 
  * @author FirEmerald

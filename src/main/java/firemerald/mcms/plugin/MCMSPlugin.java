@@ -1,7 +1,6 @@
 package firemerald.mcms.plugin;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.font.Formatting;
 
 /**
@@ -22,7 +21,7 @@ public class MCMSPlugin implements IPlugin
 	@Override
 	public String pluginID()
 	{
-		return "mcms";
+		return Main.ID;
 	}
 
 	@Override
@@ -31,10 +30,10 @@ public class MCMSPlugin implements IPlugin
 		return Main.VERSION;
 	}
 	
-	public static final ResourceLocation ICON = new ResourceLocation(Main.ID, "icon.png");
+	public static final String ICON = Main.ID + ":icon.png";
 
 	@Override
-	public ResourceLocation thumbnail()
+	public String icon()
 	{
 		return ICON;
 	}

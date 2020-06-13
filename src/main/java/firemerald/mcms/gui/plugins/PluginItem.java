@@ -16,7 +16,7 @@ public class PluginItem extends ComponentPane
 	public final IPlugin plugin;
 	public final Mesh mesh = new Mesh();
 	public ThemeElement rect = null;
-	public final int minSize, maxSize;
+	public final int minSize = 28, maxSize;
 	public float size;
 	public boolean expanded = false;
 	
@@ -26,14 +26,19 @@ public class PluginItem extends ComponentPane
 		this.pane = pane;
 		size = y2 - y1;
 		this.plugin = plugin;
-		ResourceLocation thumb = plugin.thumbnail();
+		String thumb = plugin.icon();
 		String resetColor = Formatting.color(getTheme().getTextColor());
 		if (thumb != null)
 		{
-			minSize = 60;
-			this.addElement(new DecoIcon(0, 0, 48, 48, thumb));
-			this.addElement(new DecoText(48, -1, x2 - 12, 41, plugin.name() + resetColor + "\nVersion: " + plugin.version() + resetColor + "\nAuthor: " + plugin.author()));
-			StringBuilder builder = new StringBuilder();
+			this.addElement(new DecoIcon(0, 0, 16, 16, new ResourceLocation(thumb)));
+			this.addElement(new DecoText(18, -1, x2 - 12, 41, plugin.name()));
+			StringBuilder builder = new StringBuilder("Version: ");
+			builder.append(plugin.version());
+			builder.append(resetColor);
+			builder.append("\nAuthor: ");
+			builder.append(plugin.author());
+			builder.append("\n");
+			builder.append(resetColor);
 			String[] credits = plugin.credits();
 			if (credits != null && credits.length > 0)
 			{
@@ -46,12 +51,11 @@ public class PluginItem extends ComponentPane
 			if (desc != null) builder.append(desc);
 			else builder.append("No mod description provided.");
 			String str = builder.toString();
-			maxSize = 66 + str.split("\n").length * 12;
-			this.addElement(new DecoText(0, 47, x2 - 12, y1 + maxSize - 12, str));
+			maxSize = 34 + str.split("\n").length * 12;
+			this.addElement(new DecoText(0, 15, x2 - 12, y1 + maxSize - 12, str));
 		}
 		else
 		{
-			minSize = 48;
 			StringBuilder builder = new StringBuilder(plugin.name());
 			builder.append(resetColor);
 			builder.append("\nVersion: ");

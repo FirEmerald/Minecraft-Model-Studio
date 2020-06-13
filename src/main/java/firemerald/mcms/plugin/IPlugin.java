@@ -1,7 +1,5 @@
 package firemerald.mcms.plugin;
 
-import firemerald.mcms.util.ResourceLocation;
-
 /**
  * You should implement this interface on your plugin file.<br>
  * This would be the main plugin file, generally where you initialize it, hook in to events, ect.<br>
@@ -39,12 +37,12 @@ public interface IPlugin
 	public String version();
 	
 	/** TODO size
-	 * You can use this to have a custom plugin thumbnail in the plugins menu.<br>
+	 * You can use this to have a custom plugin icon in the plugins menu.<br>
 	 * Keep in mind that this is a {@link String} representation of a {@link Resource}.
 	 * 
 	 * @return the resource location for the plugin's thumbnail, or null for none.
 	 */
-	public ResourceLocation thumbnail();
+	public String icon();
 	
 	/**
 	 * The description for this plugin - a summary of what it does.<br>

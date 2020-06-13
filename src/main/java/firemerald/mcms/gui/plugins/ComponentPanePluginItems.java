@@ -15,10 +15,10 @@ public class ComponentPanePluginItems extends ScrollableComponentPaneVertical
 	{
 		super(x1, y1, x2, y2, border);
 		final int sizeX = x2 - x1 - border * 2;
-		final IntReference y = new IntReference(border);
+		final IntReference y = new IntReference(0);
 		PluginLoader.INSTANCE.loadedPlugins.values().forEach(plugin -> {
-			int size = plugin.thumbnail() == null ? 48 : 60;
-			PluginItem item = new PluginItem(this, plugin, border, y.val, sizeX, y.val + size);
+			int size = plugin.icon() == null ? 24 : 28;
+			PluginItem item = new PluginItem(this, plugin, 0, y.val, sizeX, y.val + size);
 			this.addElement(item);
 			pluginItems.add(item);
 			y.val += size;
@@ -29,7 +29,7 @@ public class ComponentPanePluginItems extends ScrollableComponentPaneVertical
 	
 	public void updateItemSizes()
 	{
-		final IntReference y = new IntReference(this.margin);
+		final IntReference y = new IntReference(0);
 		pluginItems.forEach(item -> {
 			int size = Math.round(item.size);
 			item.setSize(item.x1, y.val, item.x2, y.val + size);
@@ -44,7 +44,7 @@ public class ComponentPanePluginItems extends ScrollableComponentPaneVertical
 	{
 		super.setSize(x1, y1, x2, y2);
 		final int sizeX = x2 - x1 - margin * 2;
-		if (pluginItems != null) pluginItems.forEach(item -> item.setSize(margin, item.y1, sizeX, item.y2));
+		if (pluginItems != null) pluginItems.forEach(item -> item.setSize(0, item.y1, sizeX, item.y2));
 		updateComponentSize();
 		updateScrollSize();
 	}
