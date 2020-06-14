@@ -19,20 +19,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.util.PrintStreamLogger;
 
 public class PluginLoader
 {
-	public static final String ICOREMOD_NAME = ICoreMod.class.getName().replace('.', '/');
-	public static final String IPLUGIN_NAME = IPlugin.class.getName().replace('.', '/');
 	public static final Method ADD_URL;
 	public static final PluginLoader INSTANCE = new PluginLoader();
 	public final List<PluginCandidate> pluginCandidates = new ArrayList<>();
@@ -67,11 +65,12 @@ public class PluginLoader
 		ADD_URL.setAccessible(true);
 	}
 
-	public final Map<String, ICoreMod> loadedCoreMods = new LinkedHashMap<>();
-	public final Map<String, IPlugin> loadedPlugins = new LinkedHashMap<>();
+	public final Map<String, CoreModWrapper> loadedCoreMods = new LinkedHashMap<>();
+	public final Map<String, AbstractPluginWrapper> loadedPlugins = new LinkedHashMap<>();
 	public final Map<String, List<ICoreModder>> coreModders = new HashMap<>();
 	public final List<ICoreModder> globalCoreModders = new ArrayList<>();
-	private Map<String, PluginCandidate> coreMods, plugins;
+	private List<CoreModWrapper> coreMods;
+	private List<PluginWrapper> plugins;
 	
 	public static byte[] modStatic(String name, byte[] bytes)
 	{
@@ -94,23 +93,29 @@ public class PluginLoader
 	
 	private void validateClass(String name, InputStream in, PluginCandidate candidate)
 	{
-		if (!name.equals(MCMSPlugin.class.getName())) try
+		try
 		{
 			ClassReader reader = new ClassReader(in);
-			if ((reader.getAccess() & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE)) == 0)
+			if ((reader.getAccess() & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE)) == 0) //is not an abstract class
 			{
-				boolean isCoreMod = false, isPlugin = false;
-				for (String interfaceName : reader.getInterfaces()) if (interfaceName.equals(ICOREMOD_NAME))
+				ClassNode node = ASMUtil.getNode(reader.b, 0);
+				if (node.visibleAnnotations != null)
 				{
-					isCoreMod = true;
-					break;
+					node.visibleAnnotations.forEach(aNode -> {
+						if (aNode.desc.equals("Lfiremerald/mcms/plugin/CoreMod;")) coreMods.add(new CoreModWrapper(candidate, name, toMap(aNode.values)));
+						else if (aNode.desc.equals("Lfiremerald/mcms/plugin/Plugin;")) plugins.add(new PluginWrapper(candidate, name, toMap(aNode.values)));
+					});
 				}
-				else if (interfaceName.equals(IPLUGIN_NAME)) isPlugin = true;
-				if (isCoreMod) coreMods.put(name, candidate);
-				else if (isPlugin) plugins.put(name, candidate);
 			}
 		}
 		catch (IOException e) {}
+	}
+	
+	private Map<String, Object> toMap(List<Object> values)
+	{
+		Map<String, Object> map = new HashMap<>();
+		for (int i = 0; i < values.size(); i += 2) map.put((String) values.get(i), values.get(i + 1));
+		return map;
 	}
 	
 	private void getPlugins(PluginCandidate candidate)
@@ -207,15 +212,14 @@ public class PluginLoader
 	
 	private void constructCoreMods()
 	{
-		coreMods.forEach((className, candidate) ->
+		coreMods.forEach(wrapper ->
 		{
 			try
 			{
-				ICoreMod coreMod = (ICoreMod) Class.forName(className).getConstructor().newInstance();
-				candidate.isPlugin = true;
-				String pluginID = coreMod.pluginID();
-				if (loadedCoreMods.containsKey(pluginID)) throw new IllegalStateException("Duplicate plugin IDs: " + pluginID);
-				loadedCoreMods.put(pluginID, coreMod);
+				ICoreMod coreMod = wrapper.constructCoreMod();
+				wrapper.candidate.isPlugin = true;
+				if (loadedCoreMods.containsKey(wrapper.id)) throw new IllegalStateException("Duplicate plugin IDs: " + wrapper.id);
+				loadedCoreMods.put(wrapper.id, wrapper);
 				Map<String, List<ICoreModder>> map;
 				if ((map = coreMod.getModders()) != null) map.forEach((className2, list) ->
 				{
@@ -231,19 +235,23 @@ public class PluginLoader
 			}
 			catch (ClassNotFoundException e)
 			{
-				LOGGER.warn("Couldn't find coremod class " + className, e);
+				LOGGER.warn("Couldn't find coremod class " + wrapper.className, e);
 			}
 			catch (NoSuchMethodException e)
 			{
-				LOGGER.warn("Couldn't instantiate coremod class " + className + ": missing public empty constructor.", e);
+				LOGGER.warn("Couldn't instantiate coremod class " + wrapper.className + ": missing public empty constructor.", e);
 			}
 			catch (IllegalAccessException e)
 			{
-				LOGGER.warn("Couldn't instantiate coremod class " + className + ": empty constructor is not public.", e);
+				LOGGER.warn("Couldn't instantiate coremod class " + wrapper.className + ": empty constructor is not public.", e);
 			}
 			catch (InstantiationException | IllegalArgumentException | InvocationTargetException | SecurityException e)
 			{
-				LOGGER.warn("Couldn't instantiate coremod class " + className, e);
+				LOGGER.warn("Couldn't instantiate coremod class " + wrapper.className, e);
+			}
+			catch (Throwable t)
+			{
+				LOGGER.warn("Error constructing coremod class " + wrapper.className, t);
 			}
 		});
 		coreMods = null;
@@ -251,25 +259,44 @@ public class PluginLoader
 	
 	public void constructPlugins()
 	{
-		loadedCoreMods.forEach((pluginID, plugin) -> addPlugin(pluginID, plugin));
-		plugins.forEach((className, candidate) ->
+		loadedCoreMods.values().forEach(wrapper -> {
+			wrapper.constructPlugin();
+			addPlugin(wrapper);
+		});
+		plugins.forEach(wrapper ->
 		{
 			try
 			{
-				IPlugin plugin = (IPlugin) Class.forName(className).getConstructor().newInstance();
-				candidate.isPlugin = true;
-				addPlugin(plugin);
+				wrapper.constructPlugin();
+				wrapper.candidate.isPlugin = true;
+				addPlugin(wrapper);
 			}
-			catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException | ClassNotFoundException e)
+			catch (ClassNotFoundException e)
 			{
-				LOGGER.error("Could not instantiate plugin " + className, e);
+				LOGGER.warn("Couldn't find plugin class " + wrapper.className, e);
+			}
+			catch (NoSuchMethodException e)
+			{
+				LOGGER.warn("Couldn't instantiate plugin class " + wrapper.className + ": missing public empty constructor.", e);
+			}
+			catch (IllegalAccessException e)
+			{
+				LOGGER.warn("Couldn't instantiate plugin class " + wrapper.className + ": empty constructor is not public.", e);
+			}
+			catch (InstantiationException | IllegalArgumentException | InvocationTargetException | SecurityException e)
+			{
+				LOGGER.warn("Couldn't instantiate plugin class " + wrapper.className, e);
+			}
+			catch (Throwable t)
+			{
+				LOGGER.warn("Error constructing plugin class " + wrapper.className, t);
 			}
 		});
-		activePlugin = MCMSPlugin.INSTANCE;
+		activePlugin = Main.ID;
 		plugins = null;
 		this.pluginCandidates.forEach((candidate) -> 
 		{
-			if (!candidate.isPlugin && candidate.file.isFile()) Main.LOGGER.log(Level.INFO, "Found a non-plugin file " + candidate.file.getAbsolutePath() + ". It has still been injected into the classpath.");
+			if (!candidate.isPlugin && candidate.file.isFile()) LOGGER.log(Level.INFO, "Found a non-plugin file " + candidate.file.getAbsolutePath() + ". It has still been injected into the classpath.");
 		});
 	}
 	
@@ -282,9 +309,8 @@ public class PluginLoader
 	
 	private void getPlugins()
 	{
-		coreMods = new LinkedHashMap<>();
-		plugins = new LinkedHashMap<>();
-		this.loadedPlugins.put(MCMSPlugin.INSTANCE.pluginID(), MCMSPlugin.INSTANCE);
+		coreMods = new ArrayList<>();
+		plugins = new ArrayList<>();
 		URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();
 		findClasspathFiles(classLoader);
 		this.pluginCandidates.forEach((candidate) ->
@@ -309,29 +335,15 @@ public class PluginLoader
 		for (File file : directory.listFiles()) if (!file.isDirectory()) this.pluginCandidates.add(new PluginCandidate(file, false));
 	}
 	
-	/**
-	 * Allows for plugins to register other plugins, such as those that should only load in the presence of another plugin.
-	 * 
-	 * @param plugin the plugin to add
-	 */
-	public void addPlugin(IPlugin plugin)
+	private void addPlugin(AbstractPluginWrapper plugin)
 	{
-		IPlugin active = activePlugin;
-		String pluginID = plugin.pluginID();
-		if (loadedPlugins.containsKey(pluginID)) throw new IllegalStateException("Duplicate plugin IDs : " + pluginID);
-		addPlugin(pluginID, plugin);
-		activePlugin = active;
+		LOGGER.debug("Adding plugin with id " + plugin.id + " and class " + plugin.className);
+		activePlugin = plugin.id;
+		loadedPlugins.put(plugin.id, plugin);
+		Main.instance.EVENT_BUS.registerListeners(plugin.getPlugin());
 	}
 	
-	private void addPlugin(String pluginID, IPlugin plugin)
-	{
-		LOGGER.debug("Adding plugin with id " + pluginID + " and class " + plugin.getClass());
-		activePlugin = plugin;
-		loadedPlugins.put(pluginID, plugin);
-		Main.instance.EVENT_BUS.registerListeners(plugin);
-	}
-	
-	public IPlugin activePlugin = MCMSPlugin.INSTANCE;
+	public String activePlugin = Main.ID;
 	
     private static final List<String> STANDARD_LIBRARIES = Arrays.asList(
     		//JRE libraries

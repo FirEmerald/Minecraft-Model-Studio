@@ -17,7 +17,7 @@ public class ComponentPanePluginItems extends ScrollableComponentPaneVertical
 		final int sizeX = x2 - x1 - border * 2;
 		final IntReference y = new IntReference(0);
 		PluginLoader.INSTANCE.loadedPlugins.values().forEach(plugin -> {
-			int size = plugin.icon() == null ? 24 : 28;
+			int size = plugin.icon == null ? 24 : 28;
 			PluginItem item = new PluginItem(this, plugin, 0, y.val, sizeX, y.val + size);
 			this.addElement(item);
 			pluginItems.add(item);

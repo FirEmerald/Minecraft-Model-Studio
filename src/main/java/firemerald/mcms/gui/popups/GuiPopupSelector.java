@@ -5,7 +5,6 @@ import java.util.function.BiConsumer;
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.IGuiElement;
-import firemerald.mcms.gui.components.IComponent;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.components.scrolling.ScrollableComponentPaneVertical;
 import firemerald.mcms.window.api.MouseButtons;

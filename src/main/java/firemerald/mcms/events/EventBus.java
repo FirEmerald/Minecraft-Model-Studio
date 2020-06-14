@@ -18,9 +18,8 @@ import org.apache.logging.log4j.Level;
 import org.eclipse.jdt.annotation.NonNull;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.plugin.IPlugin;
-import firemerald.mcms.plugin.MCMSPlugin;
 import firemerald.mcms.plugin.PluginLoader;
+import firemerald.mcms.plugin.PluginWrapper;
 import firemerald.mcms.util.MiscUtil;
 
 /** 
@@ -49,9 +48,9 @@ public class EventBus
 		private final Listener<Event> listener;
 		private final int priority;
 		private final boolean ignoreCanceled;
-		private final IPlugin plugin;
+		private final String plugin;
 		
-		private ListenerInfo(Listener<Event> listener, int priority, boolean ignoreCanceled, IPlugin plugin)
+		private ListenerInfo(Listener<Event> listener, int priority, boolean ignoreCanceled, String plugin)
 		{
 			this.listener = listener;
 			this.priority = priority;
@@ -122,7 +121,7 @@ public class EventBus
 	}
 	
 	@SuppressWarnings({ "unchecked"})
-	private <E extends Event> void addLambda(Class<E> eventClass, Listener<?> listener, int priority, boolean ignoreCanceled, IPlugin plugin)
+	private <E extends Event> void addLambda(Class<E> eventClass, Listener<?> listener, int priority, boolean ignoreCanceled, String plugin)
 	{
 		ArrayList<ListenerInfo> listeners;
 		if ((listeners = this.listeners.get(eventClass)) == null) this.listeners.put(eventClass, listeners = new ArrayList<>());
@@ -194,8 +193,9 @@ public class EventBus
 		}
 	}
 	
-	public void registerPluginListeners(IPlugin plugin)
+	public void registerPluginListeners(PluginWrapper wrapper)
 	{
+		Object plugin = wrapper.getPlugin();
 		Class<?> c = plugin.getClass();
         MethodType inT = LISTENER_TYPE.appendParameterTypes(c);
 		for (Method m : c.getMethods())
@@ -213,7 +213,7 @@ public class EventBus
 						MethodHandle mh = LOOKUP.unreflect(m);
 				        MethodType type = MethodType.methodType(Void.TYPE, eventClass);
 						EventHandler annote = m.getAnnotation(EventHandler.class);
-						addLambda(eventClass, (Listener<?>) LambdaMetafactory.metafactory(LOOKUP, "call", inT, EVENT_METHOD, mh, type).getTarget().invoke(plugin), annote.priority(), annote.ignoreCanceled(), plugin);
+						addLambda(eventClass, (Listener<?>) LambdaMetafactory.metafactory(LOOKUP, "call", inT, EVENT_METHOD, mh, type).getTarget().invoke(plugin), annote.priority(), annote.ignoreCanceled(), wrapper.id);
 					}
 					catch (Throwable e)
 					{
@@ -240,7 +240,7 @@ public class EventBus
 			clazz = clazz.getSuperclass();
 		}
 		streams.stream().flatMap(stream -> stream).sorted().forEachOrdered(listener -> (listener).call(event));
-		PluginLoader.INSTANCE.activePlugin = MCMSPlugin.INSTANCE;
+		PluginLoader.INSTANCE.activePlugin = Main.ID;
 		long endTime = System.nanoTime();
 		Main.LOGGER.log(Level.DEBUG, "Took " + MiscUtil.toSecondsDecimal(endTime - time) + " seconds");
 		return event.isCanceled();
