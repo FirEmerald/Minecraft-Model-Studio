@@ -29,6 +29,7 @@ import org.objectweb.asm.tree.ClassNode;
 import firemerald.mcms.Main;
 import firemerald.mcms.util.PrintStreamLogger;
 
+@CoreModExcluded
 public class PluginLoader
 {
 	public static final Method ADD_URL;
@@ -79,6 +80,8 @@ public class PluginLoader
 	
 	public byte[] mod(final String name, byte[] bytes)
 	{
+		ClassNode node = ASMUtil.getNode(bytes, 0);
+		if (node.visibleAnnotations != null && node.visibleAnnotations.parallelStream().anyMatch(aNode -> aNode.desc.equals("Lfiremerald/mcms/plugin/CoreMod;") || aNode.desc.equals("Lfiremerald/mcms/plugin/CoreModExcluded;"))) return bytes; //do not mod
 		List<ICoreModder> modders = new ArrayList<>();
 		modders.addAll(globalCoreModders);
 		List<ICoreModder> modders2 = coreModders.get(name);

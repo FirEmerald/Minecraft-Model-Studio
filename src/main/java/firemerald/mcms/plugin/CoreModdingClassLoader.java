@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 
 import org.apache.logging.log4j.Logger;
 
@@ -14,6 +15,7 @@ import org.apache.logging.log4j.Logger;
  * 
  * @author FirEmerald
  */
+@CoreModExcluded
 public class CoreModdingClassLoader extends URLClassLoader
 {
 	public final Logger logger;
@@ -71,7 +73,8 @@ public class CoreModdingClassLoader extends URLClassLoader
 				prev = array;
 			}
 			classData.close();
-			if (mod_method != null) try 
+			//System.out.println(name);
+			if (!name.equals("firemerald.mcms.plugin.ASMUtil") && !name.startsWith("org.objectweb.asm") && mod_method != null) try 
 			{
 				array = (byte[]) mod_method.invoke(null, name, array);
 			}

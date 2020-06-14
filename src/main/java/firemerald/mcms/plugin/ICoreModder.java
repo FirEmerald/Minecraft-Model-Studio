@@ -5,6 +5,7 @@ package firemerald.mcms.plugin;
  * 
  * @author FirEmerald
  */
+@CoreModExcluded
 @FunctionalInterface
 public interface ICoreModder
 {

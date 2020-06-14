@@ -9,6 +9,7 @@ import org.objectweb.asm.tree.ClassNode;
  * 
  * @author FirEmerald
  */
+@CoreModExcluded
 public class ASMUtil
 {
     

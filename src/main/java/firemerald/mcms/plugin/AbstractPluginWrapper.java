@@ -3,6 +3,7 @@ package firemerald.mcms.plugin;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
+@CoreModExcluded
 public abstract class AbstractPluginWrapper
 {
 	public final PluginCandidate candidate;

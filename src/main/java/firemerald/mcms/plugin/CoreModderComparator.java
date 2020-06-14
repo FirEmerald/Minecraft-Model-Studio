@@ -2,6 +2,7 @@ package firemerald.mcms.plugin;
 
 import java.util.Comparator;
 
+@CoreModExcluded
 public class CoreModderComparator implements Comparator<ICoreModder>
 {
 	public final String name;

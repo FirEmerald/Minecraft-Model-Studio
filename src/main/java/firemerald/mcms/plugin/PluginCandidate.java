@@ -2,6 +2,7 @@ package firemerald.mcms.plugin;
 
 import java.io.File;
 
+@CoreModExcluded
 public class PluginCandidate
 {
 	public final File file;

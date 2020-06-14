@@ -15,6 +15,7 @@ import org.eclipse.jdt.annotation.Nullable;
  * 
  * @author FirEmerald
  */
+@CoreModExcluded
 public interface ICoreMod
 {
 	/**
