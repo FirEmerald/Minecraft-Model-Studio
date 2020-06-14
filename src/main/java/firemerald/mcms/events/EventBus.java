@@ -43,14 +43,14 @@ public class EventBus
 		public void call(E event);
 	}
 	
-	private static class ListenerInfo implements Comparable<ListenerInfo>
+	private static class ListenerInfo<E extends Event> implements Comparable<ListenerInfo<?>>
 	{
-		private final Listener<Event> listener;
+		private final Listener<E> listener;
 		private final int priority;
 		private final boolean ignoreCanceled;
 		private final String plugin;
 		
-		private ListenerInfo(Listener<Event> listener, int priority, boolean ignoreCanceled, String plugin)
+		private ListenerInfo(Listener<E> listener, int priority, boolean ignoreCanceled, String plugin)
 		{
 			this.listener = listener;
 			this.priority = priority;
@@ -59,12 +59,12 @@ public class EventBus
 		}
 
 		@Override
-		public int compareTo(ListenerInfo o) //reverse because higher priority goes last
+		public int compareTo(ListenerInfo<?> o) //reverse because higher priority goes last
 		{
 			return o.priority - this.priority;
 		}
 		
-		private void call(Event event)
+		private void call(E event)
 		{
 			if (!this.ignoreCanceled || !event.isCanceled())
 			{
@@ -74,7 +74,7 @@ public class EventBus
 		}
 	}
 
-	private final Map<Class<? extends Event>, ArrayList<ListenerInfo>> listeners = new HashMap<>();
+	private final Map<Class<? extends Event>, ArrayList<ListenerInfo<?>>> listeners = new HashMap<>();
 
 	/** 
 	 * use like this:
@@ -120,12 +120,11 @@ public class EventBus
 		addLambda(eventClass, listener, priority, ignoreCanceled, PluginLoader.INSTANCE.activePlugin);
 	}
 	
-	@SuppressWarnings({ "unchecked"})
-	private <E extends Event> void addLambda(Class<E> eventClass, Listener<?> listener, int priority, boolean ignoreCanceled, String plugin)
+	private <E extends Event> void addLambda(Class<E> eventClass, Listener<E> listener, int priority, boolean ignoreCanceled, String plugin)
 	{
-		ArrayList<ListenerInfo> listeners;
+		ArrayList<ListenerInfo<?>> listeners;
 		if ((listeners = this.listeners.get(eventClass)) == null) this.listeners.put(eventClass, listeners = new ArrayList<>());
-		listeners.add(new ListenerInfo((Listener<Event>) listener, priority, ignoreCanceled, plugin));
+		listeners.add(new ListenerInfo<E>(listener, priority, ignoreCanceled, plugin));
 		Collections.sort(listeners);
 	}
 
@@ -133,7 +132,7 @@ public class EventBus
 	private static final MethodType LISTENER_TYPE = MethodType.methodType(Listener.class);
     private static final MethodType EVENT_METHOD = MethodType.methodType(Void.TYPE, Event.class);
 	
-	public void registerListeners(Class<?> c)
+	public <E extends Event> void registerListeners(Class<?> c)
 	{
 		for (Method m : c.getDeclaredMethods())
 		{
@@ -144,13 +143,13 @@ public class EventBus
 				if ((params = m.getParameterTypes()).length == 1 && Event.class.isAssignableFrom(clazz = params[0]))
 				{
 					@SuppressWarnings("unchecked")
-					Class<? extends Event> eventClass = (Class<? extends Event>) clazz;
+					Class<E> eventClass = (Class<E>) clazz;
 					try
 					{
 						MethodHandle mh = LOOKUP.unreflect(m);
 				        MethodType type = MethodType.methodType(Void.TYPE, eventClass);
 						EventHandler annote = m.getAnnotation(EventHandler.class);
-						addLambda(eventClass, (Listener<?>) LambdaMetafactory.metafactory(LOOKUP, "call", LISTENER_TYPE, EVENT_METHOD, mh, type).getTarget().invoke(), annote.priority(), annote.ignoreCanceled(), PluginLoader.INSTANCE.activePlugin);
+						addLambda(eventClass, (Listener<E>) LambdaMetafactory.metafactory(LOOKUP, "call", LISTENER_TYPE, EVENT_METHOD, mh, type).getTarget().invoke(), annote.priority(), annote.ignoreCanceled(), PluginLoader.INSTANCE.activePlugin);
 					}
 					catch (Throwable e)
 					{
@@ -162,7 +161,7 @@ public class EventBus
 		}
 	}
 	
-	public void registerListeners(@NonNull Object handler)
+	public <E extends Event> void registerListeners(@NonNull Object handler)
 	{
 		Class<?> c = handler.getClass();
         MethodType inT = LISTENER_TYPE.appendParameterTypes(c);
@@ -175,13 +174,13 @@ public class EventBus
 				if ((params = m.getParameterTypes()).length == 1 && Event.class.isAssignableFrom(clazz = params[0]))
 				{
 					@SuppressWarnings("unchecked")
-					Class<? extends Event> eventClass = (Class<? extends Event>) clazz;
+					Class<E> eventClass = (Class<E>) clazz;
 					try
 					{
 						MethodHandle mh = LOOKUP.unreflect(m);
 				        MethodType type = MethodType.methodType(Void.TYPE, eventClass);
 						EventHandler annote = m.getAnnotation(EventHandler.class);
-						addLambda(eventClass, (Listener<?>) LambdaMetafactory.metafactory(LOOKUP, "call", inT, EVENT_METHOD, mh, type).getTarget().invoke(handler), annote.priority(), annote.ignoreCanceled(), PluginLoader.INSTANCE.activePlugin);
+						addLambda(eventClass, (Listener<E>) LambdaMetafactory.metafactory(LOOKUP, "call", inT, EVENT_METHOD, mh, type).getTarget().invoke(handler), annote.priority(), annote.ignoreCanceled(), PluginLoader.INSTANCE.activePlugin);
 					}
 					catch (Throwable e)
 					{
@@ -193,7 +192,7 @@ public class EventBus
 		}
 	}
 	
-	public void registerPluginListeners(PluginWrapper wrapper)
+	public <E extends Event> void registerPluginListeners(PluginWrapper wrapper)
 	{
 		Object plugin = wrapper.getPlugin();
 		Class<?> c = plugin.getClass();
@@ -207,13 +206,13 @@ public class EventBus
 				if ((params = m.getParameterTypes()).length == 1 && Event.class.isAssignableFrom(clazz = params[0]))
 				{
 					@SuppressWarnings("unchecked")
-					Class<? extends Event> eventClass = (Class<? extends Event>) clazz;
+					Class<E> eventClass = (Class<E>) clazz;
 					try
 					{
 						MethodHandle mh = LOOKUP.unreflect(m);
 				        MethodType type = MethodType.methodType(Void.TYPE, eventClass);
 						EventHandler annote = m.getAnnotation(EventHandler.class);
-						addLambda(eventClass, (Listener<?>) LambdaMetafactory.metafactory(LOOKUP, "call", inT, EVENT_METHOD, mh, type).getTarget().invoke(plugin), annote.priority(), annote.ignoreCanceled(), wrapper.id);
+						addLambda(eventClass, (Listener<E>) LambdaMetafactory.metafactory(LOOKUP, "call", inT, EVENT_METHOD, mh, type).getTarget().invoke(plugin), annote.priority(), annote.ignoreCanceled(), wrapper.id);
 					}
 					catch (Throwable e)
 					{
@@ -225,21 +224,22 @@ public class EventBus
 		}
 	}
 	
-	private static final Class<?> EVENT_SUPER = Event.class.getSuperclass();
+	private static final Class<?> EVENT_SUPER = Event.class.getSuperclass(); //Should be Object.class but I'll leave this here as a just-in-case measure
 	
+	@SuppressWarnings("unchecked")
 	public <E extends Event> boolean post(E event)
 	{
 		Main.LOGGER.log(Level.DEBUG, "Firing " + event.getClass().getName() + " on " + name);
 		long time = System.nanoTime();
-		List<Stream<ListenerInfo>> streams = new ArrayList<>();
+		List<Stream<ListenerInfo<?>>> streams = new ArrayList<>();
 		Class<?> clazz = event.getClass();
 		while (clazz != EVENT_SUPER)
 		{
-			ArrayList<ListenerInfo> listeners;
+			ArrayList<ListenerInfo<?>> listeners;
 			if ((listeners = this.listeners.get(clazz)) != null) streams.add(listeners.stream());
 			clazz = clazz.getSuperclass();
 		}
-		streams.stream().flatMap(stream -> stream).sorted().forEach(listener -> (listener).call(event));
+		streams.stream().flatMap(stream -> stream).sorted().forEach(listener -> ((ListenerInfo<? super E>) listener).call(event));
 		PluginLoader.INSTANCE.activePlugin = Main.ID;
 		long endTime = System.nanoTime();
 		Main.LOGGER.log(Level.DEBUG, "Took " + MiscUtil.toSecondsDecimal(endTime - time) + " seconds");

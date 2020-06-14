@@ -262,7 +262,7 @@ public class Main
 	public void run(String[] args)
 	{
 		PluginLoader.INSTANCE.constructPlugins();
-		EVENT_BUS.post(new ApplicationEvent.PreInitilization());
+		EVENT_BUS.post(new ApplicationEvent.PreInitialization());
 		try
 		{
 			watcher = new FileWatcher();
@@ -459,8 +459,8 @@ public class Main
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(1, 0, 0), new RGB(0, 1, 1), new RGB(1, 1, 1), "red");
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(0, 1, 0), new RGB(1, 0, 1), new RGB(1, 1, 1), "green");
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(0, 0, 1), new RGB(1, 1, 0), new RGB(1, 1, 1), "blue");
-		EVENT_BUS.post(new ApplicationEvent.Initilization());
-		EVENT_BUS.post(new ApplicationEvent.PostInitilization());
+		EVENT_BUS.post(new ApplicationEvent.Initialization());
+		EVENT_BUS.post(new ApplicationEvent.PostInitialization());
 		if (args.length > 0)
 		{
 			File file = new File(args[0]);
