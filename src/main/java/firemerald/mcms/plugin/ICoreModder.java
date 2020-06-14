@@ -5,6 +5,7 @@ package firemerald.mcms.plugin;
  * 
  * @author FirEmerald
  */
+@FunctionalInterface
 public interface ICoreModder
 {
 	/**
@@ -16,5 +17,8 @@ public interface ICoreModder
 	 */
 	public byte[] coreMod(String name, byte[] bytes);
 	
-	public int getPriority(String name);
+	public default int getPriority(String name)
+	{
+		return 0;
+	}
 }
