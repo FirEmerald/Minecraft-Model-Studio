@@ -239,7 +239,7 @@ public class EventBus
 			if ((listeners = this.listeners.get(clazz)) != null) streams.add(listeners.stream());
 			clazz = clazz.getSuperclass();
 		}
-		streams.stream().flatMap(stream -> stream).sorted().forEachOrdered(listener -> (listener).call(event));
+		streams.stream().flatMap(stream -> stream).sorted().forEach(listener -> (listener).call(event));
 		PluginLoader.INSTANCE.activePlugin = Main.ID;
 		long endTime = System.nanoTime();
 		Main.LOGGER.log(Level.DEBUG, "Took " + MiscUtil.toSecondsDecimal(endTime - time) + " seconds");
