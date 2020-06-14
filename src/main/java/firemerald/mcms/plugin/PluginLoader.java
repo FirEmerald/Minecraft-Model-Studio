@@ -27,14 +27,33 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.events.EventBus;
 import firemerald.mcms.util.PrintStreamLogger;
 
+/**
+ * The main plugin loading handler. 
+ * 
+ * @author FirEmerald
+ *
+ */
 @CoreModExcluded
 public class PluginLoader
 {
+	/**
+	 * The {@link URLClassLoader#addURL(URL url)} method
+	 */
 	public static final Method ADD_URL;
+	/**
+	 * The plugin loader instance
+	 */
 	public static final PluginLoader INSTANCE = new PluginLoader();
+	/**
+	 * A list of all discovered plugin candidates
+	 */
 	public final List<PluginCandidate> pluginCandidates = new ArrayList<>();
+	/**
+	 * the plugin loader logger instance
+	 */
 	public static final Logger LOGGER;
 	
     static
@@ -51,10 +70,6 @@ public class PluginLoader
         	Logger stdErr = LogManager.getLogger("STDERR"); //the logger for System.err
         	System.setErr(new PrintStreamLogger(System.err, stdErr, Level.ERROR)); //replace the default error stream with one that goes to the logger
     	}
-    }
-	
-	static
-	{
 		try
 		{
 			ADD_URL = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
@@ -66,18 +81,50 @@ public class PluginLoader
 		ADD_URL.setAccessible(true);
 	}
 
+	/**
+	 * All the active loaded core mods
+	 */
 	public final Map<String, CoreModWrapper> loadedCoreMods = new LinkedHashMap<>();
+	/**
+	 * All the active loaded plugins
+	 */
 	public final Map<String, AbstractPluginWrapper> loadedPlugins = new LinkedHashMap<>();
+	/**
+	 * All the reigstered class-specific core modders
+	 */
 	public final Map<String, List<ICoreModder>> coreModders = new HashMap<>();
+	/**
+	 * All the registered global core modders
+	 */
 	public final List<ICoreModder> globalCoreModders = new ArrayList<>();
+	/**
+	 * A temporary list of core mod wrappers
+	 */
 	private List<CoreModWrapper> coreMods;
+	/**
+	 * A temporary list of plugin wrappers
+	 */
 	private List<PluginWrapper> plugins;
 	
+	/**
+	 * passes the call on to the instance for coremodding
+	 * 
+	 * @param name the class name
+	 * @param bytes the class's bytes
+	 * @return the modified class's bytes
+	 */
 	public static byte[] modStatic(String name, byte[] bytes)
 	{
 		return INSTANCE.mod(name, bytes);
 	}
-	
+
+	/**
+	 * Coremods a class.
+	 * 
+	 * @param name the class name
+	 * @param bytes the class's bytes
+	 * @return the modified class's bytes
+	 */
 	public byte[] mod(final String name, byte[] bytes)
 	{
 		ClassNode node = ASMUtil.getNode(bytes, 0);
@@ -94,6 +141,13 @@ public class PluginLoader
 		return bytes;
 	}
 	
+	/**
+	 * Verifies if a class is a core mod or plugin, and registers it appropriately
+	 * 
+	 * @param name the class name
+	 * @param in the class's data
+	 * @param candidate the containing plugin candidate
+	 */
 	private void validateClass(String name, InputStream in, PluginCandidate candidate)
 	{
 		try
@@ -114,6 +168,12 @@ public class PluginLoader
 		catch (IOException e) {}
 	}
 	
+	/**
+	 * Converts a {@link List} from annotation data to a {@link Map}
+	 * 
+	 * @param values the annotation data
+	 * @return a map of the annotation data
+	 */
 	private Map<String, Object> toMap(List<Object> values)
 	{
 		Map<String, Object> map = new HashMap<>();
@@ -121,6 +181,11 @@ public class PluginLoader
 		return map;
 	}
 	
+	/**
+	 * Searches for and registers plugins and core mods from a plugin candidate
+	 * 
+	 * @param candidate the plugin candidate
+	 */
 	private void getPlugins(PluginCandidate candidate)
 	{
 		File file = candidate.file;
@@ -181,7 +246,14 @@ public class PluginLoader
 			LOGGER.warn("Couldn't close jarfile " + file, e);
 		}
 	}
-	
+
+	/**
+	 * Iterative method for searching for and registering plugins and core mods from a directory
+	 * 
+	 * @param toRemove the number of characters to remove from the file path when determining the class name
+	 * @param directory the directory to search
+	 * @param candidate the plugin candidate
+	 */
 	private void parseFilesForCoremods(int toRemove, File directory, PluginCandidate candidate)
 	{
 		for (File file : directory.listFiles())
@@ -213,6 +285,9 @@ public class PluginLoader
 		}
 	}
 	
+	/**
+	 * Constructs and registers core mods
+	 */
 	private void constructCoreMods()
 	{
 		coreMods.forEach(wrapper ->
@@ -260,6 +335,9 @@ public class PluginLoader
 		coreMods = null;
 	}
 	
+	/**
+	 * Constructs and registers plugins
+	 */
 	public void constructPlugins()
 	{
 		loadedCoreMods.values().forEach(wrapper -> {
@@ -303,6 +381,11 @@ public class PluginLoader
 		});
 	}
 	
+	/**
+	 * Loads plugins and then launches the game
+	 * 
+	 * @param args the program arguments
+	 */
 	public static void launchGame(String[] args)
 	{
 		INSTANCE.getPlugins();
@@ -310,6 +393,9 @@ public class PluginLoader
 		Main.launch(args);
 	}
 	
+	/**
+	 * Finds and loads all core mod and plugin wrappers
+	 */
 	private void getPlugins()
 	{
 		coreMods = new ArrayList<>();
@@ -331,6 +417,11 @@ public class PluginLoader
 		getPlugins(new File("plugins"));
 	}
 	
+	/**
+	 * Grabs plugin candidates from a directory 
+	 * 
+	 * @param directory
+	 */
 	private void getPlugins(File directory)
 	{
 		LOGGER.info("Searching for plugins in " + directory.getAbsolutePath());
@@ -338,6 +429,11 @@ public class PluginLoader
 		for (File file : directory.listFiles()) if (!file.isDirectory()) this.pluginCandidates.add(new PluginCandidate(file, false));
 	}
 	
+	/**
+	 * registers a plugin and registers any event listeners in the instance using {@link EventBus#registerListeners(Object handler)}
+	 * 
+	 * @param plugin the plugin wrapper
+	 */
 	private void addPlugin(AbstractPluginWrapper plugin)
 	{
 		LOGGER.debug("Adding plugin with id " + plugin.id + " and class " + plugin.className);
@@ -346,8 +442,14 @@ public class PluginLoader
 		Main.instance.EVENT_BUS.registerListeners(plugin.getPlugin());
 	}
 	
+	/**
+	 * The currently active plugin, for plugin registering and event handling
+	 */
 	public String activePlugin = Main.ID;
 	
+    /**
+     * Known library files to be ignored when searching the classpath for plugin candidates
+     */
     private static final List<String> STANDARD_LIBRARIES = Arrays.asList(
     		//JRE libraries
     		"javaagent-shaded.jar",
@@ -408,6 +510,12 @@ public class PluginLoader
     	    //Referenced Libraries
     	    "org.eclipse.jdt.annotation_2.2.300.v20190328-1431.jar");
 
+    /**
+     * converts an array of {@link URL}'s to an array of {@link File}'s
+     * 
+     * @param urls the URLS to convert
+     * @return the files
+     */
     private File[] getParentSources(URL[] urls)
     {
         File[] sources = new File[urls.length];
@@ -426,6 +534,11 @@ public class PluginLoader
         }
     }
 
+    /**
+     * Searches for plugin candidates from the classpath
+     * 
+     * @param pluginClassLoader the class loader
+     */
     private void findClasspathFiles(URLClassLoader pluginClassLoader)
     {
         File[] sources = getParentSources(pluginClassLoader.getURLs());

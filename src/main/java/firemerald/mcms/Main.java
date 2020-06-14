@@ -63,7 +63,7 @@ public class Main
 	public static final String ID = "mcms";
 	public static final String VERSION = "Alpha 16";
 	public static final String BUILD_DATE = "06/12/2020 19:34";
-	public static final Logger LOGGER;
+	public static final Logger LOGGER = LogManager.getLogger("MCMS"); //the main logger;
 	public static Main instance;
 	public static final int MIN_W = 640, MIN_H = 480;
 	public int sizeW, sizeH;
@@ -194,22 +194,6 @@ public class Main
 		redoActions.clear();
 	}
 	*/
-	
-    static
-    {
-    	System.setProperty("log4j.configurationFile", "assets/mcms/log4j2.xml");
-    	LOGGER = LogManager.getLogger("MCMS"); //the main logger
-    	if (!(System.out instanceof PrintStreamLogger))
-    	{
-        	Logger stdOut = LogManager.getLogger("STDOUT"); //the logger for System.out
-        	System.setOut(new PrintStreamLogger(System.out, stdOut, Level.INFO)); //replace the default output stream with one that goes to the logger
-    	}
-    	if (!(System.err instanceof PrintStreamLogger))
-    	{
-        	Logger stdErr = LogManager.getLogger("STDERR"); //the logger for System.err
-        	System.setErr(new PrintStreamLogger(System.err, stdErr, Level.ERROR)); //replace the default error stream with one that goes to the logger
-    	}
-    }
     
     public static Mesh MODMESH;
 	

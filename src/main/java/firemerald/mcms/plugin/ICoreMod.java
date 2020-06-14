@@ -7,11 +7,7 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 
 /**
- * This interface denotes a plugin that also involves coremodding.<br>
- * Coremods will only be added from classes directly implementing {@link ICoreMod}.<br>
- * Keep in mind that this extends {@link IPlugin} and you do not need to also implement IPlugin yourself.<br>
- * Any errors during construction will cause the coremod to not be loaded - don't be afraid to use exceptions in the constructor to handle version conflicts!<br>
- * Also remember that this will be constructed before the game is launched. Avoid using <i>any</i> MCMS classes in the class - use a proxy instead.
+ * Instances of {@link ICoreMod} can be annotated with {@link CoreMod} for core modding
  * 
  * @author FirEmerald
  */
@@ -32,5 +28,11 @@ public interface ICoreMod
 	 */
 	public @Nullable List<ICoreModder> getGlobalModders();
 	
+	/**
+	 * Construct and return the main plugin class. If there isn't any main plugin class you should just return <code>this</code><br>
+	 * The returned object will be run through {@link EventBus#registerListeners(Object handler)} to automatically register event listeners
+	 * 
+	 * @return the plugin class
+	 */
 	public @NonNull Object constructPlugin();
 }
