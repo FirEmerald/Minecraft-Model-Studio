@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.Level;
@@ -47,16 +48,6 @@ public class EventBus
 	}
 	
 	/**
-	 * {@link FunctionalInterface} for event handling methods
-	 * 
-	 * @author FirEmerald
-	 *
-	 * @param <E> the event class
-	 */
-	@FunctionalInterface
-	public static interface Listener<E extends Event> extends Consumer<E> {}
-	
-	/**
 	 * Represents an event handling method and it's properties
 	 * 
 	 * @author FirEmerald
@@ -68,7 +59,7 @@ public class EventBus
 		/**
 		 * the event handler method
 		 */
-		private final Listener<E> listener;
+		private final Consumer<E> listener;
 		/**
 		 * the priority
 		 */
@@ -90,7 +81,7 @@ public class EventBus
 		 * @param ignoreCanceled if the handler should handle canceled events.
 		 * @param plugin the handler's owner plugin ID.
 		 */
-		private ListenerInfo(Listener<E> listener, int priority, boolean ignoreCanceled, String plugin)
+		private ListenerInfo(Consumer<E> listener, int priority, boolean ignoreCanceled, String plugin)
 		{
 			this.listener = listener;
 			this.priority = priority;
@@ -122,7 +113,7 @@ public class EventBus
 	/**
 	 * The event handlers
 	 */
-	private final Map<Class<? extends Event>, ArrayList<ListenerInfo<?>>> listeners = new HashMap<>();
+	private final Map<Class<? extends Event>, List<ListenerInfo<?>>> listeners = new HashMap<>();
 	
 	
 	
@@ -132,7 +123,7 @@ public class EventBus
 	 * @param eventClass the event to listen to
 	 * @param listener an instance of {@link Listener} - usually a method reference or lambda expression - to execute when the event is fired.
 	 */
-	public <E extends Event> void addListener(Class<E> eventClass, Listener<E> listener)
+	public <E extends Event> void addListener(Class<E> eventClass, Consumer<E> listener)
 	{
 		this.addListener(eventClass, listener, 0, false);
 	}
@@ -144,7 +135,7 @@ public class EventBus
 	 * @param listener an instance of {@link Listener} - usually a method reference or lambda expression - to execute when the event is fired.
 	 * @param priority the handler's priority. higher priority handlers run first.
 	 */
-	public <E extends Event> void addListener(Class<E> eventClass, Listener<E> listener, int priority)
+	public <E extends Event> void addListener(Class<E> eventClass, Consumer<E> listener, int priority)
 	{
 		this.addListener(eventClass, listener, priority, false);
 	}
@@ -156,7 +147,7 @@ public class EventBus
 	 * @param listener an instance of {@link Listener} - usually a method reference or lambda expression - to execute when the event is fired.
 	 * @param ignoreCanceled if the listener should handle events that have already been canceled
 	 */
-	public <E extends Event> void addListener(Class<E> eventClass, Listener<E> listener, boolean ignoreCanceled)
+	public <E extends Event> void addListener(Class<E> eventClass, Consumer<E> listener, boolean ignoreCanceled)
 	{
 		this.addListener(eventClass, listener, 0, ignoreCanceled);
 	}
@@ -169,10 +160,15 @@ public class EventBus
 	 * @param priority the handler's priority. higher priority handlers run first.
 	 * @param ignoreCanceled if the listener should handle events that have already been canceled
 	 */
-	public <E extends Event> void addListener(Class<E> eventClass, Listener<E> listener, int priority, boolean ignoreCanceled)
+	public <E extends Event> void addListener(Class<E> eventClass, Consumer<E> listener, int priority, boolean ignoreCanceled)
 	{
 		addLambda(eventClass, listener, priority, ignoreCanceled, PluginLoader.INSTANCE.activePlugin);
 	}
+	
+	/**
+	 * The superclass of {@link Event}, used to terminate the loop that adds all sub-class event handlers for an event.
+	 */
+	private static final Class<?> EVENT_SUPER = Event.class.getSuperclass(); //Should be Object.class but I'll leave this here as a just-in-case measure
 
 	/**
 	 * registers an event listener method for the specified class from the specified plugin ID
@@ -183,12 +179,41 @@ public class EventBus
 	 * @param ignoreCanceled if the listener should handle events that have already been canceled
 	 * @param plugin the plugin ID
 	 */
-	private <E extends Event> void addLambda(Class<E> eventClass, Listener<E> listener, int priority, boolean ignoreCanceled, String plugin)
+	private <E extends Event> void addLambda(Class<? super E> eventClass, Consumer<E> listener, int priority, boolean ignoreCanceled, String plugin)
 	{
-		ArrayList<ListenerInfo<?>> listeners;
-		if ((listeners = this.listeners.get(eventClass)) == null) this.listeners.put(eventClass, listeners = new ArrayList<>());
-		listeners.add(new ListenerInfo<E>(listener, priority, ignoreCanceled, plugin));
-		Collections.sort(listeners);
+		addLambda(eventClass, new ListenerInfo<>(listener, priority, ignoreCanceled, plugin));
+	}
+
+	/**
+	 * registers an event listener method for the specified class from the specified plugin ID
+	 * 
+	 * @param eventClass the event to listen to
+	 * @param info the event listener info
+	 */
+	@SuppressWarnings("unchecked")
+	private <E extends Event> void addLambda(Class<? super E> eventClass, ListenerInfo<E> info)
+	{
+		List<ListenerInfo<?>> listeners;
+		if ((listeners = this.listeners.get(eventClass)) == null) //build a list from the existing subclass lists
+		{
+			List<Stream<ListenerInfo<?>>> streams = new ArrayList<>();
+			Class<?> clazz = eventClass;
+			while (clazz != EVENT_SUPER)
+			{
+				List<ListenerInfo<?>> listeners2;
+				if ((listeners2 = this.listeners.get(clazz)) != null) streams.add(listeners2.stream());
+				clazz = clazz.getSuperclass();
+			}
+			this.listeners.put((Class<? extends Event>) eventClass, listeners = new ArrayList<>(streams.stream().flatMap(stream -> stream).collect(Collectors.toList())));
+		}
+		listeners.add(info);
+		this.listeners.forEach((clazz, list) -> { //register to all superclass lists
+			if (eventClass != clazz && eventClass.isAssignableFrom(clazz))
+			{
+				list.add(info);
+				Collections.sort(list);
+			}
+		});
 	}
 
     /**
@@ -198,11 +223,11 @@ public class EventBus
 	/**
 	 * The functional interface type of {@link Listener}
 	 */
-	private static final MethodType LISTENER_TYPE = MethodType.methodType(Listener.class);
+	private static final MethodType LISTENER_TYPE = MethodType.methodType(Consumer.class);
     /**
      * The method type of event methods
      */
-    private static final MethodType EVENT_METHOD = MethodType.methodType(Void.TYPE, Event.class);
+    private static final MethodType EVENT_METHOD = MethodType.methodType(Void.TYPE, Object.class);
 	
 	/**
 	 * Registers static event handler methods automatically from a class<br>
@@ -228,7 +253,7 @@ public class EventBus
 						MethodHandle mh = LOOKUP.unreflect(m);
 				        MethodType type = MethodType.methodType(Void.TYPE, eventClass);
 						EventHandler annote = m.getAnnotation(EventHandler.class);
-						addLambda(eventClass, (Listener<E>) LambdaMetafactory.metafactory(LOOKUP, "call", LISTENER_TYPE, EVENT_METHOD, mh, type).getTarget().invoke(), annote.priority(), annote.ignoreCanceled(), PluginLoader.INSTANCE.activePlugin);
+						addLambda(eventClass, (Consumer<E>) LambdaMetafactory.metafactory(LOOKUP, "accept", LISTENER_TYPE, EVENT_METHOD, mh, type).getTarget().invoke(), annote.priority(), annote.ignoreCanceled(), PluginLoader.INSTANCE.activePlugin);
 					}
 					catch (Throwable e)
 					{
@@ -266,7 +291,7 @@ public class EventBus
 						MethodHandle mh = LOOKUP.unreflect(m);
 				        MethodType type = MethodType.methodType(Void.TYPE, eventClass);
 						EventHandler annote = m.getAnnotation(EventHandler.class);
-						addLambda(eventClass, (Listener<E>) LambdaMetafactory.metafactory(LOOKUP, "call", inT, EVENT_METHOD, mh, type).getTarget().invoke(handler), annote.priority(), annote.ignoreCanceled(), PluginLoader.INSTANCE.activePlugin);
+						addLambda(eventClass, (Consumer<E>) LambdaMetafactory.metafactory(LOOKUP, "accept", inT, EVENT_METHOD, mh, type).getTarget().invoke(handler), annote.priority(), annote.ignoreCanceled(), PluginLoader.INSTANCE.activePlugin);
 					}
 					catch (Throwable e)
 					{
@@ -287,40 +312,8 @@ public class EventBus
 	 */
 	public <E extends Event> void registerPluginListeners(PluginWrapper wrapper)
 	{
-		Object plugin = wrapper.getPlugin();
-		Class<?> c = plugin.getClass();
-        MethodType inT = LISTENER_TYPE.appendParameterTypes(c);
-		for (Method m : c.getMethods())
-		{
-			if ((m.getModifiers() & Modifier.STATIC) == 0 && m.isAnnotationPresent(EventHandler.class))
-			{
-				Class<?>[] params;
-				Class<?> clazz;
-				if ((params = m.getParameterTypes()).length == 1 && Event.class.isAssignableFrom(clazz = params[0]))
-				{
-					@SuppressWarnings("unchecked")
-					Class<E> eventClass = (Class<E>) clazz;
-					try
-					{
-						MethodHandle mh = LOOKUP.unreflect(m);
-				        MethodType type = MethodType.methodType(Void.TYPE, eventClass);
-						EventHandler annote = m.getAnnotation(EventHandler.class);
-						addLambda(eventClass, (Listener<E>) LambdaMetafactory.metafactory(LOOKUP, "call", inT, EVENT_METHOD, mh, type).getTarget().invoke(plugin), annote.priority(), annote.ignoreCanceled(), wrapper.id);
-					}
-					catch (Throwable e)
-					{
-						Main.LOGGER.log(Level.WARN, "Unable to add listener for class " + c.getName() + " method " + m.toString(), e);
-					}
-				}
-				else Main.LOGGER.log(Level.WARN, "Invalid type arguments for EventHandler method " + m + ", must be a single parameter that extends Event.");
-			}
-		}
+		registerListeners(wrapper.getPlugin());
 	}
-	
-	/**
-	 * The superclass of {@link Event}, used to terminate the loop that adds all sub-class event handlers for an event.
-	 */
-	private static final Class<?> EVENT_SUPER = Event.class.getSuperclass(); //Should be Object.class but I'll leave this here as a just-in-case measure
 	
 	/**
 	 * Posts an event to the event bus, running all the listeners for that event and it's subclasses.
@@ -332,21 +325,18 @@ public class EventBus
 	@SuppressWarnings("unchecked")
 	public <E extends Event> boolean post(E event)
 	{
-		String prevID = PluginLoader.INSTANCE.activePlugin;
-		Main.LOGGER.log(Level.DEBUG, "Firing " + event.getClass().getName() + " on " + name);
-		long time = System.nanoTime();
-		List<Stream<ListenerInfo<?>>> streams = new ArrayList<>();
-		Class<?> clazz = event.getClass();
-		while (clazz != EVENT_SUPER)
+		List<ListenerInfo<?>> list = this.listeners.get(event.getClass());
+		if (list != null)
 		{
-			ArrayList<ListenerInfo<?>> listeners;
-			if ((listeners = this.listeners.get(clazz)) != null) streams.add(listeners.stream());
-			clazz = clazz.getSuperclass();
+			String prevID = PluginLoader.INSTANCE.activePlugin;
+			Main.LOGGER.log(Level.DEBUG, "Firing " + event.getClass().getName() + " on " + name);
+			long time = System.nanoTime();
+			list.forEach(info -> ((ListenerInfo<? super E>) info).call(event));
+			PluginLoader.INSTANCE.activePlugin = prevID;
+			long endTime = System.nanoTime();
+			Main.LOGGER.log(Level.DEBUG, "Took " + MiscUtil.toSecondsDecimal(endTime - time) + " seconds");
 		}
-		streams.stream().flatMap(stream -> stream).sorted().forEach(listener -> ((ListenerInfo<? super E>) listener).call(event));
-		PluginLoader.INSTANCE.activePlugin = prevID;
-		long endTime = System.nanoTime();
-		Main.LOGGER.log(Level.DEBUG, "Took " + MiscUtil.toSecondsDecimal(endTime - time) + " seconds");
+		else Main.LOGGER.log(Level.DEBUG, "Not firing " + event.getClass().getName() + " on " + name + " as there are no registered listeners for the event");
 		return event.isCanceled();
 	}
 }

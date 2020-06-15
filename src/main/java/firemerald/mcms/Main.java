@@ -47,7 +47,6 @@ import firemerald.mcms.util.EditorMode;
 import firemerald.mcms.util.EnumPlaybackMode;
 import firemerald.mcms.util.FileWatcher;
 import firemerald.mcms.util.IEditable;
-import firemerald.mcms.util.PrintStreamLogger;
 import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.TextureManager;
