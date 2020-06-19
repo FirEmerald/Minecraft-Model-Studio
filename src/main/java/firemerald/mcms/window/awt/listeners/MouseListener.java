@@ -42,7 +42,7 @@ public class MouseListener implements java.awt.event.MouseListener, MouseMotionL
 			boolean prevState = state.get(button);
 			state.set(button);
 			GuiScreen gui;
-			if ((gui = main.gui) != null)
+			if ((gui = main.getGui()) != null)
 			{
 				final float mX = event.getX();
 				final float mY = event.getY();
@@ -62,7 +62,7 @@ public class MouseListener implements java.awt.event.MouseListener, MouseMotionL
 			boolean prevState = state.get(button);
 			state.set(button);
 			GuiScreen gui;
-			if ((gui = main.gui) != null)
+			if ((gui = main.getGui()) != null)
 			{
 				final float mX = event.getX();
 				final float mY = event.getY();
@@ -75,7 +75,7 @@ public class MouseListener implements java.awt.event.MouseListener, MouseMotionL
 	public void mouseMoved(MouseEvent event)
 	{
 		GuiScreen gui;
-		if ((gui = main.gui) != null)
+		if ((gui = main.getGui()) != null)
 		{
 			final float mX = event.getX();
 			final float mY = event.getY();
@@ -94,7 +94,7 @@ public class MouseListener implements java.awt.event.MouseListener, MouseMotionL
 	public void mouseWheelMoved(MouseWheelEvent event)
 	{
 		GuiScreen gui;
-		if ((gui = main.gui) != null && (gui.canScrollH((float) main.mX, (float) main.mY) || gui.canScrollV((float) main.mX, (float) main.mY)))
+		if ((gui = main.getGui()) != null && (gui.canScrollH((float) main.mX, (float) main.mY) || gui.canScrollV((float) main.mX, (float) main.mY)))
 		{
 			final boolean isHoriz = event.isShiftDown();
 			final float amount = (float) event.getPreciseWheelRotation();

@@ -78,7 +78,7 @@ public class ComponentAnimationBar extends ComponentPanelMain
 				Main.instance.project.onAction();
 				Main.instance.project.getAnimation().load(el); //TODO scale?
 				Main.instance.animState.time = 0;
-				Main.instance.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+				Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 			}
 			catch (IOException e)
 			{
@@ -108,7 +108,7 @@ public class ComponentAnimationBar extends ComponentPanelMain
 		this.addElement(reverseAnimation = new ButtonItem16(32, 32, Textures.ITEM_REVERSE, () -> {
 			Main.instance.project.onAction();
 			Main.instance.project.getAnimation().reverseAnimation(Main.instance.project.getCompletestRig());
-			Main.instance.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 		}));
 		this.addElement(removeAnimation = new ButtonItem16(48, 32, Textures.ITEM_REMOVE, () -> {
 			Main.instance.project.onAction();

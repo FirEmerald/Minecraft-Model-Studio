@@ -18,7 +18,7 @@ public class ScrollCallback extends GLFWScrollCallback
 	public void invoke(long window, double xoffset, double yoffset)
 	{
 		GuiScreen gui;
-		if ((gui = main.gui) != null && (gui.canScrollH((float) main.mX, (float) main.mY) || gui.canScrollV((float) main.mX, (float) main.mY)))
+		if ((gui = main.getGui()) != null && (gui.canScrollH((float) main.mX, (float) main.mY) || gui.canScrollV((float) main.mX, (float) main.mY)))
 		{
 			gui.onMouseScroll((float) main.mX, (float) main.mY, (float) xoffset, (float) yoffset);
 		}

@@ -16,6 +16,6 @@ public class CursorPosCallback extends GLFWCursorPosCallback
 	@Override
 	public void invoke(long window, double xpos, double ypos)
 	{
-		main.gui.onMouseMoved((float) (main.mX = xpos), (float) (main.mY = ypos));
+		main.getGui().onMouseMoved((float) (main.mX = xpos), (float) (main.mY = ypos));
 	}
 }

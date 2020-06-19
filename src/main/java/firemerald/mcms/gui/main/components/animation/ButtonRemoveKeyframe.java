@@ -47,6 +47,6 @@ public class ButtonRemoveKeyframe extends EditableButton
 			pose.pose.remove(frame.name);
 		}
 		Main.instance.setEditing(null);
-		Main.instance.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+		Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 	}
 }

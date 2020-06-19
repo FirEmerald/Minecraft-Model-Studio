@@ -339,7 +339,7 @@ public class Animation implements IAnimation
 					transform.setFromMatrix(cur);
 				});
 			});
-			main.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+			main.onGuiUpdate(GuiUpdate.ANIMATION);
 			if (main.getEditing() instanceof ComponentKeyFrame) main.setEditing(main.getEditing());
 		}
 	}

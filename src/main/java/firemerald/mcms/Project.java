@@ -106,7 +106,7 @@ public class Project
 		if (!overrideTextureWidth.containsKey(modelName)) viewTextureWidth = textureWidth;
 		this.textureWidth = textureWidth;
 		this.models.forEach((modelName, model) -> {if (!overrideTextureWidth.containsKey(modelName)) model.updateTex();});
-		Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+		Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 	}
 	
 	public boolean hasModelTextureWidth()
@@ -119,7 +119,7 @@ public class Project
 		viewTextureWidth = textureWidth;
 		this.overrideTextureWidth.put(modelName, textureWidth);
 		model.updateTex();
-		Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+		Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 	}
 	
 	public void removeModelTextureWidth()
@@ -127,7 +127,7 @@ public class Project
 		viewTextureWidth = textureWidth;
 		this.overrideTextureWidth.remove(modelName);
 		model.updateTex();
-		Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+		Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 	}
 	
 	public int getTextureHeight()
@@ -140,7 +140,7 @@ public class Project
 		if (!overrideTextureHeight.containsKey(modelName)) viewTextureHeight = textureHeight;
 		this.textureHeight = textureHeight;
 		this.models.forEach((modelName, model) -> {if (!overrideTextureHeight.containsKey(modelName)) model.updateTex();});
-		Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+		Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 	}
 	
 	public boolean hasModelTextureHeight()
@@ -153,7 +153,7 @@ public class Project
 		viewTextureHeight = textureHeight;
 		this.overrideTextureHeight.put(modelName, textureHeight);
 		model.updateTex();
-		Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+		Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 	}
 	
 	public void removeModelTextureHeight()
@@ -161,7 +161,7 @@ public class Project
 		viewTextureHeight = textureHeight;
 		this.overrideTextureHeight.remove(modelName);
 		model.updateTex();
-		Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+		Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 	}
 	
 	public void setTextureSize(int textureWidth, int textureHeight)
@@ -180,7 +180,7 @@ public class Project
 		this.overrideTextureWidth.put(modelName, textureWidth);
 		this.overrideTextureHeight.put(modelName, textureHeight);
 		model.updateTex();
-		Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+		Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 	}
 	
 	public void removeModelTextureSize()
@@ -190,7 +190,7 @@ public class Project
 		this.overrideTextureWidth.remove(modelName);
 		this.overrideTextureHeight.remove(modelName);
 		model.updateTex();
-		Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+		Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 	}
 	
 	public float getScale()
@@ -314,7 +314,7 @@ public class Project
 			this.models.clear();
 			copy.forEach((name, model) -> this.models.put(name.equals(this.modelName) ? modelName : name, model));
 			this.modelName = modelName;
-			Main.instance.gui.onGuiUpdate(GuiUpdate.MODEL);
+			Main.instance.onGuiUpdate(GuiUpdate.MODEL);
 		}
 	}
 	
@@ -370,7 +370,7 @@ public class Project
 				viewTextureHeight = overrideTextureHeight.containsKey(modelName) ? overrideTextureHeight.get(modelName) : textureHeight;
 			}
 		}
-		Main.instance.gui.onGuiUpdate(GuiUpdate.MODEL);
+		Main.instance.onGuiUpdate(GuiUpdate.MODEL);
 	}
 	
 	public void addModel(String modelName, IModel model)
@@ -383,7 +383,7 @@ public class Project
 		viewTextureWidth = textureWidth;
 		viewTextureHeight = textureHeight;
 		updateSkeletonLocal();
-		Main.instance.gui.onGuiUpdate(GuiUpdate.MODEL);
+		Main.instance.onGuiUpdate(GuiUpdate.MODEL);
 	}
 	
 	public void removeModel()
@@ -427,7 +427,7 @@ public class Project
 			this.textures.clear();
 			copy.forEach((name, texture) -> this.textures.put(name.equals(this.textureName) ? textureName : name, texture));
 			this.textureName = textureName;
-			Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+			Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 		}
 	}
 	
@@ -448,7 +448,7 @@ public class Project
 				this.texture = texture;
 			}
 		}
-		Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+		Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 	}
 	
 	public void addTexture(String textureName, Texture texture)
@@ -458,7 +458,7 @@ public class Project
 		textures.put(textureName, texture);
 		this.textureName = textureName;
 		this.texture = texture;
-		Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
+		Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 	}
 	
 	public void removeTexture()
@@ -499,7 +499,7 @@ public class Project
 			this.animations.clear();
 			copy.forEach((name, animation) -> this.animations.put(name.equals(this.animationName) ? animationName : name, animation));
 			this.animationName = animationName;
-			Main.instance.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 		}
 	}
 	
@@ -520,7 +520,7 @@ public class Project
 				this.animation = animation;
 			}
 		}
-		Main.instance.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+		Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 	}
 	
 	public void addAnimation(String animationName, IAnimation animation)
@@ -530,7 +530,7 @@ public class Project
 		animations.put(animationName, animation);
 		this.animationName = animationName;
 		this.animation = animation;
-		Main.instance.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+		Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 	}
 	
 	public void removeAnimation()
@@ -796,7 +796,7 @@ public class Project
 		//Main.instance.clearActions();
 		clearActions();
 		for (int i = 0; i < 64; i++) onAction();
-		Main.instance.gui.onGuiUpdate(GuiUpdate.PROJECT);
+		Main.instance.onGuiUpdate(GuiUpdate.PROJECT);
 	}
 	
 	public void load(AbstractElement root)
@@ -907,7 +907,7 @@ public class Project
 		if (animationName == null) animation = null;
 		else if ((animation = animations.get(animationName)) == null) animationName = null;
 		if (model != null) model.updateTex();
-		Main.instance.gui.onGuiUpdate(GuiUpdate.PROJECT);
+		Main.instance.onGuiUpdate(GuiUpdate.PROJECT);
 	}
 	
 	public void updateSkeletonLocal()

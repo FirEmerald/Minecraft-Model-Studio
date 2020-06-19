@@ -151,7 +151,7 @@ public class GuiPopupNewKeyframe extends GuiPopup
 		if (!map.containsKey(time)) //TODO if already has a keyframe
 		{
 			map.put(time, transformation);
-			Main.instance.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 			framesBar.keyFrames.get(time).forEach(keyframe -> {
 				if (keyframe.transform == transformation) Main.instance.setEditing(keyframe);
 			});

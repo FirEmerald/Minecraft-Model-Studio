@@ -5,6 +5,7 @@ import java.awt.MenuItem;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import firemerald.mcms.Main;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentPanel;
 import firemerald.mcms.gui.components.StandardButton;
@@ -52,6 +53,7 @@ public class ComponentMenu extends ComponentPanel
 			{
 				StandardButton button = new StandardButton(1, cy, 201, cy + 20, 0, 0, label, () -> 
 				{
+					Main.instance.closePopup();
 					for (ActionListener listener: item.getActionListeners()) listener.actionPerformed(new ActionEvent(item, ActionEvent.ACTION_PERFORMED, item.getActionCommand()));
 				});
 				button.textCentered = false;

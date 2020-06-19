@@ -105,7 +105,7 @@ public class GuiPopupNewPoseframe extends GuiPopup
 		if (!anim.pose.containsKey(name.getText())) //TODO if already has a keyframe
 		{
 			anim.pose.put(name.getText(), transformation);
-			Main.instance.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 			framesBar.keyFrames.get(0f).forEach(keyframe -> {
 				if (keyframe.transform == transformation) Main.instance.setEditing(keyframe);
 			});

@@ -20,7 +20,7 @@ public class MouseButtonCallback extends GLFWMouseButtonCallback
 	public void invoke(long window, int button, int action, int mods)
 	{
 		GuiScreen gui;
-		if ((gui = main.gui) != null)
+		if ((gui = main.getGui()) != null)
 		{
 			mods = ModifierConverter.getModifiers(mods);
 			switch (action)

@@ -41,7 +41,7 @@ public class KeyListener implements java.awt.event.KeyListener
 			}
 		}
 		GuiScreen gui;
-		if ((gui = main.gui) != null)
+		if ((gui = main.getGui()) != null)
 		{
 			if (prevState) window.actions.add(() -> gui.onKeyRepeat(key, event.getExtendedKeyCode(), mods));
 			else window.actions.add(() -> gui.onKeyPressed(key, event.getExtendedKeyCode(), ModifierConverter.getModifiers(event.getModifiersEx())));
@@ -56,7 +56,7 @@ public class KeyListener implements java.awt.event.KeyListener
 		boolean prevState = state.get(key.ordinal());
 		state.set(key.ordinal(), false);
 		GuiScreen gui;
-		if ((gui = main.gui) != null)
+		if ((gui = main.getGui()) != null)
 		{
 			if (prevState) window.actions.add(() -> gui.onKeyReleased(key, event.getExtendedKeyCode(), mods)); //prevent release repeats
 		}
@@ -66,7 +66,7 @@ public class KeyListener implements java.awt.event.KeyListener
 	public void keyTyped(KeyEvent event)
 	{
 		GuiScreen gui;
-		if ((gui = main.gui) != null) window.actions.add(() -> gui.onCharTyped(event.getKeyChar()));
+		if ((gui = main.getGui()) != null) window.actions.add(() -> gui.onCharTyped(event.getKeyChar()));
 	}
 	
 	public boolean keyDown(Key key)

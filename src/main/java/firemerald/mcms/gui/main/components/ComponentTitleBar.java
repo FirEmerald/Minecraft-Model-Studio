@@ -2,6 +2,7 @@ package firemerald.mcms.gui.main.components;
 
 import java.awt.Menu;
 import java.awt.MenuItem;
+import java.awt.MenuShortcut;
 import java.awt.PopupMenu;
 import java.io.File;
 import java.io.FileWriter;
@@ -13,7 +14,6 @@ import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.AnimationState;
 import firemerald.mcms.api.util.FileUtil;
-import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.gui.plugins.GuiPopupPlugins;
@@ -24,10 +24,12 @@ import firemerald.mcms.gui.popups.GuiPopupUnsavedChanges;
 import firemerald.mcms.gui.popups.project.GuiPopupNewProject;
 import firemerald.mcms.gui.themes.GuiThemes;
 import firemerald.mcms.model.RenderObjectComponents;
+import firemerald.mcms.plugin.PluginLoader;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.util.FileUtils;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.font.FormattedText;
+import firemerald.mcms.window.api.Key;
 
 public class ComponentTitleBar extends ComponentPanelMain
 {
@@ -55,35 +57,30 @@ public class ComponentTitleBar extends ComponentPanelMain
             PopupMenu menu = new PopupMenu();
         	MenuItem newProject = new MenuItem("New Project");
         	newProject.addActionListener(action -> {
-        		((GuiPopup) Main.instance.gui).deactivate();
         		if (Main.instance.project.needsSave()) new GuiPopupUnsavedChanges(() -> new GuiPopupNewProject().activate()).activate();
         		else new GuiPopupNewProject().activate();
         	});
         	menu.add(newProject);
         	MenuItem openProject = new MenuItem("Open Project...");
         	openProject.addActionListener(action -> {
-        		((GuiPopup) Main.instance.gui).deactivate();
         		Main.instance.project.loadFrom();
-        		Main.instance.gui.onGuiUpdate(GuiUpdate.PROJECT);
+        		Main.instance.onGuiUpdate(GuiUpdate.PROJECT);
         	});
         	menu.add(openProject);
         	MenuItem editProject = new MenuItem("Edit Project");
         	menu.add(editProject);
         	MenuItem saveProject = new MenuItem("Save Project");
         	saveProject.addActionListener(action -> {
-        		((GuiPopup) Main.instance.gui).deactivate();
         		Main.instance.project.save();
         	});
         	menu.add(saveProject);
         	MenuItem saveProjectAs = new MenuItem("Save Project as...");
         	saveProjectAs.addActionListener(action -> {
-        		((GuiPopup) Main.instance.gui).deactivate();
         		Main.instance.project.saveAs();
         	});
         	menu.add(saveProjectAs);
         	MenuItem exportProject = new MenuItem("Export Project");
         	exportProject.addActionListener(action -> {
-        		((GuiPopup) Main.instance.gui).deactivate();
         		Main.instance.project.export();
         	});
         	menu.add(exportProject);
@@ -101,6 +98,14 @@ public class ComponentTitleBar extends ComponentPanelMain
         }));
         this.addElement(editMenu = new TitleButton(64, 0, 128, 16, 1, 0, "Edit", () -> {
             PopupMenu menu = new PopupMenu();
+        	MenuItem undo = new MenuItem("Undo");
+        	undo.addActionListener(action -> Main.instance.project.undo());
+        	if (Main.instance.project.undoActions.isEmpty()) undo.setEnabled(false);
+        	menu.add(undo);
+        	MenuItem redo = new MenuItem("Redo");
+        	redo.addActionListener(action -> Main.instance.project.redo());
+        	if (Main.instance.project.redoActions.isEmpty()) redo.setEnabled(false);
+        	menu.add(redo);
             return menu;
         }));
         this.addElement(modelMenu = new TitleButton(128, 0, 192, 16, 1, 0, "Model", () -> {
@@ -110,7 +115,6 @@ public class ComponentTitleBar extends ComponentPanelMain
         	MenuItem exportModel = new MenuItem("Export Model");
         	if (Main.instance.project.getModel() == null) exportModel.setEnabled(false);
         	else exportModel.addActionListener(action -> {
-        		((GuiPopup) Main.instance.gui).deactivate();
         		File file = FileUtils.getSaveFile("obj", "");
         		if (file != null)
         		{
@@ -131,7 +135,6 @@ public class ComponentTitleBar extends ComponentPanelMain
         	MenuItem exportPosedModel = new MenuItem("Export Posed Model");
         	if (Main.instance.project.getModel() == null) exportPosedModel.setEnabled(false);
         	else exportPosedModel.addActionListener(action -> {
-        		((GuiPopup) Main.instance.gui).deactivate();
         		File file = FileUtils.getSaveFile("obj", "");
         		if (file != null)
         		{
@@ -164,7 +167,6 @@ public class ComponentTitleBar extends ComponentPanelMain
             {
                 MenuItem showNodes = new MenuItem("Show Nodes");
                 showNodes.addActionListener(action -> {
-            		((GuiPopup) Main.instance.gui).deactivate();
                 	Main.instance.state.setShowNodes(true);
                 });
                 menu.add(showNodes);
@@ -173,7 +175,6 @@ public class ComponentTitleBar extends ComponentPanelMain
             {
                 MenuItem hideNodes = new MenuItem("Hide Nodes");
                 hideNodes.addActionListener(action -> {
-            		((GuiPopup) Main.instance.gui).deactivate();
                 	Main.instance.state.setShowNodes(false);
                 });
                 menu.add(hideNodes);
@@ -182,7 +183,6 @@ public class ComponentTitleBar extends ComponentPanelMain
             {
                 MenuItem showBones = new MenuItem("Show Bones");
                 showBones.addActionListener(action -> {
-            		((GuiPopup) Main.instance.gui).deactivate();
                 	Main.instance.state.setShowBones(true);
                 });
                 menu.add(showBones);
@@ -191,14 +191,12 @@ public class ComponentTitleBar extends ComponentPanelMain
             {
                 MenuItem hideBones = new MenuItem("Hide Bones");
                 hideBones.addActionListener(action -> {
-            		((GuiPopup) Main.instance.gui).deactivate();
                 	Main.instance.state.setShowBones(false);
                 });
                 menu.add(hideBones);
             }
         	MenuItem theme = new MenuItem("Change Theme");
         	theme.addActionListener(action -> {
-        		((GuiPopup) Main.instance.gui).deactivate();
         		new GuiThemes().activate();
         	});
         	menu.add(theme);
@@ -208,15 +206,14 @@ public class ComponentTitleBar extends ComponentPanelMain
             PopupMenu menu = new PopupMenu();
         	MenuItem theme = new MenuItem("About MCMS");
         	theme.addActionListener(action -> {
-        		((GuiPopup) Main.instance.gui).deactivate();
         		new GuiPopupMessageOK(new FormattedText("Minecraft Model Studio, by ", getTheme().getTextColor(), Main.instance.fontMsg).append("Fir", Color.RED).append("E", Color.YELLOW).append("merald", Color.GREEN).append(".\n\nBuild ", getTheme().getTextColor()).append(Main.VERSION, Color.BLUE).append(", on ", getTheme().getTextColor()).append(Main.BUILD_DATE, Color.BLUE)).activate();
         	});
         	menu.add(theme);
         	MenuItem plugins = new MenuItem("Plugins");
         	plugins.addActionListener(action -> {
-        		((GuiPopup) Main.instance.gui).deactivate();
         		new GuiPopupPlugins().activate();
         	});
+        	if (PluginLoader.INSTANCE.loadedPlugins.isEmpty()) plugins.setEnabled(false);
         	menu.add(plugins);
             return menu;
         }));

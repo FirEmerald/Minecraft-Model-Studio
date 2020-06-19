@@ -42,7 +42,7 @@ public class KeyCallback extends GLFWKeyCallback
 		//if (action == GLFW.GLFW_PRESS && code == GLFW.GLFW_KEY_T && (mods & GLFW.GLFW_MOD_CONTROL) != 0) System.out.println(FileUtils.encode64(Main.instance.getTexture().getBytes()).length());
 		//if (action == GLFW.GLFW_PRESS && code == GLFW.GLFW_KEY_C && (mods & GLFW.GLFW_MOD_CONTROL) != 0 && !(Main.instance.gui instanceof GuiColor)) new GuiColor(10, 10).activate();
 		GuiScreen gui;
-		if ((gui = main.gui) != null)
+		if ((gui = main.getGui()) != null)
 		{
 			switch (action)
 			{

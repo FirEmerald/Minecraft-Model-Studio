@@ -149,6 +149,6 @@ public class GuiPopupEditAnimation extends GuiPopup
 			}
 		}
 		if (!name.getText().equals(project.getAnimationName())) project.setAnimationName(MiscUtil.ensureUnique(this.name.getText(), project.getAnimationNames()));
-		Main.instance.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+		Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 	}
 }

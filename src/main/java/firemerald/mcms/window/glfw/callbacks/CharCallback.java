@@ -18,6 +18,6 @@ public class CharCallback extends GLFWCharCallback
 	public void invoke(long window, int codepoint)
 	{
 		GuiScreen gui;
-		if ((gui = main.gui) != null) gui.onCharTyped((char) codepoint);
+		if ((gui = main.getGui()) != null) gui.onCharTyped((char) codepoint);
 	}
 }

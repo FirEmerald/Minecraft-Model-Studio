@@ -106,7 +106,7 @@ public class GuiPopupLoadModel extends GuiPopup
 			});
 			project.onAction();
 			project.getModel().addRootBone(root, true);
-			Main.instance.gui.onGuiUpdate(GuiUpdate.MODEL);
+			Main.instance.onGuiUpdate(GuiUpdate.MODEL);
 		}
 		catch (Exception e)
 		{

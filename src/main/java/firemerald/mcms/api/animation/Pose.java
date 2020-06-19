@@ -131,7 +131,7 @@ public class Pose implements IAnimation
 				cur = mul.mul(cur, cur);
 				transform.setFromMatrix(cur);
 			});
-			main.gui.onGuiUpdate(GuiUpdate.ANIMATION);
+			main.onGuiUpdate(GuiUpdate.ANIMATION);
 			if (main.getEditing() instanceof ComponentPoseFrame) main.setEditing(main.getEditing());
 		}
 	}

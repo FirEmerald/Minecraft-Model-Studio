@@ -76,7 +76,7 @@ public class ApplicationState
 	public void setThemeNoStateUpdate(GuiTheme theme)
 	{
 		this.theme = theme;
-		if (Main.instance.gui != null) Main.instance.gui.onGuiUpdate(GuiUpdate.THEME);
+		Main.instance.onGuiUpdate(GuiUpdate.THEME);
 	}
 
 	public boolean showNodes()

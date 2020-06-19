@@ -51,6 +51,7 @@ import firemerald.mcms.util.ApplicationState;
 import firemerald.mcms.util.EditorMode;
 import firemerald.mcms.util.EnumPlaybackMode;
 import firemerald.mcms.util.FileWatcher;
+import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.IEditable;
 import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.ResourceLocation;
@@ -75,7 +76,7 @@ public class Main
 	public double mX = -1, mY = -1;
 	public Shader shader;
 	public TextureManager textureManager;
-	public GuiScreen gui = new GuiScreen() {}; //blank gui to prevent null pointer exceptions
+	protected GuiScreen gui = new GuiScreen() {}; //blank gui to prevent null pointer exceptions
 	public FontRenderer font0, fontMsg;
 	public RaytraceResult trace = null;
 	private IEditable editing = null;
@@ -168,6 +169,16 @@ public class Main
 		}
 	}
 	
+	public void onGuiUpdate(GuiUpdate reason)
+	{
+		gui.onGuiUpdate(reason);
+	}
+	
+	public GuiScreen getGui()
+	{
+		return gui;
+	}
+
 	public EditorMode getEditorMode()
 	{
 		return tool != null ? EditorMode.TEXTURE : EditorMode.MODEL;
