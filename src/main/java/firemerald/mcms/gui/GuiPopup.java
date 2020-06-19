@@ -9,20 +9,19 @@ public abstract class GuiPopup extends GuiScreen
 	
 	public void activate()
 	{
-		under = Main.instance.gui;
-		Main.instance.gui = this;
-		this.setSize(Main.instance.sizeW, Main.instance.sizeH);
+		Main.instance.openGui(this);
 	}
 	
 	@Override
 	public void setSize(int w, int h)
 	{
+		super.setSize(w, h);
 		under.setSize(w, h);
 	}
 	
 	public void deactivate()
 	{
-		Main.instance.gui = under;
+		Main.instance.closePopup();
 	}
 	
 	@Override

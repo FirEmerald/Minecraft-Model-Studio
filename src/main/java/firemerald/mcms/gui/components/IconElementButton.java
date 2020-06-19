@@ -1,11 +1,11 @@
 package firemerald.mcms.gui.components;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.api.util.TriFunction;
 import firemerald.mcms.theme.GuiTheme;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.ResourceLocation;
-import firemerald.mcms.util.function.TriFunction;
 import firemerald.mcms.util.mesh.Mesh;
 
 public class IconElementButton extends ComponentButton

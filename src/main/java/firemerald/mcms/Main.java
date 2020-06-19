@@ -17,6 +17,7 @@ import javax.imageio.ImageIO;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jdt.annotation.NonNull;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL;
 
@@ -24,6 +25,10 @@ import firemerald.mcms.api.animation.AnimationState;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.events.ApplicationEvent;
 import firemerald.mcms.events.EventBus;
+import firemerald.mcms.events.GuiEvent;
+import firemerald.mcms.events.RenderEvent;
+import firemerald.mcms.events.TickEvent;
+import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.GuiScreen;
 import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.gui.popups.GuiPopupException;
@@ -70,10 +75,7 @@ public class Main
 	public double mX = -1, mY = -1;
 	public Shader shader;
 	public TextureManager textureManager;
-	public GuiScreen gui = new GuiScreen() { //blank gui to prevent null pointer exceptions
-		@Override
-		public void setSize(int w, int h) {}
-	};
+	public GuiScreen gui = new GuiScreen() {}; //blank gui to prevent null pointer exceptions
 	public FontRenderer font0, fontMsg;
 	public RaytraceResult trace = null;
 	private IEditable editing = null;
@@ -141,6 +143,30 @@ public class Main
 	};
 	public ITool tool = null;
 	public final EventBus EVENT_BUS = new EventBus("mcms_event_bus");
+	
+	public void openGui(@NonNull GuiScreen gui)
+	{
+		GuiEvent.Open event = new GuiEvent.Open(gui);
+		EVENT_BUS.post(event);
+		gui = event.getGui();
+		if (gui != null && gui != this.gui)
+		{
+			if (gui instanceof GuiPopup) ((GuiPopup) gui).under = this.gui;
+			else EVENT_BUS.post(new GuiEvent.Close(this.gui));
+			this.gui = gui;
+			gui.setSize(sizeW, sizeH);
+			EVENT_BUS.post(new GuiEvent.Init(gui, sizeW, sizeH));
+		}
+	}
+	
+	public void closePopup()
+	{
+		if (gui instanceof GuiPopup)
+		{
+			EVENT_BUS.post(new GuiEvent.Close(this.gui));
+			gui = ((GuiPopup) gui).under;
+		}
+	}
 	
 	public EditorMode getEditorMode()
 	{
@@ -473,8 +499,12 @@ public class Main
 			else thisTick = nanos - lastNanos;
 			lastNanos = nanos;
 			//System.out.println(thisTick);
+			EVENT_BUS.post(new TickEvent.Pre(thisTick));
 			window.tick(thisTick);
+			EVENT_BUS.post(new TickEvent.Post(thisTick));
+			EVENT_BUS.post(new RenderEvent.Pre());
 			window.render();
+			EVENT_BUS.post(new RenderEvent.Post());
 			String title = "Minecraft Model Studio - " + project.getName();
 			if (project.needsSave()) title += " * (";
 			else title += " (";
@@ -490,6 +520,7 @@ public class Main
 				LOGGER.log(Level.WARN, e);
 			}
 		}
+		EVENT_BUS.post(new ApplicationEvent.Shutdown());
 		//tray.remove(trayIcon);
 		//tray = null;
 		//trayIcon = null;
@@ -514,8 +545,7 @@ public class Main
 		textureManager = new TextureManager();
 		overlay = new Texture(1, 1);
 
-		gui = new GuiMain();
-		gui.setSize(sizeW, sizeH);
+		this.openGui(new GuiMain());
 	}
 	
 	public void tick(long thisTick)

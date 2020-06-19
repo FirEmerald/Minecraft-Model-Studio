@@ -191,7 +191,7 @@ public class RenderObjectComponents extends Bone implements IComponentParent
 	@Override
 	public void onDeselect(EditorPanes editorPanes)
 	{
-		editorPanes.addBox.setParent(null);
+		editorPanes.addBox.setParent(null);;
 		editorPanes.addMesh.setParent(null);
 		super.onDeselect(editorPanes);
 	}

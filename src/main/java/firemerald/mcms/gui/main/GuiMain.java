@@ -112,6 +112,7 @@ public class GuiMain extends GuiScreen
 	@Override
 	public void setSize(int w, int h)
 	{
+		super.setSize(w, h);
 		titleBar.setSize(0, 0, w, 16);
 		editorPanel.setSize(0, 16, 300, h - 312);
 		toolsPanel.setSize(0, h - 312, 300, h - 112);

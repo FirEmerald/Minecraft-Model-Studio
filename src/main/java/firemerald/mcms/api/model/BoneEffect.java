@@ -10,6 +10,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.util.TriFunction;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.text.ComponentText;
@@ -17,7 +18,6 @@ import firemerald.mcms.model.EditorPanes;
 import firemerald.mcms.model.IEditableParent;
 import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.util.ResourceLocation;
-import firemerald.mcms.util.function.TriFunction;
 
 public abstract class BoneEffect implements IModelEditable
 {

@@ -1,4 +1,4 @@
-package firemerald.mcms.util.function;
+package firemerald.mcms.api.util;
 
 import java.util.Objects;
 import java.util.function.Function;

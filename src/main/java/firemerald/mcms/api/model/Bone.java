@@ -18,6 +18,7 @@ import firemerald.mcms.api.math.EulerZYXRotation;
 import firemerald.mcms.api.math.IRotation;
 import firemerald.mcms.api.math.QuaternionRotation;
 import firemerald.mcms.api.util.RaytraceResult;
+import firemerald.mcms.api.util.TriFunction;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.SelectorButton;
@@ -33,7 +34,6 @@ import firemerald.mcms.shader.Shader;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
-import firemerald.mcms.util.function.TriFunction;
 
 public class Bone implements IRaytraceTarget, IModelEditable, ITransformed
 {
