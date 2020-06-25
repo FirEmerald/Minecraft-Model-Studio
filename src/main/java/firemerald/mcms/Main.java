@@ -142,7 +142,7 @@ public class Main
 	
 	public void doAction(Action action)
 	{
-		if (!getGui().onHotkey(action)) action.action.run();
+		if (action.canRun.getAsBoolean() && !getGui().onHotkey(action)) action.action.run();
 	}
 	
 	public void openGui(@NonNull GuiScreen gui)

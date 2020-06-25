@@ -64,7 +64,7 @@ public abstract class GuiPopup extends GuiScreen
 		if (active && undoStack != null && (action == Action.UNDO || action == Action.REDO))
 		{
 			Main.instance.project.pushUndoStack(undoStack);
-			if (!super.onHotkey(action)) action.action.run();
+			if (action.canRun.getAsBoolean() && !super.onHotkey(action)) action.action.run();
 			Main.instance.project.popUndoStack();
 			return true;
 		}

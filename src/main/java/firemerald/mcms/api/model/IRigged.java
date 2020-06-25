@@ -9,7 +9,6 @@ import java.util.Map;
 import org.eclipse.jdt.annotation.Nullable;
 import org.joml.Matrix4d;
 
-import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.AnimationState;
 import firemerald.mcms.api.animation.IAnimation;
 import firemerald.mcms.api.animation.Transformation;
@@ -17,7 +16,6 @@ import firemerald.mcms.api.model.Bone.Actual;
 import firemerald.mcms.api.util.ISaveable;
 import firemerald.mcms.api.util.ISelfTyped;
 import firemerald.mcms.model.IEditableParent;
-import firemerald.mcms.util.GuiUpdate;
 
 public interface IRigged<T extends IRigged<T, B>, B extends Bone<B>> extends ISelfTyped<T>, ISaveable, IEditableParent, ITransformsProvider
 {	

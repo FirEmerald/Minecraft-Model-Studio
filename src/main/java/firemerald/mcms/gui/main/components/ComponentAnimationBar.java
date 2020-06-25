@@ -1,16 +1,7 @@
 package firemerald.mcms.gui.main.components;
 
-import java.io.IOException;
-
-import org.apache.logging.log4j.Level;
-
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
-import firemerald.mcms.api.animation.IAnimation;
-import firemerald.mcms.api.data.AbstractElement;
-import firemerald.mcms.api.util.FileUtil;
-import firemerald.mcms.api.util.FileUtil.DataType;
-import firemerald.mcms.gui.components.ButtonItem16;
 import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.components.scrolling.ScrollBar;
 import firemerald.mcms.gui.components.scrolling.ScrollBarH;
@@ -29,28 +20,22 @@ import firemerald.mcms.gui.main.components.animation.PlaybackLockButton;
 import firemerald.mcms.gui.main.components.animation.PlaybackPauseButton;
 import firemerald.mcms.gui.main.components.animation.PlaybackReverseButton;
 import firemerald.mcms.gui.main.components.animation.PlaybackStartButton;
-import firemerald.mcms.gui.main.components.items.ButtonOpenFileItem;
-import firemerald.mcms.gui.main.components.items.ButtonSaveFileItem;
-import firemerald.mcms.gui.popups.GuiPopupCopy;
-import firemerald.mcms.gui.popups.GuiPopupException;
-import firemerald.mcms.gui.popups.animation.GuiPopupEditAnimation;
-import firemerald.mcms.gui.popups.animation.GuiPopupLoadAnimation;
-import firemerald.mcms.gui.popups.animation.GuiPopupNewAnimation;
+import firemerald.mcms.gui.main.components.items.ButtonAction;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
-import firemerald.mcms.util.history.HistoryAction;
+import firemerald.mcms.util.hotkey.Action;
 
 public class ComponentAnimationBar extends ComponentPanelMain
 {
-	public final ButtonItem16 newAnimation;
-	public final ButtonItem16 addAnimation;
-	public final ButtonOpenFileItem loadAnimation;
-	public final ButtonItem16 cloneAnimation;
-	public final ButtonSaveFileItem saveAnimation;
-	public final ButtonItem16 editAnimation;
-	public final ButtonItem16 reverseAnimation;
-	public final ButtonItem16 removeAnimation;
+	public final ButtonAction newAnimation;
+	public final ButtonAction addAnimation;
+	public final ButtonAction loadAnimation;
+	public final ButtonAction cloneAnimation;
+	public final ButtonAction saveAnimation;
+	public final ButtonAction editAnimation;
+	public final ButtonAction reverseAnimation;
+	public final ButtonAction removeAnimation;
 	public final SelectorButton animationSelector;
 	public final ComponentFramesBar framesBar;
 	public final ScrollBar scrollBar;
@@ -67,64 +52,14 @@ public class ComponentAnimationBar extends ComponentPanelMain
 	{
 		super(x1, y1, x2, y2, gui);
 		int w = x2 - x1, h = y2 - y1;
-		this.addElement(newAnimation = new ButtonItem16(0, 16, Textures.ITEM_NEW, () -> {
-			new GuiPopupNewAnimation().activate();
-		}));
-		this.addElement(addAnimation = new ButtonItem16(16, 16, Textures.ITEM_ADD, () -> {
-			new GuiPopupLoadAnimation().activate(); //TODO scale?
-		}));
-		this.addElement(loadAnimation = new ButtonOpenFileItem(32, 16, Textures.ITEM_LOAD, "anim;xml;bin;json", (file) -> {
-			try
-			{
-				final String name = Main.instance.project.getAnimationName();
-				final IAnimation animation = Main.instance.project.getAnimation();
-				final IAnimation prev = animation.cloneObject();
-				AbstractElement el = FileUtil.readFile(file);
-				animation.load(el); //TODO scale?
-				final IAnimation cur = animation.cloneObject();
-				Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addAnimation(name, prev), () -> Main.instance.project.addAnimation(name, cur)));
-				Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
-			}
-			catch (IOException e)
-			{
-				GuiPopupException.onException("Couldn't load animation file: " + file, e, Level.WARN);
-			}
-		}));
-		this.addElement(cloneAnimation = new ButtonItem16(48, 16, Textures.ITEM_COPY, () -> {
-			Project project = Main.instance.project;
-			new GuiPopupCopy<>(MiscUtil.ensureUnique(project.getAnimationName(), project.getAnimationNames()), project.getAnimation(), (name, copy) -> project.addAnimation(name, copy), (name) -> project.removeAnimation(name)).activate();
-		}));
-		this.addElement(saveAnimation = new ButtonSaveFileItem(64, 16, Textures.ITEM_SAVE, "anim;xml", (file) -> {
-			DataType dataType = FileUtil.getAppropriateDataType(file.toString());
-			AbstractElement root = dataType.newElement("animtion");
-			Main.instance.project.getAnimation().save(root); //TODO scale?
-			try
-			{
-				dataType.saveElement(root, file);
-			}
-			catch (Exception e)
-			{
-				GuiPopupException.onException("Couldn't save animation to " + file, e);
-			}
-		}));
-		this.addElement(editAnimation = new ButtonItem16(80, 16, Textures.ITEM_EDIT, () -> {
-			new GuiPopupEditAnimation().activate();
-		}));
-		this.addElement(reverseAnimation = new ButtonItem16(96, 16, Textures.ITEM_REVERSE, () -> {
-			final String name = Main.instance.project.getAnimationName();
-			final IAnimation animation = Main.instance.project.getAnimation();
-			final IAnimation prev = animation.cloneObject();
-			animation.reverseAnimation(Main.instance.project.getCompletestRig());
-			final IAnimation cur = animation.cloneObject();
-			Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addAnimation(name, prev), () -> Main.instance.project.addAnimation(name, cur)));
-			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
-		}));
-		this.addElement(removeAnimation = new ButtonItem16(112, 16, Textures.ITEM_REMOVE, () -> {
-			final String name = Main.instance.project.getAnimationName();
-			final IAnimation animation = Main.instance.project.getAnimation();
-			Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addAnimation(name, animation), () -> Main.instance.project.removeAnimation(name)));
-			Main.instance.project.removeAnimation();
-		}));
+		this.addElement(newAnimation = new ButtonAction(0, 16, Textures.ITEM_NEW, Action.NEW_ANIMATION));
+		this.addElement(addAnimation = new ButtonAction(16, 16, Textures.ITEM_ADD, Action.ADD_ANIMATION));
+		this.addElement(loadAnimation = new ButtonAction(32, 16, Textures.ITEM_LOAD, Action.LOAD_ANIMATION));
+		this.addElement(cloneAnimation = new ButtonAction(48, 16, Textures.ITEM_COPY, Action.CLONE_ANIMATION));
+		this.addElement(saveAnimation = new ButtonAction(64, 16, Textures.ITEM_SAVE, Action.SAVE_ANIMATION));
+		this.addElement(editAnimation = new ButtonAction(80, 16, Textures.ITEM_EDIT, Action.EDIT_ANIMATION));
+		this.addElement(reverseAnimation = new ButtonAction(96, 16, Textures.ITEM_REVERSE, Action.REVERSE_ANIMATION));
+		this.addElement(removeAnimation = new ButtonAction(112, 16, Textures.ITEM_REMOVE, Action.REMOVE_ANIMATION));
 		newAnimation.enabled = addAnimation.enabled = true;
 		this.addElement(animationSelector = new SelectorButton(0, 0, 160, 16, Main.instance.project.getAnimationNames().isEmpty() ? "no animations available" : Main.instance.project.getAnimationName() == null ? "no animation" : Main.instance.project.getAnimationName(), Main.instance.project.getAnimationNames().isEmpty() ? new String[0] : MiscUtil.array("no animation", Main.instance.project.getAnimationNames()), (ind, value) -> {
 			//TODO undo?

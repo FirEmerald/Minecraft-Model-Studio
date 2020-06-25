@@ -1,16 +1,9 @@
 package firemerald.mcms.gui.main.components;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
-import firemerald.mcms.api.animation.AnimationState;
-import firemerald.mcms.api.model.IModel;
-import firemerald.mcms.api.util.FileUtil;
-import firemerald.mcms.gui.components.ButtonItem16;
 import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.components.scrolling.ScrollBar;
 import firemerald.mcms.gui.components.scrolling.ScrollBarH;
@@ -20,17 +13,10 @@ import firemerald.mcms.gui.components.scrolling.ScrollRight;
 import firemerald.mcms.gui.components.scrolling.ScrollUp;
 import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.gui.main.components.elements.ComponentEditSelector;
-import firemerald.mcms.gui.main.components.items.ButtonSaveFileItem;
-import firemerald.mcms.gui.popups.GuiPopupCopy;
-import firemerald.mcms.gui.popups.GuiPopupException;
-import firemerald.mcms.gui.popups.model.GuiPopupAddModel;
-import firemerald.mcms.gui.popups.model.GuiPopupLoadModel;
-import firemerald.mcms.gui.popups.model.GuiPopupModel;
-import firemerald.mcms.model.RenderObjectComponents;
+import firemerald.mcms.gui.main.components.items.ButtonAction;
 import firemerald.mcms.util.GuiUpdate;
-import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
-import firemerald.mcms.util.history.HistoryAction;
+import firemerald.mcms.util.hotkey.Action;
 
 public class ComponentElementsPanel extends ComponentPanelMain
 {
@@ -41,13 +27,13 @@ public class ComponentElementsPanel extends ComponentPanelMain
 	public final ScrollBarH scrollBarH;
 	public final ScrollLeft scrollLeft;
 	public final ScrollRight scrollRight;
-	public final ButtonItem16 newModel;
-	public final ButtonItem16 addModel;
-	public final ButtonItem16 loadModel;
-	public final ButtonItem16 cloneModel;
-	public final ButtonSaveFileItem saveModel;
-	public final ButtonItem16 editModel;
-	public final ButtonItem16 removeModel;
+	public final ButtonAction newModel;
+	public final ButtonAction addModel;
+	public final ButtonAction loadModel;
+	public final ButtonAction cloneModel;
+	public final ButtonAction saveModel;
+	public final ButtonAction editModel;
+	public final ButtonAction removeModel;
 	public final SelectorButton modelSelector;
 	
 	public ComponentElementsPanel(int x1, int y1, int x2, int y2, GuiMain gui)
@@ -63,34 +49,13 @@ public class ComponentElementsPanel extends ComponentPanelMain
 		this.addElement(scrollLeft = new ScrollLeft(0, h - 32, 16, h - 16, selector));
 		this.addElement(scrollRight = new ScrollRight(w - 32, h - 32, w - 16, h - 16, selector));
 		selector.setScrollBarH(scrollBarH);
-		this.addElement(newModel = new ButtonItem16(0, h - 16, Textures.ITEM_NEW, () -> new GuiPopupModel(false).activate()));
-		this.addElement(addModel = new ButtonItem16(16, h - 16, Textures.ITEM_ADD, () -> new GuiPopupAddModel().activate()));
-		this.addElement(loadModel = new ButtonItem16(32, h - 16, Textures.ITEM_LOAD, () -> new GuiPopupLoadModel().activate()));
-		this.addElement(cloneModel = new ButtonItem16(48, h - 16, Textures.ITEM_COPY, () -> {
-			Project project = Main.instance.project;
-			new GuiPopupCopy<>(MiscUtil.ensureUnique(project.getModelName(), project.getModelNames()), project.getModel(), (name, copy) -> project.addModel(name, copy), (name) -> project.removeModel(name)).activate();
-		}));
-		this.addElement(saveModel = new ButtonSaveFileItem(64, h - 16, Textures.ITEM_SAVE, "obj", (file) -> {
-			Writer writer = null;
-			try
-			{
-				writer = new FileWriter(file);
-				AnimationState[] anims = Main.instance.project.getStates();
-				writer.write(RenderObjectComponents.createObj(Main.instance.project.getModel(), Main.instance.project.getModel().getPose(anims)).toString());
-			}
-			catch (IOException e)
-			{
-				GuiPopupException.onException("Couldn't export model to " + file, e);
-			}
-			FileUtil.closeSafe(writer);
-		}));
-		this.addElement(editModel = new ButtonItem16(80, h - 16, Textures.ITEM_EDIT, () -> new GuiPopupModel(true).activate()));
-		this.addElement(removeModel = new ButtonItem16(96, h - 16, Textures.ITEM_REMOVE, () -> {
-			final String name = Main.instance.project.getModelName();
-			final IModel<?, ? extends RenderObjectComponents<?>> model = Main.instance.project.getModel();
-			Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addModel(name, model), () -> Main.instance.project.removeModel()));
-			Main.instance.project.removeModel();
-		}));
+		this.addElement(newModel = new ButtonAction(0, h - 16, Textures.ITEM_NEW, Action.NEW_MODEL));
+		this.addElement(addModel = new ButtonAction(16, h - 16, Textures.ITEM_ADD, Action.ADD_MODEL));
+		this.addElement(loadModel = new ButtonAction(32, h - 16, Textures.ITEM_LOAD, Action.LOAD_MODEL));
+		this.addElement(cloneModel = new ButtonAction(48, h - 16, Textures.ITEM_COPY, Action.CLONE_MODEL));
+		this.addElement(saveModel = new ButtonAction(64, h - 16, Textures.ITEM_SAVE, Action.EXPORT_MODEL));
+		this.addElement(editModel = new ButtonAction(80, h - 16, Textures.ITEM_EDIT, Action.EDIT_MODEL));
+		this.addElement(removeModel = new ButtonAction(96, h - 16, Textures.ITEM_REMOVE, Action.REMOVE_MODEL));
 		newModel.enabled = addModel.enabled = true;
 		Project project = Main.instance.project;
 		this.addElement(modelSelector = new SelectorButton(112, h - 16, w, h, project.getModelName() == null ? project.useBackingSkeleton() ? "model skeleton" : "no model selected" : project.getModelName(), allModelNames(project), (ind, value) -> {
