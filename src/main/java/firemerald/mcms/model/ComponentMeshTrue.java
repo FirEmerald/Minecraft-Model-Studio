@@ -53,14 +53,14 @@ public class ComponentMeshTrue extends ComponentMesh
 	@Override
 	public void texU(float texU)
 	{
-		super.texU(texU);
+		this.texU = texU;
 		setTexs();
 	}
 
 	@Override
 	public void texV(float texV)
 	{
-		super.texV(texV);
+		this.texV = texV;
 		setTexs();
 	}
 	
@@ -71,7 +71,6 @@ public class ComponentMeshTrue extends ComponentMesh
 	
 	public void setTexSizeU(float size)
 	{
-		Main.instance.project.onAction();
 		texSizeU = size;
 		setTexs();
 	}
@@ -83,7 +82,6 @@ public class ComponentMeshTrue extends ComponentMesh
 	
 	public void setTexSizeV(float size)
 	{
-		Main.instance.project.onAction();
 		texSizeV = size;
 		setTexs();
 	}
@@ -167,7 +165,7 @@ public class ComponentMeshTrue extends ComponentMesh
 	}
 
 	@Override
-	public IModelEditable copy(IEditableParent newParent, IRigged<?> model)
+	public IModelEditable copy(IEditableParent newParent, IRigged<?, ?> model)
 	{
 		if (newParent instanceof IComponentParent)
 		{
@@ -199,11 +197,11 @@ public class ComponentMeshTrue extends ComponentMesh
 		editor.addElement(labelTexSize = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20, Main.instance.fontMsg, "Texture Size"));
 		editorY += 20;
 		editor.addElement(texW         = new ComponentTextFloat(     editorX      , editorY, editorX + 140, editorY + 20, Main.instance.fontMsg, this.texSizeU, 0, Float.POSITIVE_INFINITY, value -> this.setTexSizeU(value), "default"));
-		if (texSizeU == 0) texW.setText("");
+		if (texSizeU == 0) texW.setTextNoUpdate("");
 		editor.addElement(texWP        = new ComponentIncrementFloat(editorX + 140, editorY                             , texW, 1));
 		editor.addElement(texWS        = new ComponentIncrementFloat(editorX + 140, editorY + 10                        , texW, -1));
 		editor.addElement(texH         = new ComponentTextFloat(     editorX + 150, editorY, editorX + 290, editorY + 20, Main.instance.fontMsg, this.texSizeV, 0, Float.POSITIVE_INFINITY, value -> this.setTexSizeV(value), "default"));
-		if (texSizeV == 0) texH.setText("");
+		if (texSizeV == 0) texH.setTextNoUpdate("");
 		editor.addElement(texHP        = new ComponentIncrementFloat(editorX + 290, editorY                             , texH, 1));
 		editor.addElement(texHS        = new ComponentIncrementFloat(editorX + 290, editorY + 10                        , texH, -1));
 		editorY += 20;

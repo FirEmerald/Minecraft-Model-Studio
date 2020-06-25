@@ -57,7 +57,7 @@ public class Animation implements IAnimation
 		return length;
 	}
 	
-	public void setLength(float length, Collection<Bone> bones)
+	public void setLength(float length, Collection<? extends Bone<?>> bones)
 	{
 		this.length = length;
 		animation.forEach((name, anim) -> {
@@ -68,8 +68,8 @@ public class Animation implements IAnimation
 			}
 			else
 			{
-				Bone bone = null;
-				for (Bone b : bones) if (b.getName().equals(name))
+				Bone<?> bone = null;
+				for (Bone<?> b : bones) if (b.getName().equals(name))
 				{
 					bone = b;
 					break;
@@ -155,10 +155,10 @@ public class Animation implements IAnimation
 	}
 	
 	@Override
-	public Map<String, Matrix4d> getBones(Map<String, Matrix4d> map, float frame, Collection<Bone> bones)
+	public Map<String, Matrix4d> getBones(Map<String, Matrix4d> map, float frame, Collection<? extends Bone<?>> bones)
 	{
 		if (frame > length && loop) frame %= length;
-		for (Bone bone : bones)
+		for (Bone<?> bone : bones)
 		{
 			NavigableMap<Float, Transformation> anim = animation.get(bone.getName());
 			if (anim != null)
@@ -359,7 +359,7 @@ public class Animation implements IAnimation
 	}
 
 	@Override
-	public void reverseAnimation(IRigged<?> rig)
+	public void reverseAnimation(IRigged<?, ?> rig)
 	{
 		this.animation.forEach((name, anim) -> {
 			if (!anim.isEmpty())
@@ -370,7 +370,7 @@ public class Animation implements IAnimation
 				});
 				if (rig != null)
 				{
-					Bone bone = rig.getBone(name);
+					Bone<?> bone = rig.getBone(name);
 					if (bone != null)
 					{
 						Transformation def = this.relative ? new Transformation() : bone.defaultTransform;

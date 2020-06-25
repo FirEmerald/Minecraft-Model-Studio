@@ -17,7 +17,7 @@ public interface IModelEditable extends IEditableParent, IEditable
 	
 	public void setVisible(boolean visible);
 	
-	public IModelEditable copy(IEditableParent newParent, IRigged<?> iRigged);
+	public IModelEditable copy(IEditableParent newParent, IRigged<?, ?> iRigged);
 	
 	default public void drawOnTexture(float x, float y, float sizeX, float sizeY) {}
 	

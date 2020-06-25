@@ -9,22 +9,25 @@ import java.util.Map;
 import org.eclipse.jdt.annotation.Nullable;
 import org.joml.Matrix4d;
 
+import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.AnimationState;
 import firemerald.mcms.api.animation.IAnimation;
 import firemerald.mcms.api.animation.Transformation;
+import firemerald.mcms.api.model.Bone.Actual;
 import firemerald.mcms.api.util.ISaveable;
+import firemerald.mcms.api.util.ISelfTyped;
 import firemerald.mcms.model.IEditableParent;
+import firemerald.mcms.util.GuiUpdate;
 
-public interface IRigged<T extends IRigged<?>> extends ISaveable, IEditableParent, ITransformsProvider
+public interface IRigged<T extends IRigged<T, B>, B extends Bone<B>> extends ISelfTyped<T>, ISaveable, IEditableParent, ITransformsProvider
 {	
-	@SuppressWarnings("unchecked")
-	public default T removeNonSkeleton(ISkeleton skeleton)
+	public default T removeNonSkeleton(Skeleton skeleton)
 	{
-		List<Bone> roots = this.getRootBones();
-		for (Bone bone : roots.toArray(new Bone[roots.size()]))
+		List<B> roots = this.getRootBones();
+		for (B bone : new ArrayList<>(roots))
 		{
 			boolean flag = false;
-			for (Bone root : skeleton.getRootBones()) if (root.name.endsWith(bone.name))
+			for (Bone.Actual root : skeleton.getRootBones()) if (root.name.endsWith(bone.name))
 			{
 				flag = true;
 				removeNotFromSkeleton(root, bone);
@@ -33,16 +36,16 @@ public interface IRigged<T extends IRigged<?>> extends ISaveable, IEditableParen
 			if (!flag) this.removeChild(bone);
 		}
 		this.updateBonesList();
-		return (T) this;
+		return self();
 	}
 	
-	public default void removeNotFromSkeleton(Bone from, Bone to)
+	public default <C extends Bone<C>> void removeNotFromSkeleton(Bone.Actual from, B to)
 	{
-		List<Bone> roots = to.children;
-		for (Bone bone : roots.toArray(new Bone[roots.size()]))
+		List<B> roots = to.children;
+		for (B bone : new ArrayList<>(roots))
 		{
 			boolean flag = false;
-			for (Bone root : from.children) if (root.name.endsWith(bone.name))
+			for (Bone.Actual root : from.children) if (root.name.endsWith(bone.name))
 			{
 				flag = true;
 				removeNotFromSkeleton(root, bone);
@@ -55,7 +58,7 @@ public interface IRigged<T extends IRigged<?>> extends ISaveable, IEditableParen
 	public default Map<String, Matrix4d> getPose(AnimationState... anims)
 	{
 		Map<String, Matrix4d> map = new HashMap<>();
-		for (Bone base : this.getRootBones()) iteratePose(base, map);
+		for (B base : this.getRootBones()) iteratePose(base, map);
 		for (AnimationState state : anims)
 		{
 			IAnimation anim = state.anim.get();
@@ -64,56 +67,56 @@ public interface IRigged<T extends IRigged<?>> extends ISaveable, IEditableParen
 		return map;
 	}
 	
-	public default void iteratePose(Bone bone, Map<String, Matrix4d> pose)
+	public default void iteratePose(B bone, Map<String, Matrix4d> pose)
 	{
 		pose.put(bone.name, bone.defaultTransform.getTransformation());
 		bone.children.forEach(child -> iteratePose(child, pose));
 	}
 	
-	public List<Bone> getRootBones();
+	public List<B> getRootBones();
 	
-	public Collection<Bone> getAllBones();
+	public Collection<B> getAllBones();
 	
 	public default Collection<String> getAllBoneNames()
 	{
-		Collection<Bone> bones = getAllBones();
+		Collection<B> bones = getAllBones();
 		List<String> names = new ArrayList<>(bones.size());
 		bones.forEach(bone -> names.add(bone.name));
 		return names;
 	}
 	
-	public default Bone getBone(String name)
+	public default B getBone(String name)
 	{
-		for (Bone root : getRootBones())
+		for (B root : getRootBones())
 		{
-			Bone res = getBone(root, name);
+			B res = getBone(root, name);
 			if (res != null) return res;
 		}
 		return null;
 	}
 	
-	default Bone getBone(Bone bone, String name)
+	default B getBone(B bone, String name)
 	{
 		if (bone.name.equals(name)) return bone;
-		else for (Bone child : bone.children)
+		else for (B child : bone.children)
 		{
-			Bone res = getBone(child, name);
+			B res = getBone(child, name);
 			if (res != null) return res;
 		}
 		return null;
 	}
 	
-	public boolean addRootBone(Bone bone, boolean updateBoneList);
+	public boolean addRootBone(B bone, boolean updateBoneList);
 	
 	public void updateBonesList();
 	
 	public boolean isNameUsed(String name);
 	
-	public default ISkeleton getSkeleton()
+	public default Skeleton getSkeleton()
 	{
 		Skeleton skeleton = new Skeleton();
 		this.getRootBones().forEach(bone -> {
-			Bone root = bone.cloneToSkeleton(null);
+			Bone.Actual root = bone.cloneToSkeleton(null);
 			skeleton.addRootBone(root, false);
 			processToSkeleton(root, bone);
 		});
@@ -121,19 +124,18 @@ public interface IRigged<T extends IRigged<?>> extends ISaveable, IEditableParen
 		return skeleton;
 	}
 	
-	public default void processToSkeleton(Bone addTo, Bone addFrom)
+	public default void processToSkeleton(Bone.Actual addTo, B addFrom)
 	{
 		addFrom.children.forEach(bone -> processToSkeleton(bone.cloneToSkeleton(addTo), bone));
 	}
 	
-	@SuppressWarnings("unchecked")
-	public default T applySkeleton(ISkeleton skeleton)
+	public default T applySkeleton(Skeleton skeleton)
 	{
-		for (Bone bone : skeleton.getRootBones())
+		for (Bone.Actual bone : skeleton.getRootBones())
 		{
 			boolean flag = false;
-			Bone root = null;
-			for (Bone root2 : this.getRootBones()) if (root2.name.equals(bone.name))
+			B root = null;
+			for (B root2 : this.getRootBones()) if (root2.name.equals(bone.name))
 			{
 				root = root2;
 				flag = true;
@@ -143,27 +145,24 @@ public interface IRigged<T extends IRigged<?>> extends ISaveable, IEditableParen
 			if (!flag)
 			{
 				if (this.isNameUsed(bone.name)) continue;
-				root = bone.cloneToModel(null);
+				root = this.makeNew(bone.name, bone.defaultTransform.copy(), null);
 				if (!this.addRootBone(root, false)) continue;
 			}
 			applyFromSkeleton(bone, root);
 		}
 		this.updateBonesList();
-		return (T) this;
+		return self();
 	}
 	
-	public default Bone makeNew(String name, Transformation transformation, @Nullable Bone parent)
-	{
-		return new Bone(name, transformation, parent);
-	}
+	public abstract B makeNew(String name, Transformation transformation, @Nullable B parent);
 
-	public default void applyFromSkeleton(Bone from, Bone to)
+	public default void applyFromSkeleton(Bone.Actual from, B to)
 	{
-		for (Bone bone : from.children)
+		for (Actual bone : from.children)
 		{
 			boolean flag = false;
-			Bone root = null;
-			for (Bone root2 : to.children) if (root2.name.equals(bone.name))
+			B root = null;
+			for (B root2 : to.children) if (root2.name.equals(bone.name))
 			{
 				root = root2;
 				flag = true;
@@ -180,11 +179,11 @@ public interface IRigged<T extends IRigged<?>> extends ISaveable, IEditableParen
 	}
 
 	@SuppressWarnings("unchecked")
-	public default T applySkeletonTransforms(ISkeleton skeleton)
+	public default T applySkeletonTransforms(Skeleton skeleton)
 	{
-		for (Bone bone : skeleton.getRootBones())
+		for (Bone.Actual bone : skeleton.getRootBones())
 		{
-			for (Bone root : this.getRootBones()) if (root.name.equals(bone.name))
+			for (B root : this.getRootBones()) if (root.name.equals(bone.name))
 			{
 				root.defaultTransform.set(bone.defaultTransform);
 				applyFromSkeletonTransforms(bone, root);
@@ -194,11 +193,11 @@ public interface IRigged<T extends IRigged<?>> extends ISaveable, IEditableParen
 		return (T) this;
 	}
 	
-	public default void applyFromSkeletonTransforms(Bone from, Bone to)
+	public default void applyFromSkeletonTransforms(Bone.Actual from, B to)
 	{
-		for (Bone bone : from.children)
+		for (Bone.Actual bone : from.children)
 		{
-			for (Bone root : to.children) if (root.name.equals(bone.name))
+			for (B root : to.children) if (root.name.equals(bone.name))
 			{
 				root.defaultTransform.set(bone.defaultTransform);
 				applyFromSkeletonTransforms(bone, root);
@@ -210,7 +209,7 @@ public interface IRigged<T extends IRigged<?>> extends ISaveable, IEditableParen
 	@Override
 	public default Transformation get(String name)
 	{
-		Bone bone = getBone(name);
+		B bone = getBone(name);
 		return bone == null ? new Transformation() : bone.defaultTransform;
 	}
 }

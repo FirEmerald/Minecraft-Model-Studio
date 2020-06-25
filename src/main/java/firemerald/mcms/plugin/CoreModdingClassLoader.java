@@ -7,7 +7,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-import org.apache.logging.log4j.Logger;
+import firemerald.mcms.launchwrapper.LaunchWrapper;
 
 /**
  * Custom {@link ClassLoader} that coremods classes.
@@ -17,7 +17,6 @@ import org.apache.logging.log4j.Logger;
 @CoreModExcluded
 public class CoreModdingClassLoader extends URLClassLoader
 {
-	public final Logger logger;
 	/**
 	 * The Method instance for {@link PluginLoader#modStatic(String, byte[])}
 	 */
@@ -28,17 +27,16 @@ public class CoreModdingClassLoader extends URLClassLoader
      * 
      * @param sources the URL sources from the original classloader
      */
-    public CoreModdingClassLoader(URL[] sources, Logger logger)
+    public CoreModdingClassLoader(URL[] sources)
     {
         super(sources, null);
-        this.logger = logger;
         try
         {
 			mod_method = Class.forName("firemerald.mcms.plugin.PluginLoader", true, this).getMethod("modStatic", String.class, byte[].class);
 		}
         catch (NoSuchMethodException | SecurityException | ClassNotFoundException e)
         {
-        	logger.warn("Failed to initialize coremodding features", e);
+        	LaunchWrapper.LOGGER.warn("Failed to initialize coremodding features", e);
 		}
     }
 
@@ -80,7 +78,7 @@ public class CoreModdingClassLoader extends URLClassLoader
 			catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
 			{
 	        	if (exceptionOnCoremodFail) throw new ClassNotFoundException("Failed to coremod " + name, e);
-	        	else logger.warn("Failed to coremod " + name, e);
+	        	else LaunchWrapper.LOGGER.warn("Failed to coremod " + name, e);
 			}
 			return defineClass(name, array, 0, array.length);
 		}

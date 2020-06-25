@@ -3,8 +3,10 @@ package firemerald.mcms.gui.main.components.elements;
 import firemerald.mcms.Main;
 import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.model.IEditableParent;
+import firemerald.mcms.util.IntReference;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class ButtonRemove extends EditableButton
 {
@@ -23,10 +25,29 @@ public class ButtonRemove extends EditableButton
 	}
 	
 	@Override
-	public void onRelease()
+	public void onRelease() //TODO
 	{
-		Main.instance.project.onAction();
-		IEditableParent parent = this.parent;
+		final IEditableParent parent = this.parent;
+		final IModelEditable component = this.component;
+		final IntReference pos = new IntReference(parent.getChildIndex(component));
+		Main.instance.project.onAction(new HistoryAction(() -> {
+			parent.addChildAt(component, pos.val);
+			Main.instance.project.getRig().updateBonesList();
+			Main.instance.editorPanes.selector.updateBase();
+		}, () -> {
+			pos.val = parent.getChildIndex(component);
+			parent.removeChild(component);
+			if (Main.instance.getEditing() == component)
+			{
+				if (parent instanceof IModelEditable)
+				{
+					Main.instance.setEditing((IModelEditable) parent);
+				}
+				else Main.instance.setEditing(null);
+			}
+			Main.instance.project.getRig().updateBonesList();
+			Main.instance.editorPanes.selector.updateBase();
+		}));
 		parent.removeChild(component);
 		if (Main.instance.getEditing() == component)
 		{

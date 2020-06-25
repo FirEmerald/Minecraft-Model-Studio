@@ -1,5 +1,6 @@
 package firemerald.mcms.gui.components.text;
 
+import java.util.Stack;
 import java.util.function.Consumer;
 
 import firemerald.mcms.Main;
@@ -10,6 +11,8 @@ import firemerald.mcms.util.ClipboardUtil;
 import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.TextureManager;
 import firemerald.mcms.util.font.FontRenderer;
+import firemerald.mcms.util.history.HistoryAction;
+import firemerald.mcms.util.hotkey.Action;
 import firemerald.mcms.util.mesh.Mesh;
 import firemerald.mcms.window.api.Cursor;
 import firemerald.mcms.window.api.Key;
@@ -30,11 +33,16 @@ public class ComponentFloatingText extends Component
 	public int clickNum = 0;
 	private final Consumer<String> onTextChange;
 	public final Mesh mesh = new Mesh();
+	public final Stack<String> undoText = new Stack<>();
+	public final Stack<String> redoText = new Stack<>();
+	public static final long SETTING_TIME = 500000000; //.5 seconds
+	public long lastTextChangeTime = 0;
+	private String initialText = "";
 	
 	public ComponentFloatingText(int x1, int y1, int x2, int y2, FontRenderer font, String text, Consumer<String> onTextChange)
 	{
 		this(x1, y1, x2, y2, font, onTextChange);
-		setText(text);
+		setTextNoUpdate(text);
 	}
 	
 	public ComponentFloatingText(int x1, int y1, int x2, int y2, FontRenderer font, Consumer<String> onTextChange)
@@ -45,6 +53,11 @@ public class ComponentFloatingText extends Component
 		setSize(x1, y1, x2, y2);
 	}
 	
+	public boolean shouldUndo()
+	{
+		return this.onTextChange != null;
+	}
+	
 	@Override
 	public void setSize(int x1, int y1, int x2, int y2)
 	{
@@ -53,10 +66,18 @@ public class ComponentFloatingText extends Component
 		updatePos2();
 	}
 	
+	public void setTextNoUpdate(String text)
+	{
+		this.initialText = this.text = text;
+		this.undoText.clear();
+		this.redoText.clear();
+		selStart = selEnd = pos = text.length();
+	}
+	
 	public void setText(String text)
 	{
-		this.text = text;
-		selStart = selEnd = pos = text.length();
+		onTextPreUpdate();
+		setTextNoUpdate(text);
 		onTextUpdate();
 	}
 	
@@ -72,7 +93,7 @@ public class ComponentFloatingText extends Component
 		if (selStart < 0) selStart = 0;
 		else if (selStart > text.length()) selStart = text.length();
 		if (selEnd < 0) selEnd = 0;
-		else if (selEnd > text.length()) selStart = text.length();
+		else if (selEnd > text.length()) selEnd = text.length();
 		cursorPos = x1 + 2 + font.getStringWidth(text.substring(0, pos));
 		selX1 = x1 + 2 + font.getStringWidth(text.substring(0, selStart));
 		selX2 = x1 + 2 + font.getStringWidth(text.substring(0, selEnd));
@@ -177,11 +198,34 @@ public class ComponentFloatingText extends Component
 			updatePos();
 		}
 	}
-	
+
 	public void onTextUpdate()
+	{
+		long time = Main.instance.lastNanos;
+		if (time - this.lastTextChangeTime > SETTING_TIME) //add to undo stack
+		{
+			this.redoText.clear();
+			this.undoText.add(text);
+		}
+		this.lastTextChangeTime = time;
+		onTextUpdateAction();
+	}
+	
+	public void onTextUpdateAction()
 	{
 		if (onTextChange != null) onTextChange.accept(text);
 		hasChanged = true;
+	}
+
+	public void onTextPreUpdate()
+	{
+		long time = Main.instance.lastNanos;
+		if (time - this.lastTextChangeTime > SETTING_TIME) //add to undo stack
+		{
+			this.redoText.clear();
+			this.undoText.add(text);
+		}
+		this.lastTextChangeTime = time;
 	}
 
 	@Override
@@ -234,6 +278,7 @@ public class ComponentFloatingText extends Component
 	{
 		if (isTextFocused()) if (chr != '\n')
 		{
+			onTextPreUpdate();
 			int pos1, pos2;
 			if (selStart != selEnd)
 			{
@@ -308,6 +353,7 @@ public class ComponentFloatingText extends Component
 	{
 		if (selEnd > 0)
 		{
+			onTextPreUpdate();
 			int pos2;
 			if (selStart != selEnd)
 			{
@@ -330,6 +376,7 @@ public class ComponentFloatingText extends Component
 	{
 		if (selStart < text.length())
 		{
+			onTextPreUpdate();
 			int pos2;
 			if (selStart != selEnd)
 			{
@@ -488,6 +535,7 @@ public class ComponentFloatingText extends Component
 	{
 		if (selStart != selEnd)
 		{
+			onTextPreUpdate();
 			ClipboardUtil.setString(text.substring(selStart, selEnd));
 			text = text.substring(0, selStart) + text.substring(selEnd);
 			pos = selEnd = selStart;
@@ -505,6 +553,7 @@ public class ComponentFloatingText extends Component
 			if (ind >= 0) str = str.substring(0, ind);
 			if (str.length() != 0)
 			{
+				onTextPreUpdate();
 				int pos1, pos2;
 				if (selStart != selEnd)
 				{
@@ -521,10 +570,22 @@ public class ComponentFloatingText extends Component
 	}
 	
 	@Override
+	public void onFocus()
+	{
+		super.onFocus();
+		this.undoText.clear();
+		this.redoText.clear();
+	}
+	
+	@Override
 	public void onUnfocus()
 	{
 		super.onUnfocus();
 		selStart = selEnd = pos = 0;
+		final String endText = this.text;
+		if (shouldUndo() && !endText.equals(initialText)) Main.instance.project.onAction(new HistoryAction(getUndo(), getRedo()));
+		this.undoText.clear();
+		this.redoText.clear();
 	}
 	
 	@Override
@@ -536,5 +597,60 @@ public class ComponentFloatingText extends Component
 	public boolean isTextFocused()
 	{
 		return focused;
+	}
+	
+
+	@Override
+	public boolean onHotkey(Action action)
+	{
+		if (action == Action.UNDO)
+		{
+			if (!undoText.isEmpty())
+			{
+				redoText.push(this.text);
+				this.lastTextChangeTime = Main.instance.lastNanos;
+				String newText = undoText.pop();
+				this.text = newText;
+				onTextUpdateAction();
+				selStart = selEnd = pos = text.length();
+				this.updatePos2();
+				return true;
+			}
+			else return false;
+		}
+		else if (action == Action.REDO)
+		{
+			if (!redoText.isEmpty())
+			{
+				undoText.push(this.text);
+				this.lastTextChangeTime = Main.instance.lastNanos;
+				String newText = redoText.pop();
+				this.text = newText;
+				onTextUpdateAction();
+				selStart = selEnd = pos = text.length();
+				this.updatePos2();
+				return true;
+			}
+			else return false;
+		}
+		else return false;
+	}
+
+	public Runnable getUndo()
+	{
+		final Consumer<String> onTextChange = this.onTextChange;
+		final String initialText = this.initialText;
+		return () -> {
+			if (onTextChange != null) onTextChange.accept(initialText);
+		};
+	}
+
+	public Runnable getRedo()
+	{
+		final Consumer<String> onTextChange = this.onTextChange;
+		final String text = this.text;
+		return () -> {
+			if (onTextChange != null) onTextChange.accept(text);
+		};
 	}
 }

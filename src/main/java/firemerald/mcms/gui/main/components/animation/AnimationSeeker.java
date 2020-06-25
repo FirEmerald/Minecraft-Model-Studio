@@ -1,6 +1,7 @@
 package firemerald.mcms.gui.main.components.animation;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.Project.ExtendedAnimationState;
 import firemerald.mcms.gui.components.ComponentButton;
 import firemerald.mcms.shader.Shader;
 import firemerald.mcms.theme.EnumDirection;
@@ -50,44 +51,53 @@ public class AnimationSeeker extends ComponentButton
 	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
-		px = mx - Main.instance.animState.time * scale;
+		px = mx - Main.instance.project.getAnimationState().time * scale;
 	}
 
 	@Override
 	public void onDrag(float mx, float my, int button)
 	{
-		Main main = Main.instance;
-		if (main.project.getAnimation() != null)
+		ExtendedAnimationState state = Main.instance.project.getAnimationState();
+		if (state != null)
 		{
-			main.animState.time = (mx - px) / scale;
-			if (main.animState.time < 0) main.animState.time = 0;
-			else if (main.animState.time > main.project.getAnimation().getLength()) main.animState.time = main.project.getAnimation().getLength();
+			state.time = (mx - px) / scale;
+			if (state.time < 0) state.time = 0;
+			else if (state.time > state.anim.get().getLength()) state.time = state.anim.get().getLength();
 		}
 	}
 	
 	@Override
 	public int getX1()
 	{
-		return super.getX1() + (int) Math.floor(Main.instance.animState.time * scale);
+		ExtendedAnimationState state = Main.instance.project.getAnimationState();
+		return super.getX1() + (state == null ? 0 : (int) Math.floor(state.time * scale));
 	}
 	
 	@Override
 	public int getX2()
 	{
-		return super.getX2() + (int) Math.floor(Main.instance.animState.time * scale);
+		ExtendedAnimationState state = Main.instance.project.getAnimationState();
+		return super.getX2() + (state == null ? 0 : (int) Math.floor(state.time * scale));
 	}
 
 	@Override
 	public void render(ButtonState state)
 	{
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(Main.instance.animState.time * scale, 0, 0);
-		Main.instance.shader.updateModel();
+		ExtendedAnimationState animState = Main.instance.project.getAnimationState();
+		if (animState != null)
+		{
+			Shader.MODEL.push();
+			Shader.MODEL.matrix().translate(animState.time * scale, 0, 0);
+			Main.instance.shader.updateModel();
+		}
 		state.applyButtonEffects();
 		el.bind();
 		mesh.render();
 		state.removeButtonEffects();
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
+		if (animState != null)
+		{
+			Shader.MODEL.pop();
+			Main.instance.shader.updateModel();
+		}
 	}
 }

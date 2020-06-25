@@ -3,13 +3,15 @@ package firemerald.mcms.gui.popups.model;
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.model.IModel;
-import firemerald.mcms.api.model.MultiModel;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.gui.decoration.DecoPane;
+import firemerald.mcms.model.ProjectModel;
+import firemerald.mcms.model.RenderObjectComponents;
 import firemerald.mcms.util.MiscUtil;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class GuiPopupModel extends GuiPopup
 {
@@ -23,9 +25,9 @@ public class GuiPopupModel extends GuiPopup
 	{
 		Project project = Main.instance.project;
 		this.addElement(pane = new DecoPane(0, 0, 320, 160, 2, 16));
-		this.addElement(name = new ComponentText(0, 10, 240, 30, Main.instance.fontMsg, isEdit ? project.getModelName() : "new model", (text) ->  {}));
-		this.addElement(textureWidth = new ComponentTextInt(0, 40, 100, 60, Main.instance.fontMsg, project.hasModelTextureWidth() ? project.getTextureWidth() : null, 1, Integer.MAX_VALUE, "default")); //TODO if already has override
-		this.addElement(textureHeight = new ComponentTextInt(140, 40, 240, 60, Main.instance.fontMsg, project.hasModelTextureHeight() ? project.getTextureHeight() : null, 1, Integer.MAX_VALUE, "default")); //TODO if already has override
+		this.addElement(name = new ComponentText(0, 10, 240, 30, Main.instance.fontMsg, isEdit ? project.getModelName() : "new model", null));
+		this.addElement(textureWidth = new ComponentTextInt(0, 40, 100, 60, Main.instance.fontMsg, project.hasModelTextureWidth() ? project.getTextureWidth() : null, 1, Integer.MAX_VALUE, null, "default")); //TODO if already has override
+		this.addElement(textureHeight = new ComponentTextInt(140, 40, 240, 60, Main.instance.fontMsg, project.hasModelTextureHeight() ? project.getTextureHeight() : null, 1, Integer.MAX_VALUE, null, "default")); //TODO if already has override
 		this.addElement(ok = new StandardButton(0, 0, 80, 20, 1, 4, isEdit ? "apply" : "create", this::apply) {
 			@Override
 			public boolean isEnabled()
@@ -62,25 +64,50 @@ public class GuiPopupModel extends GuiPopup
 	public void apply()
 	{
 		deactivate();
-		Project project = Main.instance.project;
-		project.onAction();
-		String name = this.name.getText();
-		if (!name.equals(project.getModelName())) name = MiscUtil.ensureUnique(name, project.getModelNames());
+		final Project project = Main.instance.project;
+		String name2 = this.name.getText();
+		if (!name2.equals(project.getModelName())) name2 = MiscUtil.ensureUnique(name2, project.getModelNames());
+		final String name = name2;
+		final Integer width = textureWidth.getText().length() == 0 ? null : textureWidth.getVal();
+		final Integer height = textureHeight.getText().length() == 0 ? null : textureHeight.getVal();
+		final IModel<?, ? extends RenderObjectComponents<?>> model;
 		if (isEdit)
 		{
+			model = project.getModel();
+			final String oldName = project.getModelName();
+			final Integer oldWidth = project.getModelTextureWidth();
+			final Integer oldHeight = project.getModelTextureHeight();
 			project.setModelName(name);
 			if (textureWidth.getText().length() == 0) project.removeModelTextureWidth();
 			else project.setModelTextureWidth(textureWidth.getVal());
 			if (textureHeight.getText().length() == 0) project.removeModelTextureHeight();
 			else project.setModelTextureHeight(textureHeight.getVal());
+			project.onAction(new HistoryAction(() -> {
+				project.setModelName(oldName, name);
+				if (oldWidth == null) project.removeModelTextureWidth(name);
+				else project.setModelTextureWidth(name, oldWidth);
+				if (oldHeight == null) project.removeModelTextureHeight(name);
+				else project.setModelTextureHeight(name, oldHeight);
+			}, () -> {
+				project.setModelName(name, oldName);
+				if (width == null) project.removeModelTextureWidth(oldName);
+				else project.setModelTextureWidth(oldName, width);
+				if (height == null) project.removeModelTextureHeight(oldName);
+				else project.setModelTextureHeight(oldName, height);
+			}));
 			//TODO
 		}
 		else
 		{
-			IModel model = new MultiModel();
+			model = new ProjectModel();
 			project.addModel(name, model);
 			if (textureWidth.getText().length() != 0) project.setModelTextureWidth(textureWidth.getVal());
 			if (textureHeight.getText().length() != 0) project.setModelTextureHeight(textureHeight.getVal());
+			project.onAction(new HistoryAction(() -> project.removeModel(name), () -> {
+				project.addModel(name, model);
+				if (width != null) project.setModelTextureWidth(name, width);
+				if (height != null) project.setModelTextureHeight(name, height);
+			}));
 			//TODO
 		}
 	}

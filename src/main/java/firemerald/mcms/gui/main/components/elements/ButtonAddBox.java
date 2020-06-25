@@ -5,6 +5,7 @@ import firemerald.mcms.model.ComponentBox;
 import firemerald.mcms.model.IComponentParent;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class ButtonAddBox extends EditableButton
 {
@@ -24,8 +25,8 @@ public class ButtonAddBox extends EditableButton
 	@Override
 	public void onRelease()
 	{
-		Main.instance.project.onAction();
 		ComponentBox box = new ComponentBox(parent, "new box");
+		Main.instance.project.onAction(new HistoryAction(() -> parent.removeChild(box), () -> parent.addChild(box)));
 		Main main = Main.instance;
 		main.setEditing(box);
 		Main.instance.editorPanes.selector.updateBase();

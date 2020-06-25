@@ -145,7 +145,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 
 	public void posX(float posX)
 	{
-		Main.instance.project.onAction();
 		position.translation.x = posX;
 		updateTransform();
 	}
@@ -157,7 +156,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 
 	public void posY(float posY)
 	{
-		Main.instance.project.onAction();
 		position.translation.y = posY;
 		updateTransform();
 	}
@@ -169,7 +167,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 
 	public void posZ(float posZ)
 	{
-		Main.instance.project.onAction();
 		position.translation.z = posZ;
 		updateTransform();
 	}
@@ -181,7 +178,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 
 	public void offX(float offX)
 	{
-		Main.instance.project.onAction();
 		offset.x = offX;
 		updateTransform();
 	}
@@ -193,7 +189,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 
 	public void offY(float offY)
 	{
-		Main.instance.project.onAction();
 		offset.y = offY;
 		updateTransform();
 	}
@@ -205,7 +200,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 
 	public void offZ(float offZ)
 	{
-		Main.instance.project.onAction();
 		offset.z = offZ;
 		updateTransform();
 	}
@@ -217,7 +211,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 
 	public void rotation(IRotation rotation)
 	{
-		Main.instance.project.onAction();
 		position.rotation = rotation;
 		updateTransform();
 	}
@@ -229,7 +222,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 
 	public void texU(float texU)
 	{
-		Main.instance.project.onAction();
 		this.texU = texU;
 	}
 
@@ -240,7 +232,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 
 	public void texV(float texV)
 	{
-		Main.instance.project.onAction();
 		this.texV = texV;
 	}
 	
@@ -380,30 +371,26 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 				this.position.rotation instanceof QuaternionRotation ? names[2] : "Unknown rotation"
 				, names, (ind, str) -> {
 					this.onDeselect(editorPanes);
-					IRotation old = position.rotation;
 					switch (ind)
 					{
 					case 0:
-						Main.instance.project.onAction();
-						position.rotation = IRotation.NONE;
+						position.setRotationTo(this, IRotation.NONE);
 						break;
 					case 1:
-						Main.instance.project.onAction();
-						(position.rotation = new EulerZYXRotation()).setFromQuaternion(old.getQuaternion());
+						position.setRotationTo(this, new EulerZYXRotation());
 						break;
 					//case 2:
 					//	(defaultTransform.rotation = new EulerXYZRotation()).setFromQuaternion(old.getQuaternion());
 					//	break;
 					case 2:
-						Main.instance.project.onAction();
-						(position.rotation = new QuaternionRotation()).setFromQuaternion(old.getQuaternion());
+						position.setRotationTo(this, new QuaternionRotation());
 						break;
 					}
 					this.onSelect(editorPanes, origY);
 					this.updateTransform();
 				}));
 		editorY += 20;
-		editorY = this.position.rotation.onSelect(editorPanes, editorY, Main.instance.project::onAction, this::updateTransform);
+		editorY = this.position.rotation.onSelect(editorPanes, editorY, this::updateTransform);
 		
 		editor.addElement(labelOff     = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20, Main.instance.fontMsg, "Offset"));
 		editorY += 20;
@@ -432,6 +419,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	@Override
 	public void onDeselect(EditorPanes editorPanes)
 	{
+		this.position.rotation.onDeselect(editorPanes);
 		editorPanes.addBox.setParent(null);
 		editorPanes.addMesh.setParent(null);
 		editorPanes.copy.setEditable(null, null);
@@ -496,7 +484,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		texOV     = null;
 		texOVP    = null;
 		texOVS    = null;
-		this.position.rotation.onDeselect(editorPanes);
 	}
 
 	@Override
@@ -507,7 +494,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	
 	public void setName(String name)
 	{
-		Main.instance.project.onAction();
 		this.name = name;
 	}
 
@@ -567,6 +553,30 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	public void removeChild(IModelEditable child)
 	{
 		if (child instanceof ModelComponent) this.children.remove(child);
+	}
+	
+	@Override
+	public int getChildIndex(IModelEditable child)
+	{
+		if (child instanceof ModelComponent)
+		{
+			if (children.contains(child)) return children.indexOf(child);
+			else return -1;
+		}
+		else return -1;
+	}
+
+	@Override
+	public void addChildAt(IModelEditable child, int index)
+	{
+		if (child instanceof ModelComponent)
+		{
+			if (!children.contains(child))
+			{
+				if (index <= 0) index = 0;
+				this.children.add(index, (ModelComponent) child);
+			}
+		}
 	}
 
 	@Override
@@ -654,7 +664,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		ModelComponent.loadComponent(this, el);
 	}
 	
-	public void copyChildren(ModelComponent newParent, IRigged<?> model)
+	public void copyChildren(ModelComponent newParent, IRigged<?, ?> model)
 	{
 		for (ModelComponent child : children) child.copy(newParent, model);
 	}

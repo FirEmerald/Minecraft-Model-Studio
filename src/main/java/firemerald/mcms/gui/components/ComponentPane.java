@@ -96,6 +96,12 @@ public class ComponentPane extends GuiElementContainer implements IComponent
 	}
 
 	@Override
+	public void tick(float mx, float my, float deltaTime)
+	{
+		super.tick(mx - ex1, my - ey1, deltaTime);
+	}
+
+	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
 		super.onMousePressed(mx - ex1, my - ey1, button, mods);

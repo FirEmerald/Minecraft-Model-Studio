@@ -10,7 +10,7 @@ public class ComponentModelView extends ComponentPanelMain
 	public ComponentModelView(int x1, int y1, int x2, int y2, GuiMain gui)
 	{
 		super(x1, y1, x2, y2, gui);
-		this.addElement(modelViewer = new ComponentModelViewer(x1, y1, x2, y2, gui));
+		this.addElement(modelViewer = new ComponentModelViewer(0, 0, x2 - x1, y2 - y1, gui));
 	}
 	
 	@Override

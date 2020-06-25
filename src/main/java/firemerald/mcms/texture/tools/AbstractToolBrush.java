@@ -10,6 +10,7 @@ import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.texture.BlendMode;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.texture.Texture;
+import firemerald.mcms.util.history.HistoryActionTextureDraw;
 
 public abstract class AbstractToolBrush implements ITool
 {
@@ -19,6 +20,7 @@ public abstract class AbstractToolBrush implements ITool
 	public void onMouseClick(Texture tex, double u, double v, int button)
 	{
 		//action = new TextureDrawAction(tex);
+		Main.instance.project.onAction(new HistoryActionTextureDraw(tex));
 		if (button == GLFW_MOUSE_BUTTON_LEFT) draw(tex, u, v, Main.instance.toolHolder.getColor1());
 		else if (button == GLFW_MOUSE_BUTTON_RIGHT) draw(tex, u, v, Main.instance.toolHolder.getColor2());
 	}
@@ -38,7 +40,6 @@ public abstract class AbstractToolBrush implements ITool
 	@Override
 	public void onMouseRelease(Texture tex, double u, double v, int button)
 	{
-		Main.instance.project.onAction();
 		//if (action != null) Main.instance.onAction(action);
 		//action = null;
 	}

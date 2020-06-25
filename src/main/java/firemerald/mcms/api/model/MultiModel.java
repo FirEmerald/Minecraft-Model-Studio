@@ -7,14 +7,15 @@ import java.util.Map;
 
 import org.joml.Matrix4d;
 
+import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.model.IModelEditable;
 
-public class MultiModel implements IModel
+public abstract class MultiModel<M extends MultiModel<M, T>, T extends Bone<T>> implements IModel<M, T>
 {
-	public final List<Bone> base = new ArrayList<>();
-	public final List<Bone> bones = new ArrayList<>();
+	public final List<T> base = new ArrayList<>();
+	public final List<T> bones = new ArrayList<>();
 	
 	public MultiModel() {}
 	
@@ -23,60 +24,61 @@ public class MultiModel implements IModel
 		load(el);
 	}
 	
-	public MultiModel(List<Bone> base)
+	public MultiModel(List<T> base)
 	{
 		setBase(base);
 	}
 	
 	@Override
-	public List<Bone> getRootBones()
+	public List<T> getRootBones()
 	{
 		return base;
 	}
 
 	@Override
-	public Collection<Bone> getAllBones()
+	public Collection<T> getAllBones()
 	{
 		return bones;
 	}
 	
 	@Override
-	public boolean addRootBone(Bone bone, boolean updateBoneList)
+	public boolean addRootBone(T bone, boolean updateBoneList)
 	{
 		base.add(bone);
 		if (updateBoneList) this.updateBonesList();
 		return true;
 	}
 	
-	public void setBase(List<Bone> base)
+	public void setBase(List<T> base)
 	{
 		bones.clear();
 		this.base.clear();
-		for (Bone obj : base)
+		for (T obj : base)
 		{
 			this.base.add(obj);
 			addBone(obj);
 		}
 	}
 	
-	public void setBase(Bone... base)
+	@SuppressWarnings("unchecked")
+	public void setBase(T... base)
 	{
 		bones.clear();
 		this.base.clear();
-		for (Bone obj : base)
+		for (T obj : base)
 		{
 			this.base.add(obj);
 			addBone(obj);
 		}
 	}
 	
-	protected void addBone(Bone bone)
+	protected void addBone(T bone)
 	{
 		bones.add(bone);
-		for (Bone bone2 : bone.children) addBone(bone2);
+		for (T bone2 : bone.children) addBone(bone2);
 	}
 	
-	public void addBaseBone(Bone bone)
+	public void addBaseBone(T bone)
 	{
 		this.base.add(bone);
 		addBone(bone);
@@ -85,25 +87,25 @@ public class MultiModel implements IModel
 	@Override
 	public void render(Map<String, Matrix4d> map, Runnable defaultTexture)
 	{
-		for (Bone base : this.base) base.render(map, defaultTexture);
+		for (T base : this.base) if (base instanceof RenderBone<?>) ((RenderBone<?>) base).render(map, defaultTexture);
 	}
 
 	@Override
 	public void cleanUp()
 	{
-		for (Bone base : this.base) base.cleanUp();
+		for (T base : this.base) base.cleanUp();
 	}
 
 	@Override
 	public RaytraceResult rayTrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> transformations, Matrix4d root)
 	{
 		RaytraceResult result = null;
-		for (Bone bone : base)
+		for (T bone : base) if (bone instanceof RenderBone)
 		{
 			Matrix4d transformation = transformations.get(bone.name);
 			if (transformation == null) transformation = new Matrix4d();
 			transformation = root.mul(transformation, new Matrix4d());
-			RaytraceResult res = bone.raytrace(fx, fy, fz, dx, dy, dz, transformations, transformation);
+			RaytraceResult res = ((RenderBone<?>) bone).raytrace(fx, fy, fz, dx, dy, dz, transformations, transformation);
 			if (res != null && (result == null || res.m < result.m)) result = res;
 		}
 		return result;
@@ -127,12 +129,14 @@ public class MultiModel implements IModel
 		return candidate instanceof Bone;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void addChild(IModelEditable child)
 	{
-		if (child instanceof Bone && !this.base.contains(child)) this.addBaseBone((Bone) child);
+		if (child instanceof Bone && !this.base.contains(child)) this.addBaseBone((T) child);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void addChildBefore(IModelEditable child, IModelEditable position)
 	{
@@ -140,11 +144,12 @@ public class MultiModel implements IModel
 		{
 			int pos = this.base.indexOf(position);
 			if (pos < 0) pos = 0;
-			this.base.add(pos, (Bone) child);
-			addBone((Bone) child);
+			this.base.add(pos, (T) child);
+			addBone((T) child);
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void addChildAfter(IModelEditable child, IModelEditable position)
 	{
@@ -152,8 +157,8 @@ public class MultiModel implements IModel
 		{
 			int pos = this.base.indexOf(position) + 1;
 			if (pos <= 0) pos = this.base.size();
-			this.base.add(pos, (Bone) child);
-			addBone((Bone) child);
+			this.base.add(pos, (T) child);
+			addBone((T) child);
 		}
 	}
 
@@ -164,9 +169,28 @@ public class MultiModel implements IModel
 	}
 
 	@Override
+	public int getChildIndex(IModelEditable child)
+	{
+		if (child instanceof Bone && this.base.contains(child)) return this.base.indexOf(child);
+		else return -1;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void addChildAt(IModelEditable child, int index)
+	{
+		if (child instanceof Bone && !this.base.contains(child))
+		{
+			if (index < 0) index = 0;
+			this.base.add(index, (T) child);
+			addBone((T) child);
+		}
+	}
+
+	@Override
 	public boolean isNameUsed(String name)
 	{
-		for (Bone bone : this.bones) if (bone.name.equals(name)) return true;
+		for (T bone : this.bones) if (bone.name.equals(name)) return true;
 		return false;
 	}
 
@@ -174,7 +198,7 @@ public class MultiModel implements IModel
 	public void updateBonesList()
 	{
 		this.bones.clear();
-		for (Bone base : this.base) addBone(base);
+		for (T base : this.base) addBone(base);
 	}
 
 	@Override
@@ -183,8 +207,9 @@ public class MultiModel implements IModel
 		base.clear();
 		for (AbstractElement el : root.getChildren())
 		{
-			Bone base = Bone.construct(el.getName(), null, el, 1);
-			if (base != null) this.base.add(base);
+			T base = this.makeNew(el.getString("name", "unnamed bone"), new Transformation(el, 1), null);
+			base.loadFromXML(el, 1);
+			this.base.add(base);
 		}
 		updateBonesList();
 	}
@@ -202,10 +227,12 @@ public class MultiModel implements IModel
 	}
 
 	@Override
-	public MultiModel cloneObject()
+	public M cloneObject()
 	{
-		List<Bone> newBase = new ArrayList<>(this.base.size());
+		List<T> newBase = new ArrayList<>(this.base.size());
 		this.base.forEach(oldBase -> newBase.add(oldBase.cloneObject(null)));
-		return new MultiModel(newBase);
+		return newModel(newBase);
 	}
+	
+	public abstract M newModel(List<T> base);
 }

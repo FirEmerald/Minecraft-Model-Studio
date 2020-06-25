@@ -24,8 +24,9 @@ import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.util.FileUtils;
+import firemerald.mcms.util.IClonableObject;
 
-public class Texture
+public class Texture implements IClonableObject<Texture>
 {
 	protected ByteBuffer data;
 	public int w, h;
@@ -53,6 +54,7 @@ public class Texture
 		needsSet = true;
 	}
 	
+	@Override
 	public Texture cloneObject()
 	{
 		return new Texture(this);

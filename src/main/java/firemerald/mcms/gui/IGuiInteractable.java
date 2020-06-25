@@ -1,5 +1,7 @@
 package firemerald.mcms.gui;
 
+import firemerald.mcms.util.history.IHistoryAction;
+import firemerald.mcms.util.hotkey.Action;
 import firemerald.mcms.window.api.Cursor;
 import firemerald.mcms.window.api.Key;
 
@@ -32,6 +34,10 @@ public interface IGuiInteractable extends IGuiElement
 	public abstract boolean onKeyRepeat(Key key, int scancode, int mods);
 	
 	public abstract boolean onKeyReleased(Key key, int scancode, int mods);
+	
+	public abstract boolean onHotkey(Action action);
+	
+	public abstract boolean onAction(IHistoryAction<?> action);
 	
 	public abstract Cursor getCursor(float mx, float my);
 }

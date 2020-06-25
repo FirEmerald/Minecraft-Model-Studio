@@ -5,6 +5,7 @@ import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.model.IEditableParent;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class ButtonCopy extends EditableButton
 {
@@ -25,8 +26,8 @@ public class ButtonCopy extends EditableButton
 	@Override
 	public void onRelease()
 	{
-		Main.instance.project.onAction();
 		IModelEditable copy = component.copy(parent, Main.instance.project.getRig());
+		Main.instance.project.onAction(new HistoryAction(() -> parent.removeChild(copy), () -> parent.addChild(copy)));
 		Main main = Main.instance;
 		main.setEditing(copy);
 		Main.instance.editorPanes.selector.updateBase();

@@ -170,7 +170,7 @@ public class FileUtils
 		case NativeFileDialog.NFD_OKAY:
 			String fileName = output.getStringUTF8(0);
 			NativeFileDialog.nNFD_Free(output.get(0));
-			file = new File(fileName);
+			file = new File(ensureHasExtension(fileName, getDefaultExtension(filter)));
 			break;
 		case NativeFileDialog.NFD_ERROR:
 			GuiPopupException.onException("Error in save file dialog:\n" + NativeFileDialog.NFD_GetError());
@@ -181,6 +181,21 @@ public class FileUtils
 		}
 		Main.instance.lastNanos += (System.nanoTime() - n);
 		return file;
+	}
+	
+	public static String getDefaultExtension(CharSequence filter)
+	{
+		String fil = filter.toString();
+		int ind = fil.indexOf(';');
+		if (ind < 0) return fil;
+		else return fil.substring(0, ind);
+	}
+	
+	public static String ensureHasExtension(String file, String defaultExtension)
+	{
+		String ext = FileUtil.getExtension(file);
+		if (ext == null || ext.length() == 0) return file + "." + defaultExtension;
+		else return file;
 	}
 	
 	public static File getFolder(CharSequence directory)

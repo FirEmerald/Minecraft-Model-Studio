@@ -10,13 +10,11 @@ import firemerald.mcms.util.mesh.Meshes;
 
 public abstract class PlaybackButton extends ComponentButton
 {
-	public ResourceLocation icon;
 	public ThemeElement rect;
 	
-	public PlaybackButton(int x, int y, ResourceLocation icon)
+	public PlaybackButton(int x, int y)
 	{
 		super(x, y, x + 32, y + 32);
-		this.icon = icon;
 		onGuiUpdate(GuiUpdate.THEME);
 	}
 
@@ -40,6 +38,8 @@ public abstract class PlaybackButton extends ComponentButton
 	
 	@Override
 	public abstract void onRelease();
+	
+	public abstract ResourceLocation getIcon();
 
 	@Override
 	public void render(ButtonState state)
@@ -51,7 +51,7 @@ public abstract class PlaybackButton extends ComponentButton
 		rect.bind();
 		Meshes.X32.render();
 		Main.instance.shader.setColor(getTheme().getOutlineColor());
-		Main.instance.textureManager.bindTexture(icon);
+		Main.instance.textureManager.bindTexture(getIcon());
 		Meshes.X32.render();
 		Main.instance.shader.setColor(1, 1, 1, 1);
 		state.removeButtonEffects();

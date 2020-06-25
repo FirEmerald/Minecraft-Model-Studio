@@ -28,6 +28,7 @@ import org.objectweb.asm.tree.ClassNode;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.events.EventBus;
+import firemerald.mcms.util.PrintStreamLogger;
 
 /**
  * The main plugin loading handler. 
@@ -53,10 +54,22 @@ public class PluginLoader
 	/**
 	 * the plugin loader logger instance
 	 */
-	public static final Logger LOGGER = LogManager.getLogger("MSMS Plugin Loader");
+	public static final Logger LOGGER;
 	
     static
     {
+		System.setProperty("log4j.configurationFile", "assets/mcms/log4j2.xml");
+		LOGGER = LogManager.getLogger("MCMS Plugin Loader"); //the main logger
+		if (!(System.out instanceof PrintStreamLogger))
+		{
+			Logger stdOut = LogManager.getLogger("STDOUT"); //the logger for System.out
+			System.setOut(new PrintStreamLogger(System.out, stdOut, Level.INFO)); //replace the default output stream with one that goes to the logger
+		}
+		if (!(System.err instanceof PrintStreamLogger))
+		{
+			Logger stdErr = LogManager.getLogger("STDERR"); //the logger for System.err
+			System.setErr(new PrintStreamLogger(System.err, stdErr, Level.ERROR)); //replace the default error stream with one that goes to the logger
+		}
 		try
 		{
 			ADD_URL = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);

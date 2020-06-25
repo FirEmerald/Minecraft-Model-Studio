@@ -1,7 +1,7 @@
 package firemerald.mcms.launchwrapper;
 
+import firemerald.mcms.launchwrapper.LauncherLogger.Level;
 import firemerald.mcms.plugin.CoreModdingClassLoader;
-import firemerald.mcms.util.PrintStreamLogger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,36 +18,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class LaunchWrapper
 {
-	protected static final Logger LOGGER;
+	public static final LauncherLogger LOGGER = new LauncherLogger(new File("logs/launchwrapper.log"));
 	private static ProgressBars progressBars;
 	private static int item;
 	private static boolean isMDK = false;
 	
 	static
 	{
-		System.setProperty("log4j.configurationFile", "assets/mcms/log4j2.xml");
-		LOGGER = LogManager.getLogger("LaunchWrapper"); //the main logger
-		if (!(System.out instanceof PrintStreamLogger))
-		{
-			Logger stdOut = LogManager.getLogger("STDOUT"); //the logger for System.out
-			System.setOut(new PrintStreamLogger(System.out, stdOut, Level.INFO)); //replace the default output stream with one that goes to the logger
-		}
-		if (!(System.err instanceof PrintStreamLogger))
-		{
-			Logger stdErr = LogManager.getLogger("STDERR"); //the logger for System.err
-			System.setErr(new PrintStreamLogger(System.err, stdErr, Level.ERROR)); //replace the default error stream with one that goes to the logger
-		}
+		System.setOut(new PrintStreamLauncherLogger(System.out, LOGGER, Level.STDOUT));
+		System.setErr(new PrintStreamLauncherLogger(System.err, LOGGER, Level.STDERR));
 	}
 	
 	public static void main(String[] args)
 	{
-		isMDK = System.getProperty("isMDK").equalsIgnoreCase("true");
+		String val = System.getProperty("isMDK");
+		isMDK = val != null && val.equalsIgnoreCase("true");
 		List<URL> jars = new ArrayList<>();
 		for (String source : System.getProperty("java.class.path").split(System.getProperty("path.separator")))
 		{
@@ -57,7 +44,7 @@ public class LaunchWrapper
 			}
 			catch (MalformedURLException e)
 			{
-				LOGGER.error("Couldn't grab classpath source " + source + " for coremodding, this may cause issues and/or crashes", e);
+				LOGGER.log(Level.ERROR, "Couldn't grab classpath source " + source + " for coremodding, this may cause issues and/or crashes", e);
 			}
 		}
 		if (!isMDK)
@@ -87,7 +74,7 @@ public class LaunchWrapper
 			progressBars = null;
 		}
 		else LOGGER.info("MDK detected.");
-		CoreModdingClassLoader classLoader = new CoreModdingClassLoader(jars.toArray(new URL[jars.size()]), LOGGER);
+		CoreModdingClassLoader classLoader = new CoreModdingClassLoader(jars.toArray(new URL[jars.size()]));
 		LOGGER.info("Launching wrapped MCMS");
 		try
 		{
@@ -95,7 +82,7 @@ public class LaunchWrapper
 		}
 		catch (Throwable e)
 		{
-			LOGGER.fatal("MCMS crashed", e);
+			LOGGER.error("MCMS crashed", e);
 		}
 		LOGGER.debug("Main thread exit");
 	}

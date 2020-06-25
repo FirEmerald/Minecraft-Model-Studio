@@ -21,7 +21,6 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL;
 
-import firemerald.mcms.api.animation.AnimationState;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.events.ApplicationEvent;
 import firemerald.mcms.events.EventBus;
@@ -49,7 +48,6 @@ import firemerald.mcms.texture.tools.IToolHolder;
 import firemerald.mcms.theme.GuiTheme;
 import firemerald.mcms.util.ApplicationState;
 import firemerald.mcms.util.EditorMode;
-import firemerald.mcms.util.EnumPlaybackMode;
 import firemerald.mcms.util.FileWatcher;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.IEditable;
@@ -57,6 +55,7 @@ import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.TextureManager;
 import firemerald.mcms.util.font.FontRenderer;
+import firemerald.mcms.util.hotkey.Action;
 import firemerald.mcms.util.mesh.Mesh;
 import firemerald.mcms.window.api.Cursor;
 import firemerald.mcms.window.api.Window;
@@ -66,8 +65,8 @@ public class Main
 {
 	//public static final String VERSION = "0.0.0.0";
 	public static final String ID = "mcms";
-	public static final String VERSION = "Alpha 16";
-	public static final String BUILD_DATE = "06/12/2020 19:34";
+	public static final String VERSION = "Alpha 20";
+	public static final String BUILD_DATE = "06/24/2020 18:08";
 	public static final Logger LOGGER = LogManager.getLogger("MCMS"); //the main logger;
 	public static Main instance;
 	public static final int MIN_W = 640, MIN_H = 480;
@@ -88,10 +87,6 @@ public class Main
 	public final ApplicationState state = new ApplicationState();
 	public final Project project = new Project("untitled", 16, 16);
 	private Texture overlay;
-	public final AnimationState animState = new AnimationState(() -> project.getAnimation(), 0);
-	public EnumPlaybackMode animMode = EnumPlaybackMode.PAUSED;
-	public boolean animLoop = false;
-	public float animScale = 1;
 	public static double time = 0;
 	public EditorPanes editorPanes;
 	public IToolHolder toolHolder = new IToolHolder()
@@ -144,6 +139,11 @@ public class Main
 	};
 	public ITool tool = null;
 	public final EventBus EVENT_BUS = new EventBus("mcms_event_bus");
+	
+	public void doAction(Action action)
+	{
+		if (!getGui().onHotkey(action)) action.action.run();
+	}
 	
 	public void openGui(@NonNull GuiScreen gui)
 	{
@@ -203,33 +203,6 @@ public class Main
 	{
 		return this.editingModel;
 	}
-
-	/*
-	private final Stack<IAction> undoActions = new Stack<>();
-	private final Stack<IAction> redoActions = new Stack<>();
-	
-	public void undo()
-	{
-		if (!undoActions.isEmpty()) redoActions.add(undoActions.pop().get());
-	}
-
-	public void redo()
-	{
-		if (!redoActions.isEmpty()) undoActions.add(redoActions.pop().get());
-	}
-	
-	public void onAction(IAction action)
-	{
-		redoActions.clear();
-		undoActions.add(action);
-	}
-	
-	public void clearActions()
-	{
-		undoActions.clear();
-		redoActions.clear();
-	}
-	*/
     
     public static Mesh MODMESH;
 	
@@ -294,7 +267,7 @@ public class Main
 		}
 		window = new GLFWWindow(this);
 		//window = new AWTWindow(this);
-		state.loadState();
+		if (ApplicationState.FILE.exists()) state.loadState();
 		state.saveState();
 		window.showWindow();
 		window.focusWindow();
@@ -517,10 +490,8 @@ public class Main
 			window.render();
 			EVENT_BUS.post(new RenderEvent.Post());
 			String title = "Minecraft Model Studio - " + project.getName();
-			if (project.needsSave()) title += " * (";
-			else title += " (";
-			if (project.getSource() != null) title += project.getSource().toString() + ")";
-			else title += "not saved)";
+			if (project.needsSave()) title += " *";
+			if (project.getSource() != null) title += " (" + project.getSource().toString() + ")";
 			window.setTitle(title);
 			try
 			{

@@ -6,9 +6,8 @@ import java.util.List;
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.model.Bone;
-import firemerald.mcms.api.model.FluidRenderEffect;
-import firemerald.mcms.api.model.IRigged;
+import firemerald.mcms.api.model.RenderBone;
+import firemerald.mcms.api.model.effects.FluidRenderEffect;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.DropdownButton;
@@ -19,10 +18,11 @@ import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.gui.decoration.DecoPane;
+import firemerald.mcms.util.history.HistoryAction;
 
-public class GuiPopupFluid extends GuiPopup
+public class GuiPopupFluid<T extends RenderBone<T>> extends GuiPopup
 {
-	public final Bone parent;
+	public final T parent;
 	public final DecoPane pane;
 	public final ComponentText name;
 	public final DropdownButton nameOptions;
@@ -41,7 +41,7 @@ public class GuiPopupFluid extends GuiPopup
 	public final ComponentIncrementFloat marginUp, marginDown;
 	public final StandardButton ok, cancel;
 	
-	public GuiPopupFluid(Bone parent)
+	public GuiPopupFluid(T parent)
 	{
 		this.parent = parent;
 		Project project = Main.instance.project;
@@ -58,28 +58,34 @@ public class GuiPopupFluid extends GuiPopup
 			project.getDisplayBoneNames(parent, possible);
 			names = possible.toArray(new String[possible.size()]);
 		}
-		this.addElement(name = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, names[0], text -> names[0] = text));
+		this.addElement(name = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, names[0], text -> names[0] = text) {
+			@Override
+			public boolean shouldUndo()
+			{
+				return false;
+			}
+		});
 		this.addElement(nameOptions = new DropdownButton(cx + cw - 20, y, cx + cw, y + 20, name, names, (ind, val) -> name.setText(val)));
 		y += 20;
 		this.addElement(indexLabel = new ComponentFloatingLabel(cx, y, cx + 33, y + 20, Main.instance.fontMsg, "index"));
-		this.addElement(index = new ComponentTextInt(cx + 33, y, cx + cw - 10, y + 20, Main.instance.fontMsg, 0, 0, Integer.MAX_VALUE));
+		this.addElement(index = new ComponentTextInt(cx + 33, y, cx + cw - 10, y + 20, Main.instance.fontMsg, 0, 0, Integer.MAX_VALUE, null));
 		this.addElement(indexUp = new ComponentIncrementInt(cx + cw - 10, y, index, 1));
 		this.addElement(indexDown = new ComponentIncrementInt(cx + cw - 10, y + 10, index, -1));
 		y += 20;
 		this.addElement(sizeLabel = new ComponentFloatingLabel(cx, y, cx + cw, y + 20, Main.instance.fontMsg, "size"));
 		y += 20;
-		this.addElement(sizeX = new ComponentTextFloat(cx, y, cx + (cw / 3) - 10, y + 20, Main.instance.fontMsg, 1, 0, Float.POSITIVE_INFINITY));
+		this.addElement(sizeX = new ComponentTextFloat(cx, y, cx + (cw / 3) - 10, y + 20, Main.instance.fontMsg, 1, 0, Float.POSITIVE_INFINITY, null));
 		this.addElement(sizeXUp = new ComponentIncrementFloat(cx + (cw / 3) - 10, y, sizeX, 1f));
 		this.addElement(sizeXDown = new ComponentIncrementFloat(cx + (cw / 3) - 10, y + 10, sizeX, -1f));
-		this.addElement(sizeY = new ComponentTextFloat(cx + (cw / 3), y, cx + (cw * 2 / 3) - 10, y + 20, Main.instance.fontMsg, 1, 0, Float.POSITIVE_INFINITY));
+		this.addElement(sizeY = new ComponentTextFloat(cx + (cw / 3), y, cx + (cw * 2 / 3) - 10, y + 20, Main.instance.fontMsg, 1, 0, Float.POSITIVE_INFINITY, null));
 		this.addElement(sizeYUp = new ComponentIncrementFloat(cx + (cw * 2 / 3) - 10, y, sizeY, 1f));
 		this.addElement(sizeYDown = new ComponentIncrementFloat(cx + (cw * 2 / 3) - 10, y + 10, sizeY, -1f));
-		this.addElement(sizeZ = new ComponentTextFloat(cx + (cw * 2 / 3), y, cx + cw - 10, y + 20, Main.instance.fontMsg, 1, 0, Float.POSITIVE_INFINITY));
+		this.addElement(sizeZ = new ComponentTextFloat(cx + (cw * 2 / 3), y, cx + cw - 10, y + 20, Main.instance.fontMsg, 1, 0, Float.POSITIVE_INFINITY, null));
 		this.addElement(sizeZUp = new ComponentIncrementFloat(cx + cw - 10, y, sizeZ, 1f));
 		this.addElement(sizeZDown = new ComponentIncrementFloat(cx + cw - 10, y + 10, sizeZ, -1f));
 		y += 20;
 		this.addElement(marginLabel = new ComponentFloatingLabel(cx, y, cx + 46, y + 20, Main.instance.fontMsg, "margin"));
-		this.addElement(margin = new ComponentTextFloat(cx + 46, y, cx + cw - 10, y + 20, Main.instance.fontMsg, 0.00390625f, 0, Float.POSITIVE_INFINITY));
+		this.addElement(margin = new ComponentTextFloat(cx + 46, y, cx + cw - 10, y + 20, Main.instance.fontMsg, 0.00390625f, 0, Float.POSITIVE_INFINITY, null));
 		this.addElement(marginUp = new ComponentIncrementFloat(cx + cw - 10, y, margin, 0.00390625f));
 		this.addElement(marginDown = new ComponentIncrementFloat(cx + cw - 10, y + 10, margin, -0.00390625f));
 		
@@ -138,15 +144,23 @@ public class GuiPopupFluid extends GuiPopup
 	
 	public void apply()
 	{
-		Main.instance.project.onAction();
 		deactivate();
-		IRigged<?> rigged = Main.instance.project.getRig();
-		FluidRenderEffect newBone = new FluidRenderEffect(name.getText(), parent, new Transformation(), index.getVal(), sizeX.getVal(), sizeY.getVal(), sizeZ.getVal(), margin.getVal());
-		if (parent != null) rigged.updateBonesList();
-		else rigged.addChild(newBone);
+		final FluidRenderEffect newBone = new FluidRenderEffect(name.getText(), parent, new Transformation(), index.getVal(), sizeX.getVal(), sizeY.getVal(), sizeZ.getVal(), margin.getVal());
+		final T parent = this.parent;
 		Main main = Main.instance;
 		main.project.updateSkeletonLocalAlt();
 		main.setEditing(newBone);
 		Main.instance.editorPanes.selector.updateBase();
+		Main.instance.project.onAction(new HistoryAction(() -> {
+			parent.removeEffect(newBone);
+			main.project.updateSkeletonLocalAlt();
+			if (Main.instance.getEditing() == newBone) Main.instance.setEditing(null);
+			Main.instance.editorPanes.selector.updateBase();
+		}, () -> {
+			parent.addEffect(newBone);
+			main.project.updateSkeletonLocalAlt();
+			main.setEditing(newBone);
+			Main.instance.editorPanes.selector.updateBase();
+		}));
 	}
 }

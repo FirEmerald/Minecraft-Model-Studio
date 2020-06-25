@@ -17,6 +17,7 @@ import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.FileUtils;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class GuiPopupLoadTexture extends GuiPopup
 {
@@ -35,9 +36,9 @@ public class GuiPopupLoadTexture extends GuiPopup
 		final int cy = 20;
 		this.addElement(pane = new DecoPane(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20, 2, 16));
 		int y = cy;
-		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, MiscUtil.ensureUnique("Untitled", project.getTextureNames()), text -> {}));
+		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, MiscUtil.ensureUnique("Untitled", project.getTextureNames()), null));
 		y += 20;
-		this.addElement(file = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, "", text -> {}));
+		this.addElement(file = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, "", null));
 		this.addElement(browse = new ButtonItem20(cx + cw - 20, y, Textures.ITEM_BROWSE, () -> {
 			File file = FileUtils.getOpenFile(FileUtils.getLoadImageFilter(), "");
 			if (file != null) this.file.setText(file.toString());
@@ -80,13 +81,13 @@ public class GuiPopupLoadTexture extends GuiPopup
 	public void apply()
 	{
 		deactivate();
-		Project project = Main.instance.project;
+		final Project project = Main.instance.project;
 		try
 		{
-			Texture tex = new ReloadingTexture(new File(file.getText()));
-			String name = MiscUtil.ensureUnique(this.name.getText(), project.getTextureNames());
-			project.onAction();
+			final Texture tex = new ReloadingTexture(new File(file.getText()));
+			final String name = MiscUtil.ensureUnique(this.name.getText(), project.getTextureNames());
 			project.addTexture(name, tex);
+			project.onAction(new HistoryAction(() -> project.removeTexture(name), () -> project.addTexture(name, tex)));
 		}
 		catch (Exception e)
 		{

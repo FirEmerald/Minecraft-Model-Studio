@@ -1,4 +1,4 @@
-package firemerald.mcms.api.model;
+package firemerald.mcms.api.model.effects;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -6,10 +6,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.Nullable;
+import org.joml.Matrix4d;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.api.util.TriFunction;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
@@ -21,7 +23,7 @@ import firemerald.mcms.util.ResourceLocation;
 
 public abstract class BoneEffect implements IModelEditable
 {
-	private static final Map<String, TriFunction<Bone, AbstractElement, Float, BoneEffect>> EFFECT_TYPES = new HashMap<>();
+	private static final Map<String, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect>> EFFECT_TYPES = new HashMap<>();
 
 	/**
 	 * Register a Bone Effect type
@@ -31,12 +33,12 @@ public abstract class BoneEffect implements IModelEditable
 	 * 
 	 * @return if the bone effect was registered
 	 */
-	public static boolean registerBoneType(ResourceLocation name, TriFunction<Bone, AbstractElement, Float, BoneEffect> constructor)
+	public static boolean registerBoneType(ResourceLocation name, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor)
 	{
 		return registerBoneType(name.toString().replace(':', '-').replace('/', '_'), constructor);
 	}
 	
-	private static boolean registerBoneType(String name, TriFunction<Bone, AbstractElement, Float, BoneEffect> constructor)
+	private static boolean registerBoneType(String name, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor)
 	{
 		if (EFFECT_TYPES.containsKey(name)) return false;
 		else
@@ -46,9 +48,9 @@ public abstract class BoneEffect implements IModelEditable
 		}
 	}
 	
-	public static BoneEffect constructIfRegistered(String name, @Nullable Bone parent, AbstractElement element, float scale)
+	public static BoneEffect constructIfRegistered(String name, @Nullable RenderBone<?> parent, AbstractElement element, float scale)
 	{
-		TriFunction<Bone, AbstractElement, Float, BoneEffect> constructor = EFFECT_TYPES.get(name);
+		TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor = EFFECT_TYPES.get(name);
 		if (constructor == null) return null;
 		else return constructor.apply(parent, element, scale);
 	}
@@ -69,13 +71,27 @@ public abstract class BoneEffect implements IModelEditable
 	
 	protected boolean visible = true;
 	protected String name;
-	protected Bone parent;
+	protected RenderBone<?> parent;
+	public final Transformation transform;
 
-	public BoneEffect(String name, Bone parent)
+	public BoneEffect(String name, @Nullable RenderBone<?> parent)
+	{
+		this(name, parent, new Transformation());
+	}
+
+	public BoneEffect(String name, @Nullable RenderBone<?> parent, Transformation transform)
 	{
 		this.name = name;
+		this.transform = transform;
 		if (parent == null) this.parent = null;
 		else (this.parent = parent).addEffect(this);
+	}
+
+	public Matrix4d getTransformation()
+	{
+		Matrix4d mat = transform.getTransformation();
+		if (parent != null) parent.getTransformation().mul(mat, mat);
+		return mat;
 	}
 	
 	public void loadFromXML(AbstractElement el, float scale)
@@ -126,7 +142,6 @@ public abstract class BoneEffect implements IModelEditable
 	
 	public void setName(String name)
 	{
-		Main.instance.project.onAction();
 		this.name = name;
 	}
 
@@ -154,7 +169,7 @@ public abstract class BoneEffect implements IModelEditable
 	@Override
 	public Transformation getDefaultTransformation()
 	{
-		return new Transformation();
+		return transform;
 	}
 
 	@Override
@@ -187,6 +202,15 @@ public abstract class BoneEffect implements IModelEditable
 	@Override
 	public void removeChild(IModelEditable child) {}
 	
+	@Override
+	public int getChildIndex(IModelEditable child)
+	{
+		return -1;
+	}
+
+	@Override
+	public void addChildAt(IModelEditable child, int index) {}
+	
 	public abstract void preRender(Runnable defaultTex);
 
 	public abstract void postRenderBone(Runnable defaultTex);
@@ -197,5 +221,5 @@ public abstract class BoneEffect implements IModelEditable
 
 	public abstract void doCleanUp();
 
-	public abstract BoneEffect cloneObject(Bone clonedParent);
+	public abstract BoneEffect cloneObject(RenderBone<?> clonedParent);
 }

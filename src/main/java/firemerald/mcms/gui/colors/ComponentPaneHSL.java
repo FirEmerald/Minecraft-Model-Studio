@@ -20,15 +20,15 @@ public class ComponentPaneHSL extends ComponentPaneColorPicker
 		this.addElement(hslPicker = new ColorPickerHSL(0, 0, hsl));
 		FontRenderer font = Main.instance.fontMsg;
 		this.addElement(new ComponentFloatingLabel(160, 00, 172, 20, font, "H"));
-		this.addElement(hHSL = new ComponentTextInt(172, 0, 206, 20, font, 0, 360));
+		this.addElement(hHSL = new ComponentTextInt(172, 0, 206, 20, font, 0, 360, null));
 		this.addElement(new ComponentIncrementInt(206, 0, hHSL, 1));
 		this.addElement(new ComponentIncrementInt(206, 10, hHSL, -1));
 		this.addElement(new ComponentFloatingLabel(160, 20, 172, 40, font, "S"));
-		this.addElement(sHSL = new ComponentTextInt(172, 20, 206, 40, font, 0, 100));
+		this.addElement(sHSL = new ComponentTextInt(172, 20, 206, 40, font, 0, 100, null));
 		this.addElement(new ComponentIncrementInt(206, 20, sHSL, 1));
 		this.addElement(new ComponentIncrementInt(206, 30, sHSL, -1));
 		this.addElement(new ComponentFloatingLabel(160, 40, 172, 60, font, "L"));
-		this.addElement(lHSL = new ComponentTextInt(172, 40, 206, 60, font, 0, 100));
+		this.addElement(lHSL = new ComponentTextInt(172, 40, 206, 60, font, 0, 100, null));
 		this.addElement(new ComponentIncrementInt(206, 40, lHSL, 1));
 		this.addElement(new ComponentIncrementInt(206, 50, lHSL, -1));
 		

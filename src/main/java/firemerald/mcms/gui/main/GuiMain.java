@@ -8,12 +8,12 @@ import org.joml.Vector3f;
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.model.MultiModel;
 import firemerald.mcms.gui.GuiScreen;
 import firemerald.mcms.gui.main.components.*;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.model.ComponentBox;
 import firemerald.mcms.model.EditorPanes;
+import firemerald.mcms.model.ProjectModel;
 import firemerald.mcms.model.RenderObjectComponents;
 import firemerald.mcms.texture.ReloadingTexture;
 import firemerald.mcms.texture.Texture;
@@ -52,10 +52,10 @@ public class GuiMain extends GuiScreen
 			GuiPopupException.onException("Couldn't load default texture texture.png", e1);
 		}
 
-		RenderObjectComponents test1, test2, test3, test4;
+		RenderObjectComponents.Actual test1, test2, test3, test4;
 		ComponentBox box;
-		MultiModel model = new MultiModel();
-		test1 = new RenderObjectComponents("test1", new Transformation(new Vector3f(0, -24f, 0)), null);
+		ProjectModel model = new ProjectModel();
+		test1 = new RenderObjectComponents.Actual("test1", new Transformation(new Vector3f(0, -24f, 0)), null);
 		box = new ComponentBox(test1, "box1");
 		box.lengthX(16);
 		box.lengthY(16);
@@ -67,7 +67,7 @@ public class GuiMain extends GuiScreen
 		box.setTexSizeU(64);
 		box.setTexSizeV(32);
 		*/
-		test2 = new RenderObjectComponents("test2", new Transformation(new Vector3f(0, 16, 0)), test1);
+		test2 = new RenderObjectComponents.Actual("test2", new Transformation(new Vector3f(0, 16, 0)), test1);
 		box = new ComponentBox(test2, "box2");
 		box.lengthX(16);
 		box.lengthY(16);
@@ -79,7 +79,7 @@ public class GuiMain extends GuiScreen
 		box.setTexSizeU(64);
 		box.setTexSizeV(32);
 		*/
-		test3 = new RenderObjectComponents("test3", new Transformation(new Vector3f(0, 16, 0)), test2);
+		test3 = new RenderObjectComponents.Actual("test3", new Transformation(new Vector3f(0, 16, 0)), test2);
 		box = new ComponentBox(test3, "box3");
 		box.lengthX(16);
 		box.lengthY(16);
@@ -91,7 +91,7 @@ public class GuiMain extends GuiScreen
 		box.setTexSizeU(64);
 		box.setTexSizeV(32);
 		*/
-		test4 = new RenderObjectComponents("test4", new Transformation(new Vector3f(0, 16, 0)), test3);
+		test4 = new RenderObjectComponents.Actual("test4", new Transformation(new Vector3f(0, 16, 0)), test3);
 		box = new ComponentBox(test4, "box4");
 		box.lengthX(16);
 		box.lengthY(16);
@@ -106,6 +106,7 @@ public class GuiMain extends GuiScreen
 		model.setBase(test1);
 		project.addModel("test", model);
 		project.clearActions();
+		project.clearNeedsSave();
 		this.onGuiUpdate(GuiUpdate.PROJECT);
 	}
 	

@@ -166,7 +166,7 @@ public class RenderUtil
 		ITEM_MESH = itemMesh;
 	}
 	
-	public static void renderSkeleton(Bone bone, Map<String, Matrix4d> transforms, boolean showNodes, boolean showBones)
+	public static void renderSkeleton(Bone<?> bone, Map<String, Matrix4d> transforms, boolean showNodes, boolean showBones)
 	{
 		if (!bone.visible) return;
 		Main.instance.textureManager.bindTexture(Textures.BOX);
@@ -184,7 +184,7 @@ public class RenderUtil
 		Main.MODMESH.drawMode = Mesh.DrawMode.TRIANGLES;
 	}
 	
-	public static void renderSkeletonMesh(Bone bone, Map<String, Matrix4d> transforms, boolean showNodes, boolean showBones)
+	public static void renderSkeletonMesh(Bone<?> bone, Map<String, Matrix4d> transforms, boolean showNodes, boolean showBones)
 	{
 		Matrix4d m = transforms.get(bone.getName());
 		Shader.MODEL.push();
@@ -204,7 +204,7 @@ public class RenderUtil
 			Shader.MODEL.pop();
 			Main.instance.shader.updateModel();
 		}
-		for (Bone child : bone.children) if (child.visible)
+		for (Bone<?> child : bone.children) if (child.visible)
 		{
 			if (showBones)
 			{

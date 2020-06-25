@@ -45,7 +45,7 @@ public class MiscUtil
 		}
 	}
 	
-	public static String getNewBoneName(String name, IRigged<?> model)
+	public static String getNewBoneName(String name, IRigged<?, ?> model)
 	{
 		if (!model.isNameUsed(name)) return name;
 		int i = 2;

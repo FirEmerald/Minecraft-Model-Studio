@@ -13,19 +13,22 @@ import org.lwjgl.opengl.GL11;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
+import firemerald.mcms.Project.ExtendedAnimationState;
 import firemerald.mcms.api.animation.AnimationState;
 import firemerald.mcms.api.math.MathUtils;
 import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.IModel;
 import firemerald.mcms.api.model.IRaytraceTarget;
-import firemerald.mcms.api.model.ISkeleton;
+import firemerald.mcms.api.model.Skeleton;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.gui.components.Component;
 import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.model.ComponentBox;
 import firemerald.mcms.model.IComponentParent;
+import firemerald.mcms.model.RenderObjectComponents;
 import firemerald.mcms.shader.FrameBuffer;
 import firemerald.mcms.shader.Shader;
+import firemerald.mcms.texture.Texture;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.ApplicationState;
 import firemerald.mcms.util.EditorMode;
@@ -105,8 +108,8 @@ public class ComponentModelViewer extends Component
     	if (this.contains(mx, my))
     	{
     		Project project = main.project;
-        	IModel model = project.getModel();
-    		if (model != null)
+        	IModel<?, ?> model = project.getModel();
+    		if (model != null || !project.lockedModels.isEmpty())
     		{
     	    	float rmx = ((mx - x1) * 2) / sizeW - 1;
     	    	float rmy = 1 - ((my - y1) * 2) / sizeH;
@@ -114,11 +117,19 @@ public class ComponentModelViewer extends Component
             	p1.mul(1 / p1.w());
             	Vector4f p2 = MathUtils.toVector4f(inverse.transform(new Vector4d(rmx, rmy, 1, 1)));
             	p2.mul(1 / p2.w());
-            	main.trace = model.rayTrace(p1.x(), p1.y(), p1.z(), p2.x() - p1.x(), p2.y() - p1.y(), p2.z() - p1.z(), model.getPose(project.getAnimation() == null ? new AnimationState[0] : new AnimationState[] {main.animState}));
-            	if (main.getEditorMode() == EditorMode.TEXTURE && main.trace instanceof TextureRaytraceResult)
+            	ExtendedAnimationState[] states = project.getStates();
+            	float dx = p2.x() - p1.x(), dy = p2.y() - p1.y(), dz = p2.z() - p1.z();
+            	RaytraceResult trace = model == null ? null : model.rayTrace(p1.x(), p1.y(), p1.z(), dx, dy, dz, model.getPose(states));
+            	for (IModel<?, ?> lockedModel : project.lockedModels.keySet()) if (lockedModel != model)
             	{
-            		TextureRaytraceResult texRes = (TextureRaytraceResult) main.trace;
-            		if (texRes.tex != null)
+            		RaytraceResult res = lockedModel.rayTrace(p1.x(), p1.y(), p1.z(), dx, dy, dz, lockedModel.getPose(states));
+            		if (res != null && (trace == null || trace.m > res.m)) trace = res;
+            	}
+            	main.trace = trace;
+            	if (main.getEditorMode() == EditorMode.TEXTURE && trace instanceof TextureRaytraceResult)
+            	{
+            		TextureRaytraceResult texRes = (TextureRaytraceResult) trace;
+            		if (texRes.tex != null && texRes.tex == project.getTexture()) //TODO overlay on other textures
             		{
                 		if (main.getOverlay().w != texRes.tex.w || main.getOverlay().h != texRes.tex.h) main.getOverlay().setSize(texRes.tex.w, texRes.tex.h);
                 		Main.instance.tool.drawOnOverlay(main.getOverlay(), texRes.u, texRes.v);
@@ -127,6 +138,19 @@ public class ComponentModelViewer extends Component
     		}
         	else main.trace = null;
     	}
+	}
+	
+	public void renderModel(IModel<?, ?> model, AnimationState[] states, Runnable setTex)
+	{
+    	Map<String, Matrix4d> map = model.getPose(states);
+    	model.render(map, setTex);
+	}
+	
+	public void renderBones(IModel<?, ?> model, AnimationState[] states)
+	{
+    	ApplicationState state = Main.instance.state;
+    	Map<String, Matrix4d> map = model.getPose(states);
+		for (Bone<?> bone : model.getRootBones()) RenderUtil.renderSkeleton(bone, map, state.showNodes(), state.showBones());
 	}
 
 	@Override
@@ -160,31 +184,44 @@ public class ComponentModelViewer extends Component
 		shader.updateView();
 		shader.updateProjection();
     	Main.listGLErrors("pre-render");
-    	IModel model = project.getModel();
+    	IModel<?, ?> model = project.getModel();
+    	ExtendedAnimationState[] states = project.getStates();
     	if (model != null)
     	{
-        	Map<String, Matrix4d> map = model.getPose(new AnimationState[] {main.animState});
+        	Map<String, Matrix4d> map = model.getPose(states);
         	project.bindTex();
     		if (main.getEditorMode() == EditorMode.TEXTURE) main.shader.setOverlayTexture(main.getOverlay());
         	model.render(map, () -> project.bindTex());
     		if (main.getEditorMode() == EditorMode.TEXTURE) main.shader.setOverlayTexture(null);
         	project.unbindTex();
-    		if (state.showNodes() || state.showBones())
-    		{
-    			glClear(GL_DEPTH_BUFFER_BIT);
-    			for (Bone bone : model.getRootBones()) RenderUtil.renderSkeleton(bone, map, state.showNodes(), state.showBones());
-    		}
     	}
-    	else if (state.showNodes() || state.showBones()) //skeleton view
-    	{
-    		ISkeleton skeleton = Main.instance.project.getSkeleton();
-    		if (skeleton != null)
+    	project.lockedModels.forEach((m, tex) -> {
+    		if (m != model)
     		{
-            	Map<String, Matrix4d> map = skeleton.getPose(new AnimationState[] {main.animState});
-    			for (Bone bone : skeleton.getRootBones()) RenderUtil.renderSkeleton(bone, map, state.showNodes(), state.showBones());
+        		if (tex != null) tex.bind();
+        		else Main.instance.textureManager.unbindTexture();
+        		renderModel(m, states, tex == null ? Main.instance.textureManager::unbindTexture : tex::bind);
     		}
-    	}
+    	});
+		if (state.showNodes() || state.showBones())
+		{
+			glClear(GL_DEPTH_BUFFER_BIT);
+	    	if (model != null) renderBones(model, states);
+	    	else
+	    	{
+	    		Skeleton skeleton = Main.instance.project.getSkeleton();
+	    		if (skeleton != null)
+	    		{
+	            	Map<String, Matrix4d> map = skeleton.getPose(project.getStates());
+	    			for (Bone.Actual bone : skeleton.getRootBones()) RenderUtil.renderSkeleton(bone, map, state.showNodes(), state.showBones());
+	    		}
+	    	}
+	    	project.lockedModels.keySet().forEach(m -> {
+	    		if (m != model) renderBones(m, states);
+	    	});
+		}
         glDisable(GL_CULL_FACE);
+    	Main.listGLErrors("post-render");
 		
 		//TODO rendering
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -202,6 +239,7 @@ public class ComponentModelViewer extends Component
         glDepthFunc(GL_LEQUAL);
         glBindTexture(GL_TEXTURE_2D, fb.frameBufferTex);
 		renderFB.render();
+    	Main.listGLErrors("post-post-render");
 	}
 	
 	private double prevU, prevV;
@@ -219,8 +257,8 @@ public class ComponentModelViewer extends Component
 		{
 			Main main = Main.instance;
 			Project project = main.project;
-			IModel model = project.getModel();
-			if (model != null)
+			IModel<?, ? extends RenderObjectComponents<?>> model = project.getModel();
+			if (model != null || !project.lockedModels.isEmpty())
 			{
 				if (main.getEditorMode() == EditorMode.TEXTURE || button == MouseButtons.LEFT)
 				{
@@ -230,10 +268,34 @@ public class ComponentModelViewer extends Component
 			    	p1.mul(1 / p1.w());
 			    	Vector4f p2 = MathUtils.toVector4f(inverse.transform(new Vector4d(rmx, rmy, 1, 1)));
 			    	p2.mul(1 / p2.w());
-			    	RaytraceResult trace = model.rayTrace(p1.x(), p1.y(), p1.z(), p2.x() - p1.x(), p2.y() - p1.y(), p2.z() - p1.z(), model.getPose(new AnimationState[] {main.animState}));
+	            	float dx = p2.x() - p1.x(), dy = p2.y() - p1.y(), dz = p2.z() - p1.z();
+	            	ExtendedAnimationState[] states = project.getStates();
+	            	IModel<?, ? extends RenderObjectComponents<?>> clicked = null;
+			    	RaytraceResult trace = null;
+			    	if (model != null)
+			    	{
+			    		trace = model.rayTrace(p1.x(), p1.y(), p1.z(), dx, dy, dz, model.getPose(states));
+				    	if (trace != null) clicked = model;
+			    	}
+	            	for (IModel<?, ? extends RenderObjectComponents<?>> lockedModel : project.lockedModels.keySet()) if (lockedModel != model)
+	            	{
+				    	RaytraceResult res = lockedModel.rayTrace(p1.x(), p1.y(), p1.z(), dx, dy, dz, lockedModel.getPose(states));
+	            		if (res != null && (trace == null || trace.m > res.m))
+	            		{
+	            			trace = res;
+				    		clicked = lockedModel;
+	            		}
+	            	}
 			    	IEditable editable = main.getEditing();
 			    	if (trace != null)
 			    	{
+			    		if (clicked != model) //clicked on a locked model
+			    		{
+			    			project.lockedModels.put(model, project.getTexture());
+			    			project.setModel(clicked);
+			    			Texture tex = project.lockedModels.get(clicked);
+			    			if (tex != project.getTexture()) project.setTexture(tex);
+			    		}
 			    		if (main.getEditorMode() == EditorMode.TEXTURE && trace instanceof TextureRaytraceResult)
 			    		{
 			    			TextureRaytraceResult texRes = (TextureRaytraceResult) trace;
@@ -273,8 +335,8 @@ public class ComponentModelViewer extends Component
 		else
 		{
 			Project project = Main.instance.project;
-			IModel model = project.getModel();
-			if (model != null)
+			IModel<?, ? extends RenderObjectComponents<?>> model = project.getModel();
+			if (model != null || !project.lockedModels.isEmpty())
 			{
 				if (Main.instance.getEditorMode() == EditorMode.TEXTURE)
 				{
@@ -284,8 +346,25 @@ public class ComponentModelViewer extends Component
 			    	p1.mul(1 / p1.w());
 			    	Vector4f p2 = MathUtils.toVector4f(inverse.transform(new Vector4d(rmx, rmy, 1, 1)));
 			    	p2.mul(1 / p2.w());
-			    	RaytraceResult trace = model.rayTrace(p1.x(), p1.y(), p1.z(), p2.x() - p1.x(), p2.y() - p1.y(), p2.z() - p1.z(), model.getPose(new AnimationState[] {Main.instance.animState}));
-			    	if (trace != null)
+	            	float dx = p2.x() - p1.x(), dy = p2.y() - p1.y(), dz = p2.z() - p1.z();
+	            	ExtendedAnimationState[] states = project.getStates();
+	            	IModel<?, ? extends RenderObjectComponents<?>> clicked = null;
+			    	RaytraceResult trace = null;
+			    	if (model != null)
+			    	{
+			    		trace = model.rayTrace(p1.x(), p1.y(), p1.z(), dx, dy, dz, model.getPose(states));
+				    	if (trace != null) clicked = model;
+			    	}
+	            	for (IModel<?, ? extends RenderObjectComponents<?>> lockedModel : project.lockedModels.keySet()) if (lockedModel != model)
+	            	{
+				    	RaytraceResult t = lockedModel.rayTrace(p1.x(), p1.y(), p1.z(), dx, dy, dz, model.getPose(states));
+				    	if (t != null && (trace == null || trace.m > t.m))
+				    	{
+				    		trace = t;
+				    		clicked = lockedModel;
+				    	}
+	            	}
+			    	if (trace != null && clicked == model)
 			    	{
 			    		if (trace instanceof TextureRaytraceResult)
 			    		{
@@ -312,7 +391,7 @@ public class ComponentModelViewer extends Component
 		else
 		{
 			Project project = Main.instance.project;
-			IModel model = project.getModel();
+			IModel<?, ?> model = project.getModel();
 			if (model != null)
 			{
 				if (Main.instance.getEditorMode() == EditorMode.TEXTURE)
@@ -323,7 +402,7 @@ public class ComponentModelViewer extends Component
 			    	p1.mul(1 / p1.w());
 			    	Vector4f p2 = MathUtils.toVector4f(inverse.transform(new Vector4d(rmx, rmy, 1, 1)));
 			    	p2.mul(1 / p2.w());
-			    	RaytraceResult trace = model.rayTrace(p1.x(), p1.y(), p1.z(), p2.x() - p1.x(), p2.y() - p1.y(), p2.z() - p1.z(), model.getPose(new AnimationState[] {Main.instance.animState}));
+			    	RaytraceResult trace = model.rayTrace(p1.x(), p1.y(), p1.z(), p2.x() - p1.x(), p2.y() - p1.y(), p2.z() - p1.z(), model.getPose(project.getStates()));
 			    	if (trace != null)
 			    	{
 			    		if (trace instanceof TextureRaytraceResult)
@@ -433,7 +512,7 @@ public class ComponentModelViewer extends Component
 		return false;
 	}
 	
-	public void fix(Bone parent)
+	public void fix(Bone<?> parent)
 	{
 		parent.children.forEach(bone -> {
 			Vector3f trans = bone.defaultTransform.translation;

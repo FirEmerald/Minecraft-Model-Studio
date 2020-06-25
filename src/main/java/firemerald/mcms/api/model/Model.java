@@ -8,61 +8,62 @@ import java.util.Map;
 
 import org.joml.Matrix4d;
 
+import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.model.IModelEditable;
 
-public class Model implements IModel
+public abstract class Model<M extends Model<M, T>, T extends Bone<T>> implements IModel<M, T>
 {
-	private Bone base;
-	public final List<Bone> bones = new ArrayList<>();
+	private T base;
+	public final List<T> bones = new ArrayList<>();
 	
 	public Model() {}
 	
-	public Model(Bone base)
+	public Model(T base)
 	{
 		setBase(base);
 	}
 
 	@Override
-	public List<Bone> getRootBones()
+	public List<T> getRootBones()
 	{
 		return Collections.singletonList(base);
 	}
 
 	@Override
-	public Collection<Bone> getAllBones()
+	public Collection<T> getAllBones()
 	{
 		return bones;
 	}
 	
 	@Override
-	public boolean addRootBone(Bone bone, boolean updateBoneList)
+	public boolean addRootBone(T bone, boolean updateBoneList)
 	{
 		return false;
 	}
 	
-	public Bone getBase()
+	public T getBase()
 	{
 		return base;
 	}
 	
-	public void setBase(Bone base)
+	public void setBase(T base)
 	{
 		bones.clear();
 		addBone(this.base = base);
 	}
 	
-	protected void addBone(Bone bone)
+	protected void addBone(T bone)
 	{
 		bones.add(bone);
-		for (Bone bone2 : bone.children) addBone(bone2);
+		for (T bone2 : bone.children) addBone(bone2);
 	}
 	
 	@Override
 	public void render(Map<String, Matrix4d> map, Runnable defaultTexture)
 	{
-		base.render(map, defaultTexture);
+		if (base instanceof RenderBone) ((RenderBone<?>) base).render(map, defaultTexture);
 	}
 
 	@Override
@@ -74,14 +75,18 @@ public class Model implements IModel
 	@Override
 	public RaytraceResult rayTrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> transformations, Matrix4d root)
 	{
-		Matrix4d transformation = transformations.get(base.name);
-		if (transformation == null) transformation = new Matrix4d();
-		transformation = root.mul(transformation, new Matrix4d());
-		return base.raytrace(fx, fy, fz, dx, dy, dz, transformations, transformation);
+		if (base instanceof ObjectBone)
+		{
+			Matrix4d transformation = transformations.get(base.name);
+			if (transformation == null) transformation = new Matrix4d();
+			transformation = root.mul(transformation, new Matrix4d());
+			return ((ObjectBone<?>) base).raytrace(fx, fy, fz, dx, dy, dz, transformations, transformation);
+		}
+		else return null;
 	}
 
 	@Override
-	public Collection<? extends IModelEditable> getChildren()
+	public Collection<T> getChildren()
 	{
 		return Collections.singleton(base);
 	}
@@ -111,9 +116,18 @@ public class Model implements IModel
 	public void removeChild(IModelEditable child) {}
 
 	@Override
+	public int getChildIndex(IModelEditable child)
+	{
+		return -1;
+	}
+
+	@Override
+	public void addChildAt(IModelEditable child, int index) {}
+
+	@Override
 	public boolean isNameUsed(String name)
 	{
-		for (Bone bone : this.bones) if (bone.name.equals(name)) return true;
+		for (T bone : this.bones) if (bone.name.equals(name)) return true;
 		return false;
 	}
 
@@ -130,8 +144,8 @@ public class Model implements IModel
 		base = null;
 		for (AbstractElement el : root.getChildren())
 		{
-			Bone base = Bone.construct(el.getName(), null, el, 1);
-			if (base != null) this.base = base;
+			base = this.makeNew(el.getString("name", "unnamed bone"), new Transformation(el, 1), null);
+			base.loadFromXML(el, 1);
 		}
 		updateBonesList();
 	}
@@ -143,20 +157,14 @@ public class Model implements IModel
 	}
 
 	@Override
-	public ISkeleton getSkeleton()
+	public Skeleton getSkeleton()
 	{
 		Skeleton skeleton = new Skeleton();
-		Bone root = new Bone(base.name, base.defaultTransform, null);
+		Bone.Actual root = new Bone.Actual(base.name, base.defaultTransform, null);
 		skeleton.addRootBone(root, false);
 		processToSkeleton(root, base);
 		skeleton.updateBonesList();
 		return skeleton;
-	}
-	
-	@Override
-	public void processToSkeleton(Bone addTo, Bone addFrom)
-	{
-		addFrom.children.forEach(bone -> processToSkeleton(new Bone(bone.name, bone.defaultTransform, addTo), bone));
 	}
 
 	@Override
@@ -166,9 +174,11 @@ public class Model implements IModel
 	}
 
 	@Override
-	public Model cloneObject()
+	public M cloneObject()
 	{
-		Bone newBase = this.base.cloneObject(null);
-		return new Model(newBase);
+		T newBase = base.cloneObject(null);
+		return newModel(newBase);
 	}
+	
+	public abstract M newModel(T base);
 }

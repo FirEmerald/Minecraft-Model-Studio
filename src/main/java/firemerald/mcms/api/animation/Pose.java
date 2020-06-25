@@ -50,9 +50,9 @@ public class Pose implements IAnimation
 	}
 	
 	@Override
-	public Map<String, Matrix4d> getBones(Map<String, Matrix4d> map, float frame, Collection<Bone> bones)
+	public Map<String, Matrix4d> getBones(Map<String, Matrix4d> map, float frame, Collection<? extends Bone<?>> bones)
 	{
-		for (Bone bone : bones)
+		for (Bone<?> bone : bones)
 		{
 			Transformation transform = pose.get(bone.getName());
 			if (transform != null)
@@ -145,5 +145,5 @@ public class Pose implements IAnimation
 	}
 
 	@Override
-	public void reverseAnimation(IRigged<?> rig) {} //nothing to do
+	public void reverseAnimation(IRigged<?, ?> rig) {} //nothing to do
 }

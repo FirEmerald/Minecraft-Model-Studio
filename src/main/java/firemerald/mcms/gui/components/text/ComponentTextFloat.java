@@ -1,106 +1,76 @@
 package firemerald.mcms.gui.components.text;
 
-import java.util.function.Consumer;
-
 import firemerald.mcms.texture.Color;
+import firemerald.mcms.util.FloatConsumer;
 import firemerald.mcms.util.font.FontRenderer;
 
 public class ComponentTextFloat extends ComponentText
 {
+	private float initialVal;
 	protected float val;
 	protected float min, max;
 	protected boolean error = false;
-	private final Consumer<Float> onValueChange;
+	private final FloatConsumer onValueChange;
 	private final String ambient;
 	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, float min, float max, Consumer<Float> onValueChange)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, float min, float max, FloatConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, val, min, max, onValueChange, null);
 	}
 	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float min, float max, Consumer<Float> onValueChange)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float min, float max, FloatConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, 0, min, max, onValueChange, null);
 	}
 	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, Consumer<Float> onValueChange)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, FloatConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, val, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, onValueChange, null);
 	}
 	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, Consumer<Float> onValueChange)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, FloatConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, 0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, onValueChange, null);
 	}
 	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, float min, float max)
-	{
-		this(x1, y1, x2, y2, font, val, min, max, null, null);
-	}
-	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float min, float max)
-	{
-		this(x1, y1, x2, y2, font, 0, min, max, (String) null);
-	}
-	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val)
-	{
-		this(x1, y1, x2, y2, font, val, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, (String) null);
-	}
-	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font)
-	{
-		this(x1, y1, x2, y2, font, 0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, (String) null);
-	}
-	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, float min, float max, Consumer<Float> onValueChange, String ambient)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, float min, float max, FloatConsumer onValueChange, String ambient)
 	{
 		super(x1, y1, x2, y2, font, null);
 		setBounds(min, max);
-		setVal(val);
+		this.setValNoUpdate(val);
 		this.onValueChange = onValueChange;
 		this.ambient = ambient;
 	}
 	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float min, float max, Consumer<Float> onValueChange, String ambient)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float min, float max, FloatConsumer onValueChange, String ambient)
 	{
 		this(x1, y1, x2, y2, font, 0, min, max, onValueChange, ambient);
 	}
 	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, Consumer<Float> onValueChange, String ambient)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, FloatConsumer onValueChange, String ambient)
 	{
 		this(x1, y1, x2, y2, font, val, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, onValueChange, ambient);
 	}
 	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, Consumer<Float> onValueChange, String ambient)
+	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, FloatConsumer onValueChange, String ambient)
 	{
 		this(x1, y1, x2, y2, font, 0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, onValueChange, ambient);
 	}
 	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, float min, float max, String ambient)
+	@Override
+	public boolean shouldUndo()
 	{
-		this(x1, y1, x2, y2, font, val, min, max, null, ambient);
+		return super.shouldUndo() || this.onValueChange != null;
 	}
 	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float min, float max, String ambient)
+	public void setValNoUpdate(float val)
 	{
-		this(x1, y1, x2, y2, font, 0, min, max, ambient);
-	}
-	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, float val, String ambient)
-	{
-		this(x1, y1, x2, y2, font, val, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, ambient);
-	}
-	
-	public ComponentTextFloat(int x1, int y1, int x2, int y2, FontRenderer font, String ambient)
-	{
-		this(x1, y1, x2, y2, font, 0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, ambient);
+		this.setTextNoUpdate(Float.toString(this.initialVal = this.val = val));
 	}
 	
 	public void setVal(float val)
 	{
-		this.val = val;
-		this.setText(Float.toString(val));
+		this.setText(Float.toString(this.initialVal = this.val = val));
 	}
 	
 	public float getVal()
@@ -127,9 +97,9 @@ public class ComponentTextFloat extends ComponentText
 	}
 	
 	@Override
-	public void onTextUpdate()
+	public void onTextUpdateAction()
 	{
-		super.onTextUpdate();
+		super.onTextUpdateAction();
 		try
 		{
 			val = Float.parseFloat(text);
@@ -167,5 +137,29 @@ public class ComponentTextFloat extends ComponentText
 	public Color getTextColor()
 	{
 		return text.length() == 0 && ambient != null ? new Color(super.getTextColor(), .25f) : error ? Color.RED : super.getTextColor();
+	}
+
+	@Override
+	public Runnable getUndo()
+	{
+		final Runnable sup = super.getUndo();
+		final FloatConsumer onValueChange = this.onValueChange;
+		final float initialVal = this.initialVal;
+		return () -> {
+			sup.run();
+			if (onValueChange != null) onValueChange.accept(initialVal);
+		};
+	}
+
+	@Override
+	public Runnable getRedo()
+	{
+		final Runnable sup = super.getRedo();
+		final FloatConsumer onValueChange = this.onValueChange;
+		final float val = this.val;
+		return () -> {
+			sup.run();
+			if (onValueChange != null) onValueChange.accept(val);
+		};
 	}
 }

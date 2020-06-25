@@ -18,16 +18,22 @@
 		</Console>
 		<RollingFile name="Latest" fileName="${directory}latest.log" filePattern="${directory}log-$${date:MM-dd-yyyy}.%i.log.gz">
 			<PatternLayout pattern="${pattern}"/>
+			<ThresholdFilter level="INFO"/>
 			<Policies>
 				<OnStartupTriggeringPolicy/>
 			</Policies>
 		</RollingFile>
+		<File name="Debug" fileName="${directory}debug.log" append="false">
+			<ThresholdFilter level="DEBUG"/>
+			<PatternLayout pattern="${pattern}"/>
+		</File>
 	</Appenders>
 	<Loggers>
 		<Root level="all">
 			<AppenderRef ref="STDOUT"/>
 			<AppenderRef ref="STDERR"/>
 			<AppenderRef ref="Latest"/>
+			<AppenderRef ref="Debug"/>
 		</Root>
 		<Logger name="STDOUT" level="all"/>
 		<Logger name="STDERR" level="all"/>

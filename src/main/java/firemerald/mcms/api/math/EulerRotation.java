@@ -42,26 +42,23 @@ public abstract class EulerRotation implements IRotation
 	private ComponentIncrementDouble rotZP, rotZS;
 	
 	@Override
-	public int onSelect(EditorPanes editorPanes, int editorY, Runnable preUpdate, Runnable onUpdate)
+	public int onSelect(EditorPanes editorPanes, int editorY, Runnable onUpdate)
 	{
 		GuiElementContainer editor = editorPanes.editor.container;
 		int editorX = editorPanes.editor.minX;
 		editor.addElement(rotXT     = new ComponentTextDouble(     editorX      , editorY, editorX + 90 , editorY + 20, Main.instance.fontMsg, vec.x(), -180, 180, value -> {
-			preUpdate.run();
 			vec.x = value;
 			onUpdate.run();
 		}));
 		editor.addElement(rotXP     = new ComponentIncrementDouble(editorX + 90 , editorY                             , rotXT, 1));
 		editor.addElement(rotXS     = new ComponentIncrementDouble(editorX + 90 , editorY + 10                        , rotXT, -1));
 		editor.addElement(rotYT     = new ComponentTextDouble(     editorX + 100, editorY, editorX + 190, editorY + 20, Main.instance.fontMsg, vec.y(), -180, 180, value -> {
-			preUpdate.run();
 			vec.y = value;
 			onUpdate.run();
 		}));
 		editor.addElement(rotYP     = new ComponentIncrementDouble(editorX + 190, editorY                             , rotYT, 1));
 		editor.addElement(rotYS     = new ComponentIncrementDouble(editorX + 190, editorY + 10                        , rotYT, -1));
 		editor.addElement(rotZT     = new ComponentTextDouble(     editorX + 200, editorY, editorX + 290, editorY + 20, Main.instance.fontMsg, vec.z(), -180, 180, value -> {
-			preUpdate.run();
 			vec.z = value;
 			onUpdate.run();
 		}));

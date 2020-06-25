@@ -20,15 +20,15 @@ public class ComponentPaneRGB extends ComponentPaneColorPicker
 		this.addElement(rgbPicker = new ColorPickerRGB(0, 0, rgb));
 		FontRenderer font = Main.instance.fontMsg;
 		this.addElement(new ComponentFloatingLabel(160, 00, 172, 20, font, "R"));
-		this.addElement(rRGB = new ComponentTextInt(172, 0, 206, 20, font, 0, 255));
+		this.addElement(rRGB = new ComponentTextInt(172, 0, 206, 20, font, 0, 255, null));
 		this.addElement(new ComponentIncrementInt(206, 0, rRGB, 1));
 		this.addElement(new ComponentIncrementInt(206, 10, rRGB, -1));
 		this.addElement(new ComponentFloatingLabel(160, 20, 172, 40, font, "G"));
-		this.addElement(gRGB = new ComponentTextInt(172, 20, 206, 40, font, 0, 255));
+		this.addElement(gRGB = new ComponentTextInt(172, 20, 206, 40, font, 0, 255, null));
 		this.addElement(new ComponentIncrementInt(206, 20, gRGB, 1));
 		this.addElement(new ComponentIncrementInt(206, 30, gRGB, -1));
 		this.addElement(new ComponentFloatingLabel(160, 40, 172, 60, font, "B"));
-		this.addElement(bRGB = new ComponentTextInt(172, 40, 206, 60, font, 0, 255));
+		this.addElement(bRGB = new ComponentTextInt(172, 40, 206, 60, font, 0, 255, null));
 		this.addElement(new ComponentIncrementInt(206, 40, bRGB, 1));
 		this.addElement(new ComponentIncrementInt(206, 50, bRGB, -1));
 		setColor(rgb);

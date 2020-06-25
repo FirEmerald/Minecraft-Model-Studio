@@ -36,7 +36,7 @@ public class KeyListener implements java.awt.event.KeyListener
 		{
 			if (entry.getValue().isPressed(this.window, key, mods))
 			{
-				window.actions.add(() -> entry.getKey().action.run());
+				window.actions.add(() -> main.doAction(entry.getKey()));
 				return;
 			}
 		}

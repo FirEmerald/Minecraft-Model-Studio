@@ -1,64 +1,55 @@
 package firemerald.mcms.gui.components.text;
 
-import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.util.font.FontRenderer;
 
 public class ComponentTextDouble extends ComponentText
 {
+	private double initialVal;
 	protected double val;
 	protected double min, max;
 	protected boolean error = false;
-	private final Consumer<Double> onValueChange;
+	private final DoubleConsumer onValueChange;
 	
-	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, double val, double min, double max, Consumer<Double> onValueChange)
+	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, double val, double min, double max, DoubleConsumer onValueChange)
 	{
 		super(x1, y1, x2, y2, font, null);
 		setBounds(min, max);
-		setVal(val);
+		this.setValNoUpdate(val);
 		this.onValueChange = onValueChange;
 	}
 	
-	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, double min, double max, Consumer<Double> onValueChange)
+	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, double min, double max, DoubleConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, 0, min, max, onValueChange);
 	}
 	
-	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, double val, Consumer<Double> onValueChange)
+	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, double val, DoubleConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, val, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, onValueChange);
 	}
 	
-	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, Consumer<Double> onValueChange)
+	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, DoubleConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, 0, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, onValueChange);
 	}
 	
-	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, double val, double min, double max)
+	@Override
+	public boolean shouldUndo()
 	{
-		this(x1, y1, x2, y2, font, val, min, max, null);
+		return super.shouldUndo() || this.onValueChange != null;
 	}
-	
-	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, double min, double max)
+
+	public void setValNoUpdate(double val)
 	{
-		this(x1, y1, x2, y2, font, 0, min, max);
-	}
-	
-	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font, double val)
-	{
-		this(x1, y1, x2, y2, font, val, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
-	}
-	
-	public ComponentTextDouble(int x1, int y1, int x2, int y2, FontRenderer font)
-	{
-		this(x1, y1, x2, y2, font, 0, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+		this.setTextNoUpdate(Double.toString(this.initialVal = this.val = val));
 	}
 	
 	public void setVal(double val)
 	{
-		this.val = val;
-		this.setText(Double.toString(val));
+		this.setText(Double.toString(this.initialVal = this.val = val));
 	}
 	
 	public double getVal()
@@ -85,9 +76,9 @@ public class ComponentTextDouble extends ComponentText
 	}
 	
 	@Override
-	public void onTextUpdate()
+	public void onTextUpdateAction()
 	{
-		super.onTextUpdate();
+		super.onTextUpdateAction();
 		try
 		{
 			val = Double.parseDouble(text);
@@ -114,5 +105,29 @@ public class ComponentTextDouble extends ComponentText
 	public Color getTextColor()
 	{
 		return error ? Color.RED : getTheme().getTextColor();
+	}
+
+	@Override
+	public Runnable getUndo()
+	{
+		final Runnable sup = super.getUndo();
+		final DoubleConsumer onValueChange = this.onValueChange;
+		final double initialVal = this.initialVal;
+		return () -> {
+			sup.run();
+			if (onValueChange != null) onValueChange.accept(initialVal);
+		};
+	}
+
+	@Override
+	public Runnable getRedo()
+	{
+		final Runnable sup = super.getRedo();
+		final DoubleConsumer onValueChange = this.onValueChange;
+		final double val = this.val;
+		return () -> {
+			sup.run();
+			if (onValueChange != null) onValueChange.accept(val);
+		};
 	}
 }

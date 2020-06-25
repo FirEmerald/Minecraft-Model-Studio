@@ -1,5 +1,6 @@
-package firemerald.mcms.api.model;
+package firemerald.mcms.api.model.effects;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.joml.Matrix4d;
 
 import firemerald.mcms.Main;
@@ -8,6 +9,7 @@ import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.math.EulerZYXRotation;
 import firemerald.mcms.api.math.IRotation;
 import firemerald.mcms.api.math.QuaternionRotation;
+import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.SelectorButton;
@@ -18,25 +20,14 @@ import firemerald.mcms.model.IEditableParent;
 
 public abstract class PosedBoneEffect extends BoneEffect
 {
-	public final Transformation transform;
-
-	public PosedBoneEffect(String name, Bone parent, Transformation transform)
+	public PosedBoneEffect(String name, @Nullable RenderBone<?> parent, Transformation transform)
+	{
+		super(name, parent, transform);
+	}
+	
+	public PosedBoneEffect(String name, @Nullable RenderBone<?> parent)
 	{
 		super(name, parent);
-		this.transform = transform;
-	}
-
-	@Override
-	public Transformation getDefaultTransformation()
-	{
-		return this.transform;
-	}
-
-	public Matrix4d getTransformation()
-	{
-		Matrix4d mat = transform.getTransformation();
-		if (parent != null) parent.getTransformation().mul(mat, mat);
-		return mat;
 	}
 	
 	@Override
@@ -56,9 +47,9 @@ public abstract class PosedBoneEffect extends BoneEffect
 	@Override
 	public void movedTo(IEditableParent oldParent, IEditableParent newParent)
 	{
-		this.parent = oldParent instanceof Bone ? (Bone) oldParent : null;
+		this.parent = oldParent instanceof RenderBone<?> ? (RenderBone<?>) oldParent : null;
 		Matrix4d targetTransform = getTransformation();
-		this.parent = newParent instanceof Bone ? (Bone) newParent : null;
+		this.parent = newParent instanceof RenderBone<?> ? (RenderBone<?>) newParent : null;
 		Matrix4d parentTransform = parent == null ? new Matrix4d() : parent.getTransformation();
 		Matrix4d newTransform = parentTransform.invert().mul(targetTransform);
 		this.transform.setFromMatrix(newTransform);
@@ -71,7 +62,6 @@ public abstract class PosedBoneEffect extends BoneEffect
 	
 	public void tX(float x)
 	{
-		Main.instance.project.onAction();
 		transform.translation.x = x;
 	}
 	
@@ -82,7 +72,6 @@ public abstract class PosedBoneEffect extends BoneEffect
 	
 	public void tY(float y)
 	{
-		Main.instance.project.onAction();
 		transform.translation.y = y;
 	}
 	
@@ -93,7 +82,6 @@ public abstract class PosedBoneEffect extends BoneEffect
 	
 	public void tZ(float z)
 	{
-		Main.instance.project.onAction();
 		transform.translation.z = z;
 	}
 
@@ -140,29 +128,25 @@ public abstract class PosedBoneEffect extends BoneEffect
 				this.transform.rotation instanceof QuaternionRotation ? names[2] : "Unknown rotation"
 				, names, (ind, str) -> {
 					this.onDeselect(editorPanes);
-					IRotation old = transform.rotation;
 					switch (ind)
 					{
 					case 0:
-						Main.instance.project.onAction();
-						transform.rotation = IRotation.NONE;
+						transform.setRotationTo(this, IRotation.NONE);
 						break;
 					case 1:
-						Main.instance.project.onAction();
-						(transform.rotation = new EulerZYXRotation()).setFromQuaternion(old.getQuaternion());
+						transform.setRotationTo(this, new EulerZYXRotation());
 						break;
 					//case 2:
 					//	(defaultTransform.rotation = new EulerXYZRotation()).setFromQuaternion(old.getQuaternion());
 					//	break;
 					case 2:
-						Main.instance.project.onAction();
-						(transform.rotation = new QuaternionRotation()).setFromQuaternion(old.getQuaternion());
+						transform.setRotationTo(this, new QuaternionRotation());
 						break;
 					}
 					this.onSelect(editorPanes, origY);
 				}));
 		editorY += 20;
-		return this.transform.rotation.onSelect(editorPanes, editorY, Main.instance.project::onAction, () -> {});
+		return this.transform.rotation.onSelect(editorPanes, editorY, () -> {});
 	}
 
 	@Override

@@ -1,6 +1,7 @@
 package firemerald.mcms.gui.main.components.animation;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.Project.ExtendedAnimationState;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.math.EulerZYXRotation;
 import firemerald.mcms.api.math.IRotation;
@@ -16,14 +17,15 @@ import firemerald.mcms.model.EditorPanes;
 import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.util.EnumPlaybackMode;
 import firemerald.mcms.util.IEditable;
+import firemerald.mcms.util.history.HistoryActionChangeFloatValue;
 
 public class ComponentPoseFrame extends ElementButton implements IEditable
 {
 	public final String name;
-	public final Bone bone;
+	public final Bone<?> bone;
 	public final Transformation transform;
 	
-	public ComponentPoseFrame(int x1, int y1, int x2, int y2, int outline, int radius, String name, Bone bone, Transformation transform)
+	public ComponentPoseFrame(int x1, int y1, int x2, int y2, int outline, int radius, String name, Bone<?> bone, Transformation transform)
 	{
 		super(x1, y1, x2, y2, (w, h, theme) -> theme.genRoundedBox(w.intValue(), h.intValue(), outline, radius), null);
 		this.name = name;
@@ -31,8 +33,9 @@ public class ComponentPoseFrame extends ElementButton implements IEditable
 		this.transform = transform;
 		this.onRelease = () -> {
 			Main.instance.setEditing(this);
-			Main.instance.animState.time = 0;
-			Main.instance.animMode = EnumPlaybackMode.PAUSED;
+			ExtendedAnimationState state = Main.instance.project.getAnimationState();
+			state.time = 0;
+			state.animMode = EnumPlaybackMode.PAUSED;
 		};
 	}
 
@@ -63,19 +66,19 @@ public class ComponentPoseFrame extends ElementButton implements IEditable
 		editor.addElement(labelPos  = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20 , Main.instance.fontMsg, "Position"));
 		editorY += 20;
 		editor.addElement(posXT     = new ComponentTextFloat(     editorX      , editorY, editorX + 90 , editorY + 20 , Main.instance.fontMsg, transform.translation.x, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> {
-			Main.instance.project.onAction();
+			Main.instance.project.onAction(new HistoryActionChangeFloatValue(transform.translation.x, () -> transform.translation.x, val -> transform.translation.x = val));
 			transform.translation.x = value;
 		}));
 		editor.addElement(posXP     = new ComponentIncrementFloat(editorX + 90 , editorY                              , posXT, 1));
 		editor.addElement(posXS     = new ComponentIncrementFloat(editorX + 90 , editorY + 10                         , posXT, -1));
 		editor.addElement(posYT     = new ComponentTextFloat(     editorX + 100, editorY , editorX + 190, editorY + 20, Main.instance.fontMsg, transform.translation.y, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> {
-			Main.instance.project.onAction();
+			Main.instance.project.onAction(new HistoryActionChangeFloatValue(transform.translation.y, () -> transform.translation.y, val -> transform.translation.y = val));
 			transform.translation.y = value;
 		}));
 		editor.addElement(posYP     = new ComponentIncrementFloat(editorX + 190, editorY                              , posYT, 1));
 		editor.addElement(posYS     = new ComponentIncrementFloat(editorX + 190, editorY + 10                         , posYT, -1));
 		editor.addElement(posZT     = new ComponentTextFloat(     editorX + 200, editorY , editorX + 290, editorY + 20, Main.instance.fontMsg, transform.translation.z, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> {
-			Main.instance.project.onAction();
+			Main.instance.project.onAction(new HistoryActionChangeFloatValue(transform.translation.z, () -> transform.translation.z, val -> transform.translation.z = val));
 			transform.translation.z = value;
 		}));
 		editor.addElement(posZP     = new ComponentIncrementFloat(editorX + 290, editorY                              , posZT, 1));
@@ -114,7 +117,7 @@ public class ComponentPoseFrame extends ElementButton implements IEditable
 					this.onSelect(editorPanes, origY);
 				}));
 		editorY += 20;
-		return this.transform.rotation.onSelect(editorPanes, editorY, Main.instance.project::onAction, () -> {});
+		return this.transform.rotation.onSelect(editorPanes, editorY, () -> {});
 	}
 	
 	public int addExtra(EditorPanes editorPanes, int editorY)

@@ -20,15 +20,15 @@ public class ComponentPaneHSV extends ComponentPaneColorPicker
 		this.addElement(hsvPicker = new ColorPickerHSV(0, 0, hsv));
 		FontRenderer font = Main.instance.fontMsg;
 		this.addElement(new ComponentFloatingLabel(160, 00, 172, 20, font, "H"));
-		this.addElement(hHSV = new ComponentTextInt(172, 0, 206, 20, font, 0, 360));
+		this.addElement(hHSV = new ComponentTextInt(172, 0, 206, 20, font, 0, 360, null));
 		this.addElement(new ComponentIncrementInt(206, 0, hHSV, 1));
 		this.addElement(new ComponentIncrementInt(206, 10, hHSV, -1));
 		this.addElement(new ComponentFloatingLabel(160, 20, 172, 40, font, "S"));
-		this.addElement(sHSV = new ComponentTextInt(172, 20, 206, 40, font, 0, 100));
+		this.addElement(sHSV = new ComponentTextInt(172, 20, 206, 40, font, 0, 100, null));
 		this.addElement(new ComponentIncrementInt(206, 20, sHSV, 1));
 		this.addElement(new ComponentIncrementInt(206, 30, sHSV, -1));
 		this.addElement(new ComponentFloatingLabel(160, 40, 172, 60, font, "V"));
-		this.addElement(vHSV = new ComponentTextInt(172, 40, 206, 60, font, 0, 100));
+		this.addElement(vHSV = new ComponentTextInt(172, 40, 206, 60, font, 0, 100, null));
 		this.addElement(new ComponentIncrementInt(206, 40, vHSV, 1));
 		this.addElement(new ComponentIncrementInt(206, 50, vHSV, -1));
 		setColor(hsv);

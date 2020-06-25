@@ -11,19 +11,37 @@ import org.joml.Matrix4d;
 
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
-import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.IModel;
 import firemerald.mcms.api.model.IRigged;
-import firemerald.mcms.api.model.MultiModel;
 import firemerald.mcms.api.model.ObjData;
+import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.api.util.RaytraceResult;
-import firemerald.mcms.util.MiscUtil;
 
-public class RenderObjectComponents extends Bone implements IComponentParent
+public abstract class RenderObjectComponents<T extends RenderObjectComponents<T>> extends RenderBone<T> implements IComponentParent
 {
+	public static class Actual extends RenderObjectComponents<Actual>
+	{
+		public Actual(String name, Transformation defaultTransform, Actual parent)
+		{
+			super(name, defaultTransform, parent);
+		}
+		
+		@Override
+		public String getXMLName()
+		{
+			return "component_holder";
+		}
+
+		@Override
+		public Actual makeBone(String name, Transformation transform, Actual parent)
+		{
+			return new Actual(name, transform, parent);
+		}
+	}
+	
 	private final List<ModelComponent> components = new ArrayList<>();
 
-	public RenderObjectComponents(String name, Transformation defaultTransform, Bone parent)
+	public RenderObjectComponents(String name, Transformation defaultTransform, T parent)
 	{
 		super(name, defaultTransform, parent);
 	}
@@ -71,23 +89,23 @@ public class RenderObjectComponents extends Bone implements IComponentParent
 		for (ModelComponent component : components) component.addToObjModel(trans, obj, mesh);
 	}
 	
-	public static ObjData createObj(IModel model, Map<String, Matrix4d> pose)
+	public static ObjData createObj(IModel<?, ? extends RenderObjectComponents<?>> model, Map<String, Matrix4d> pose)
 	{
 		ObjData obj = new ObjData();
 		Matrix4d ident = new Matrix4d();
-		for (Bone bone : model.getRootBones()) addToObj(bone, obj, ident, pose);
+		for (RenderObjectComponents<?> bone : model.getRootBones()) addToObj(bone, obj, ident, pose);
 		return obj;
 	}
 	
-	private static void addToObj(Bone bone, ObjData obj, Matrix4d parentTransform, Map<String, Matrix4d> pose)
+	private static void addToObj(RenderObjectComponents<?> bone, ObjData obj, Matrix4d parentTransform, Map<String, Matrix4d> pose)
 	{
 		Matrix4d transform = parentTransform.mul(pose.get(bone.getName()), new Matrix4d());
-		if (bone instanceof RenderObjectComponents) ((RenderObjectComponents) bone).addToObj(transform, obj);
-		for (Bone bone2 : bone.children) addToObj(bone2, obj, transform, pose);
+		bone.addToObj(transform, obj);
+		for (RenderObjectComponents<?> bone2 : bone.children) addToObj(bone2, obj, transform, pose);
 	}
 	
 	@Override
-	public RaytraceResult raytrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> transformations, Matrix4d transformation)
+	public RaytraceResult raytraceLocal(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> transformations, Matrix4d transformation)
 	{
 		RaytraceResult result = null;
 		if (childrenVisible)
@@ -97,7 +115,7 @@ public class RenderObjectComponents extends Bone implements IComponentParent
 				RaytraceResult res = component.raytrace(fx, fy, fz, dx, dy, dz, transformation);
 				if (res != null && (result == null || res.m < result.m)) result = res;
 			}
-			for (Bone child : children)
+			for (T child : children)
 			{
 				Matrix4d transform = transformations.get(child.getName());
 				if (transform == null) transform = new Matrix4d(transformation);
@@ -173,6 +191,31 @@ public class RenderObjectComponents extends Bone implements IComponentParent
 		if (child instanceof ModelComponent) components.remove(child);
 		else super.removeChild(child);
 	}
+	
+	@Override
+	public int getChildIndex(IModelEditable child)
+	{
+		if (child instanceof ModelComponent)
+		{
+			if (components.contains(child)) return components.indexOf(child);
+			else return -1;
+		}
+		else return super.getChildIndex(child);
+	}
+
+	@Override
+	public void addChildAt(IModelEditable child, int index)
+	{
+		if (child instanceof ModelComponent)
+		{
+			if (!components.contains(child))
+			{
+				if (index <= 0) index = this.components.size();
+				this.components.add(index, (ModelComponent) child);
+			}
+		}
+		else super.addChildAt(child, index);
+	}
 
 	@Override
 	public List<ModelComponent> getChildrenComponents()
@@ -197,12 +240,6 @@ public class RenderObjectComponents extends Bone implements IComponentParent
 	}
 	
 	@Override
-	public String getXMLName()
-	{
-		return "component_holder";
-	}
-	
-	@Override
 	public void addChildrenToXML(AbstractElement addTo, float scale)
 	{
 		for (ModelComponent child : this.components) child.addToXML(addTo);
@@ -223,25 +260,10 @@ public class RenderObjectComponents extends Bone implements IComponentParent
 	}
 
 	@Override
-	public IModelEditable copy(IEditableParent newParent, IRigged<?> model)
+	public void copyChildren(T newParent, IRigged<?, ?> model)
 	{
-		RenderObjectComponents bone = null;
-		if (newParent instanceof Bone)
-		{
-			bone = new RenderObjectComponents(MiscUtil.getNewBoneName(name, model), new Transformation(defaultTransform), (Bone) newParent);
-			model.updateBonesList();
-		}
-		else if (newParent instanceof MultiModel)
-		{
-			bone = new RenderObjectComponents(MiscUtil.getNewBoneName(name, model), new Transformation(defaultTransform), null);
-			((MultiModel) newParent).addBaseBone(bone);
-		}
-		if (bone != null)
-		{
-			copyChildren(bone, model);
-			for (ModelComponent child : this.components) child.copy(bone, model);
-		}
-		return bone;
+		super.copyChildren(newParent, model);
+		components.forEach(child -> child.copy(newParent, model));
 	}
 	
 	@Override
@@ -252,35 +274,10 @@ public class RenderObjectComponents extends Bone implements IComponentParent
 	}
 	
 	@Override
-	public RenderObjectComponents cloneObject(Bone clonedParent)
+	public T cloneObject(T clonedParent)
 	{
-		final RenderObjectComponents cloned = cloneSingle(clonedParent);
+		final T cloned = super.cloneObject(clonedParent);
 		this.components.forEach(component -> component.cloneObject(cloned));
-		this.children.forEach(child -> child.cloneObject(cloned));
 		return cloned;
-	}
-	
-	@Override
-	public RenderObjectComponents cloneSingle(Bone clonedParent)
-	{
-		return new RenderObjectComponents(this.name, this.defaultTransform.copy(), clonedParent);
-	}
-
-	@Override
-	public RenderObjectComponents cloneSingle(Bone clonedParent, IRigged<?> to)
-	{
-		return new RenderObjectComponents(MiscUtil.getNewBoneName(this.name, to), this.defaultTransform.copy(), clonedParent);
-	}
-
-	@Override
-	public Bone cloneToSkeleton(Bone clonedParent)
-	{
-		return new Bone(this.name, this.defaultTransform.copy(), clonedParent);
-	}
-
-	@Override
-	public RenderObjectComponents cloneToModel(Bone clonedParent)
-	{
-		return new RenderObjectComponents(this.name, this.defaultTransform.copy(), clonedParent);
 	}
 }

@@ -7,6 +7,8 @@ import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.IComponent;
 import firemerald.mcms.theme.GuiTheme;
 import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.util.history.IHistoryAction;
+import firemerald.mcms.util.hotkey.Action;
 import firemerald.mcms.window.api.Cursor;
 import firemerald.mcms.window.api.Key;
 import firemerald.mcms.window.api.MouseButtons;
@@ -208,5 +210,19 @@ public abstract class GuiElementContainer implements IGuiInteractable, IGuiHolde
 	{
 		IGuiElement[] elements = getElementsCopy();
 		for (int i = elements.length - 1; i >= 0; i--) elements[i].setThemeOverride(theme);
+	}
+
+	@Override
+	public boolean onHotkey(Action action)
+	{
+		if (focused != null) return focused.onHotkey(action);
+		else return false;
+	}
+
+	@Override
+	public boolean onAction(IHistoryAction<?> action)
+	{
+		if (focused != null) return focused.onAction(action);
+		else return false;
 	}
 }

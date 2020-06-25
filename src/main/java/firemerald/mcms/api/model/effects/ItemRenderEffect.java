@@ -1,8 +1,12 @@
-package firemerald.mcms.api.model;
+package firemerald.mcms.api.model.effects;
+
+import org.eclipse.jdt.annotation.Nullable;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.model.IRigged;
+import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.SelectorButton;
@@ -18,30 +22,50 @@ import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
 import firemerald.mcms.util.TransformType;
 
-public class ItemRenderEffect extends PosedBoneEffect
+public class ItemRenderEffect extends StagedPosedBoneEffect
 {
 	protected int slot = 0;
 	protected float scale = 1;
 	protected TransformType transformType;
 
-	public ItemRenderEffect(String name, Bone parent, Transformation transform, int slot)
+	public ItemRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, int slot)
 	{
-		this(name, parent, transform, slot, 1f);
+		this(name, parent, transform, EffectRenderStage.POST_BONE, slot, 1f);
 	}
 
-	public ItemRenderEffect(String name, Bone parent, Transformation transform, int slot, float scale)
+	public ItemRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, EffectRenderStage stage, int slot)
 	{
-		this(name, parent, transform, slot, scale, TransformType.FIXED);
+		this(name, parent, transform, stage, slot, 1f);
 	}
 
-	public ItemRenderEffect(String name, Bone parent, Transformation transform, int slot, TransformType transformType)
+	public ItemRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, int slot, float scale)
 	{
-		this(name, parent, transform, slot, 1, transformType);
+		this(name, parent, transform, EffectRenderStage.POST_BONE, slot, scale, TransformType.FIXED);
 	}
 
-	public ItemRenderEffect(String name, Bone parent, Transformation transform, int slot, float scale, TransformType transformType)
+	public ItemRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, EffectRenderStage stage, int slot, float scale)
 	{
-		super(name, parent, transform);
+		this(name, parent, transform, stage, slot, scale, TransformType.FIXED);
+	}
+
+	public ItemRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, int slot, TransformType transformType)
+	{
+		this(name, parent, transform, EffectRenderStage.POST_BONE, slot, transformType);
+	}
+
+	public ItemRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, EffectRenderStage stage, int slot, TransformType transformType)
+	{
+		this(name, parent, transform, stage, slot, 1, transformType);
+	}
+
+	public ItemRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, int slot, float scale, TransformType transformType)
+	{
+		this(name, parent, transform, EffectRenderStage.POST_BONE, slot, scale, transformType);
+	}
+
+	public ItemRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, EffectRenderStage stage, int slot, float scale, TransformType transformType)
+	{
+		super(name, parent, transform, stage);
 		this.slot = slot;
 		this.scale = scale;
 		this.transformType = transformType;
@@ -54,7 +78,6 @@ public class ItemRenderEffect extends PosedBoneEffect
 	
 	public void setSlot(int slot)
 	{
-		Main.instance.project.onAction();
 		this.slot = slot;
 	}
 	
@@ -65,7 +88,6 @@ public class ItemRenderEffect extends PosedBoneEffect
 	
 	public void setScale(float scale)
 	{
-		Main.instance.project.onAction();
 		this.scale = scale;
 	}
 	
@@ -76,20 +98,13 @@ public class ItemRenderEffect extends PosedBoneEffect
 	
 	public void setTransformType(TransformType transformType)
 	{
-		Main.instance.project.onAction();
 		this.transformType = transformType;
 	}
-
-	@Override
-	public void preRender(Runnable defaultTex) {}
-
-	@Override
-	public void postRenderBone(Runnable defaultTex) {}
 	
 	public static final ResourceLocation TEX = new ResourceLocation(Main.ID, "item.png");
 	
 	@Override
-	public void postRenderChildren(Runnable defaultTexture) //TODO
+	public void render(Runnable defaultTexture) //TODO
 	{
 		Shader.MODEL.push();
 		Shader.MODEL.matrix().mul(transform.getTransformation());
@@ -128,7 +143,7 @@ public class ItemRenderEffect extends PosedBoneEffect
 	}
 
 	@Override
-	public ItemRenderEffect cloneObject(Bone clonedParent)
+	public ItemRenderEffect cloneObject(RenderBone<?> clonedParent)
 	{
 		return new ItemRenderEffect(this.name, clonedParent, transform, slot, scale, transformType);
 	}
@@ -198,12 +213,18 @@ public class ItemRenderEffect extends PosedBoneEffect
 	}
 
 	@Override
-	public ItemRenderEffect copy(IEditableParent newParent, IRigged<?> iRigged)
+	public ItemRenderEffect copy(IEditableParent newParent, IRigged<?, ?> iRigged)
 	{
-		if (newParent instanceof Bone) return cloneObject((Bone) newParent);
+		if (newParent instanceof RenderBone<?>) return cloneObject((RenderBone<?>) newParent);
 		else return null;
 	}
 
 	@Override
 	public void doCleanUp() {}
+
+	@Override
+	public EffectRenderStage getDefaultStage()
+	{
+		return EffectRenderStage.POST_BONE;
+	}
 }

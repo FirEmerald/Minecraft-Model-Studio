@@ -1,6 +1,7 @@
 package firemerald.mcms.gui.main.components.animation;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.Project.ExtendedAnimationState;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.gui.GuiElementContainer;
@@ -13,14 +14,15 @@ public class ComponentKeyFrame extends ComponentPoseFrame implements IEditable
 {
 	public final float time;
 	
-	public ComponentKeyFrame(int x1, int y1, int x2, int y2, int outline, int radius, String name, Bone bone, float time, Transformation transform)
+	public ComponentKeyFrame(int x1, int y1, int x2, int y2, int outline, int radius, String name, Bone<?> bone, float time, Transformation transform)
 	{
 		super(x1, y1, x2, y2, outline, radius, name, bone, transform);
 		this.time = time;
 		this.onRelease = () -> {
 			Main.instance.setEditing(this);
-			Main.instance.animState.time = this.time;
-			Main.instance.animMode = EnumPlaybackMode.PAUSED;
+			ExtendedAnimationState state = Main.instance.project.getAnimationState();
+			state.time = this.time;
+			state.animMode = EnumPlaybackMode.PAUSED;
 		};
 	}
 	

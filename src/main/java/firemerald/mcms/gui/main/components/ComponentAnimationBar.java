@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Level;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
+import firemerald.mcms.api.animation.IAnimation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.api.util.FileUtil.DataType;
@@ -24,6 +25,7 @@ import firemerald.mcms.gui.main.components.animation.ButtonRemoveKeyframe;
 import firemerald.mcms.gui.main.components.animation.ComponentFramesBar;
 import firemerald.mcms.gui.main.components.animation.PlaybackEndButton;
 import firemerald.mcms.gui.main.components.animation.PlaybackForwardButton;
+import firemerald.mcms.gui.main.components.animation.PlaybackLockButton;
 import firemerald.mcms.gui.main.components.animation.PlaybackPauseButton;
 import firemerald.mcms.gui.main.components.animation.PlaybackReverseButton;
 import firemerald.mcms.gui.main.components.animation.PlaybackStartButton;
@@ -34,10 +36,10 @@ import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.gui.popups.animation.GuiPopupEditAnimation;
 import firemerald.mcms.gui.popups.animation.GuiPopupLoadAnimation;
 import firemerald.mcms.gui.popups.animation.GuiPopupNewAnimation;
-import firemerald.mcms.util.EnumPlaybackMode;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class ComponentAnimationBar extends ComponentPanelMain
 {
@@ -74,10 +76,13 @@ public class ComponentAnimationBar extends ComponentPanelMain
 		this.addElement(loadAnimation = new ButtonOpenFileItem(32, 16, Textures.ITEM_LOAD, "anim;xml;bin;json", (file) -> {
 			try
 			{
+				final String name = Main.instance.project.getAnimationName();
+				final IAnimation animation = Main.instance.project.getAnimation();
+				final IAnimation prev = animation.cloneObject();
 				AbstractElement el = FileUtil.readFile(file);
-				Main.instance.project.onAction();
-				Main.instance.project.getAnimation().load(el); //TODO scale?
-				Main.instance.animState.time = 0;
+				animation.load(el); //TODO scale?
+				final IAnimation cur = animation.cloneObject();
+				Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addAnimation(name, prev), () -> Main.instance.project.addAnimation(name, cur)));
 				Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 			}
 			catch (IOException e)
@@ -87,9 +92,9 @@ public class ComponentAnimationBar extends ComponentPanelMain
 		}));
 		this.addElement(cloneAnimation = new ButtonItem16(48, 16, Textures.ITEM_COPY, () -> {
 			Project project = Main.instance.project;
-			new GuiPopupCopy(MiscUtil.ensureUnique(project.getAnimationName(), project.getAnimationNames()), (name) -> project.addAnimation(name, project.getAnimation().cloneObject())).activate();
+			new GuiPopupCopy<>(MiscUtil.ensureUnique(project.getAnimationName(), project.getAnimationNames()), project.getAnimation(), (name, copy) -> project.addAnimation(name, copy), (name) -> project.removeAnimation(name)).activate();
 		}));
-		this.addElement(saveAnimation = new ButtonSaveFileItem(0, 32, Textures.ITEM_SAVE, "anim;xml", (file) -> {
+		this.addElement(saveAnimation = new ButtonSaveFileItem(64, 16, Textures.ITEM_SAVE, "anim;xml", (file) -> {
 			DataType dataType = FileUtil.getAppropriateDataType(file.toString());
 			AbstractElement root = dataType.newElement("animtion");
 			Main.instance.project.getAnimation().save(root); //TODO scale?
@@ -102,22 +107,27 @@ public class ComponentAnimationBar extends ComponentPanelMain
 				GuiPopupException.onException("Couldn't save animation to " + file, e);
 			}
 		}));
-		this.addElement(editAnimation = new ButtonItem16(16, 32, Textures.ITEM_EDIT, () -> {
+		this.addElement(editAnimation = new ButtonItem16(80, 16, Textures.ITEM_EDIT, () -> {
 			new GuiPopupEditAnimation().activate();
 		}));
-		this.addElement(reverseAnimation = new ButtonItem16(32, 32, Textures.ITEM_REVERSE, () -> {
-			Main.instance.project.onAction();
-			Main.instance.project.getAnimation().reverseAnimation(Main.instance.project.getCompletestRig());
+		this.addElement(reverseAnimation = new ButtonItem16(96, 16, Textures.ITEM_REVERSE, () -> {
+			final String name = Main.instance.project.getAnimationName();
+			final IAnimation animation = Main.instance.project.getAnimation();
+			final IAnimation prev = animation.cloneObject();
+			animation.reverseAnimation(Main.instance.project.getCompletestRig());
+			final IAnimation cur = animation.cloneObject();
+			Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addAnimation(name, prev), () -> Main.instance.project.addAnimation(name, cur)));
 			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 		}));
-		this.addElement(removeAnimation = new ButtonItem16(48, 32, Textures.ITEM_REMOVE, () -> {
-			Main.instance.project.onAction();
+		this.addElement(removeAnimation = new ButtonItem16(112, 16, Textures.ITEM_REMOVE, () -> {
+			final String name = Main.instance.project.getAnimationName();
+			final IAnimation animation = Main.instance.project.getAnimation();
+			Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addAnimation(name, animation), () -> Main.instance.project.removeAnimation(name)));
 			Main.instance.project.removeAnimation();
 		}));
 		newAnimation.enabled = addAnimation.enabled = true;
 		this.addElement(animationSelector = new SelectorButton(0, 0, 160, 16, Main.instance.project.getAnimationNames().isEmpty() ? "no animations available" : Main.instance.project.getAnimationName() == null ? "no animation" : Main.instance.project.getAnimationName(), Main.instance.project.getAnimationNames().isEmpty() ? new String[0] : MiscUtil.array("no animation", Main.instance.project.getAnimationNames()), (ind, value) -> {
-			Main.instance.animState.time = 0;
-			Main.instance.project.onAction();
+			//TODO undo?
 			if (ind == 0)
 			{
 				Main.instance.project.setAnimation(null);
@@ -138,14 +148,15 @@ public class ComponentAnimationBar extends ComponentPanelMain
 		this.addElement(scrollLeft = new ScrollLeft(192, h - 16, 208, h, framesBar));
 		this.addElement(scrollRight = new ScrollRight(w - 16, h - 16, w, h, framesBar));
 		framesBar.setScrollBarH(scrollBarH);
-		this.addElement(addKeyFrame = new ButtonAddKeyframe(64, 16, framesBar));
-		this.addElement(moveKeyFrame = new ButtonMoveKeyframe(96, 16, framesBar));
-		this.addElement(removeKeyFrame = new ButtonRemoveKeyframe(128, 16));
-		this.addElement(new PlaybackStartButton(0, 48));
-		this.addElement(new PlaybackReverseButton(32, 48));
-		this.addElement(new PlaybackPauseButton(64, 48));
-		this.addElement(new PlaybackForwardButton(96, 48));
-		this.addElement(new PlaybackEndButton(128, 48));
+		this.addElement(addKeyFrame = new ButtonAddKeyframe(32, 64, framesBar));
+		this.addElement(moveKeyFrame = new ButtonMoveKeyframe(64, 64, framesBar));
+		this.addElement(removeKeyFrame = new ButtonRemoveKeyframe(96, 64));
+		this.addElement(new PlaybackStartButton(0, 32));
+		this.addElement(new PlaybackReverseButton(32, 32));
+		this.addElement(new PlaybackPauseButton(64, 32));
+		this.addElement(new PlaybackForwardButton(96, 32));
+		this.addElement(new PlaybackEndButton(128, 32));
+		this.addElement(new PlaybackLockButton(0, 64));
 	}
 	
 	@Override
@@ -165,27 +176,7 @@ public class ComponentAnimationBar extends ComponentPanelMain
 	public void tick(float mx, float my, float deltaTime)
 	{
 		Main main = Main.instance;
-		if (main.project.getAnimation() != null)
-		{
-			main.animState.time += deltaTime * main.animMode.step * main.animScale;
-			float length = main.project.getAnimation().getLength();
-			if (main.animLoop) main.animState.time %= length;
-			else if (main.animState.time >= length)
-			{
-				main.animState.time = length;
-				main.animMode = EnumPlaybackMode.PAUSED;
-			}
-			else if (main.animState.time <= 0)
-			{
-				main.animState.time = 0;
-				main.animMode = EnumPlaybackMode.PAUSED;
-			}
-		}
-		else
-		{
-			main.animState.time = 0;
-			main.animMode = EnumPlaybackMode.PAUSED;
-		}
+		main.project.tickAnims(deltaTime);
 	}
 	
 	@Override

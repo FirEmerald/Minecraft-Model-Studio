@@ -1,4 +1,4 @@
-package firemerald.mcms.util.action;
+package firemerald.mcms.util.history;
 
 import java.nio.ByteBuffer;
 
@@ -6,12 +6,12 @@ import org.lwjgl.system.MemoryUtil;
 
 import firemerald.mcms.texture.Texture;
 
-public class TextureDrawAction implements IAction
+public class HistoryActionTextureDraw implements IHistoryAction<HistoryActionTextureDraw>
 {
 	public final Texture texture;
 	public final ByteBuffer oldData;
 	
-	public TextureDrawAction(Texture texture)
+	public HistoryActionTextureDraw(Texture texture)
 	{
 		this.texture = texture;
 		oldData = MemoryUtil.memAlloc(texture.getData().capacity());
@@ -21,7 +21,7 @@ public class TextureDrawAction implements IAction
 	}
 
 	@Override
-	public TextureDrawAction get()
+	public HistoryActionTextureDraw perform()
 	{
 		ByteBuffer data = MemoryUtil.memAlloc(texture.getData().capacity());
 		

@@ -6,9 +6,8 @@ import java.util.List;
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.model.Bone;
-import firemerald.mcms.api.model.IRigged;
-import firemerald.mcms.api.model.ItemRenderEffect;
+import firemerald.mcms.api.model.RenderBone;
+import firemerald.mcms.api.model.effects.ItemRenderEffect;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.DropdownButton;
@@ -21,10 +20,11 @@ import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.gui.decoration.DecoPane;
 import firemerald.mcms.util.TransformType;
+import firemerald.mcms.util.history.HistoryAction;
 
-public class GuiPopupItem extends GuiPopup
+public class GuiPopupItem<T extends RenderBone<T>> extends GuiPopup
 {
-	public final Bone parent;
+	public final T parent;
 	public final DecoPane pane;
 	public final ComponentText name;
 	public final DropdownButton nameOptions;
@@ -39,7 +39,7 @@ public class GuiPopupItem extends GuiPopup
 	private TransformType transformType = TransformType.NONE;
 	public final StandardButton ok, cancel;
 	
-	public GuiPopupItem(Bone parent)
+	public GuiPopupItem(T parent)
 	{
 		this.parent = parent;
 		Project project = Main.instance.project;
@@ -56,15 +56,21 @@ public class GuiPopupItem extends GuiPopup
 			project.getDisplayBoneNames(parent, possible);
 			names = possible.toArray(new String[possible.size()]);
 		}
-		this.addElement(name = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, names[0], text -> names[0] = text));
+		this.addElement(name = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, names[0], text -> names[0] = text) {
+			@Override
+			public boolean shouldUndo()
+			{
+				return false;
+			}
+		});
 		this.addElement(nameOptions = new DropdownButton(cx + cw - 20, y, cx + cw, y + 20, name, names, (ind, val) -> name.setText(val)));
 		y += 20;
 		this.addElement(slotLabel = new ComponentFloatingLabel(cx, y, cx + 27, y + 20, Main.instance.fontMsg, "slot"));
-		this.addElement(slot = new ComponentTextInt(cx + 27, y, cx + 54, y + 20, Main.instance.fontMsg, 0, 0, Integer.MAX_VALUE));
+		this.addElement(slot = new ComponentTextInt(cx + 27, y, cx + 54, y + 20, Main.instance.fontMsg, 0, 0, Integer.MAX_VALUE, null));
 		this.addElement(slotUp = new ComponentIncrementInt(cx + 54, y, slot, 1));
 		this.addElement(slotDown = new ComponentIncrementInt(cx + 54, y + 10, slot, -1));
 		this.addElement(scaleLabel = new ComponentFloatingLabel(cx + 64, y, cx + 100, y + 20, Main.instance.fontMsg, "scale"));
-		this.addElement(scale = new ComponentTextFloat(cx + 100, y, cx + cw - 10, y + 20, Main.instance.fontMsg, 1, 0, Float.POSITIVE_INFINITY));
+		this.addElement(scale = new ComponentTextFloat(cx + 100, y, cx + cw - 10, y + 20, Main.instance.fontMsg, 1, 0, Float.POSITIVE_INFINITY, null));
 		this.addElement(scaleUp = new ComponentIncrementFloat(cx + cw - 10, y, scale, .0625f));
 		this.addElement(scaleDown = new ComponentIncrementFloat(cx + cw - 10, y + 10, scale, -.0625f));
 		y += 20;
@@ -117,15 +123,22 @@ public class GuiPopupItem extends GuiPopup
 	
 	public void apply()
 	{
-		Main.instance.project.onAction();
 		deactivate();
-		IRigged<?> rigged = Main.instance.project.getRig();
-		ItemRenderEffect newBone = new ItemRenderEffect(name.getText(), parent, new Transformation(), slot.getVal(), scale.getVal(), transformType);
-		if (parent != null) rigged.updateBonesList();
-		else rigged.addChild(newBone);
+		final ItemRenderEffect newBone = new ItemRenderEffect(name.getText(), parent, new Transformation(), slot.getVal(), scale.getVal(), transformType);
 		Main main = Main.instance;
 		main.project.updateSkeletonLocalAlt();
 		main.setEditing(newBone);
 		Main.instance.editorPanes.selector.updateBase();
+		Main.instance.project.onAction(new HistoryAction(() -> {
+			parent.removeEffect(newBone);
+			main.project.updateSkeletonLocalAlt();
+			if (Main.instance.getEditing() == newBone) Main.instance.setEditing(null);
+			Main.instance.editorPanes.selector.updateBase();
+		}, () -> {
+			parent.addEffect(newBone);
+			main.project.updateSkeletonLocalAlt();
+			main.setEditing(newBone);
+			Main.instance.editorPanes.selector.updateBase();
+		}));
 	}
 }

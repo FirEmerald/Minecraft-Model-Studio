@@ -83,14 +83,14 @@ public class ComponentBox extends ComponentMesh
 	@Override
 	public void texU(float texU)
 	{
-		super.texU(texU);
+		this.texU = texU;
 		setTexs();
 	}
 
 	@Override
 	public void texV(float texV)
 	{
-		super.texV(texV);
+		this.texV = texV;
 		setTexs();
 	}
 	
@@ -492,7 +492,6 @@ public class ComponentBox extends ComponentMesh
 
 	public void lengthX(float lengthX)
 	{
-		Main.instance.project.onAction();
 		this.lengthX = lengthX;
 		setVerts();
 		setTexs();
@@ -505,7 +504,6 @@ public class ComponentBox extends ComponentMesh
 
 	public void lengthY(float lengthY)
 	{
-		Main.instance.project.onAction();
 		this.lengthY = lengthY;
 		setVerts();
 		setTexs();
@@ -518,7 +516,6 @@ public class ComponentBox extends ComponentMesh
 
 	public void lengthZ(float lengthZ)
 	{
-		Main.instance.project.onAction();
 		this.lengthZ = lengthZ;
 		setVerts();
 		setTexs();
@@ -533,7 +530,6 @@ public class ComponentBox extends ComponentMesh
 	{
 		if (mirror != this.mirror)
 		{
-			Main.instance.project.onAction();
 			this.mirror = mirror;
 			setTexs();
 		}
@@ -548,7 +544,6 @@ public class ComponentBox extends ComponentMesh
 	{
 		if (flipped != this.flipped)
 		{
-			Main.instance.project.onAction();
 			this.flipped = flipped;
 			setTexs();
 			setNorms();
@@ -563,7 +558,6 @@ public class ComponentBox extends ComponentMesh
 	
 	public void setUp(boolean enabled)
 	{
-		Main.instance.project.onAction();
 		enableUp = enabled;
 		setInds();
 	}
@@ -575,7 +569,6 @@ public class ComponentBox extends ComponentMesh
 	
 	public void setDown(boolean enabled)
 	{
-		Main.instance.project.onAction();
 		enableDown = enabled;
 		setInds();
 	}
@@ -587,7 +580,6 @@ public class ComponentBox extends ComponentMesh
 	
 	public void setNorth(boolean enabled)
 	{
-		Main.instance.project.onAction();
 		enableNorth = enabled;
 		setInds();
 	}
@@ -599,7 +591,6 @@ public class ComponentBox extends ComponentMesh
 	
 	public void setEast(boolean enabled)
 	{
-		Main.instance.project.onAction();
 		enableEast = enabled;
 		setInds();
 	}
@@ -611,7 +602,6 @@ public class ComponentBox extends ComponentMesh
 	
 	public void setSouth(boolean enabled)
 	{
-		Main.instance.project.onAction();
 		enableSouth = enabled;
 		setInds();
 	}
@@ -623,7 +613,6 @@ public class ComponentBox extends ComponentMesh
 	
 	public void setWest(boolean enabled)
 	{
-		Main.instance.project.onAction();
 		enableWest = enabled;
 		setInds();
 	}
@@ -829,7 +818,7 @@ public class ComponentBox extends ComponentMesh
 	}
 
 	@Override
-	public IModelEditable copy(IEditableParent newParent, IRigged<?> model)
+	public IModelEditable copy(IEditableParent newParent, IRigged<?, ?> model)
 	{
 		if (newParent instanceof IComponentParent)
 		{

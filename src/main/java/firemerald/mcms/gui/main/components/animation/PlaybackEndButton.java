@@ -1,27 +1,36 @@
 package firemerald.mcms.gui.main.components.animation;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.Project.ExtendedAnimationState;
 import firemerald.mcms.util.EnumPlaybackMode;
+import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
 
 public class PlaybackEndButton extends PlaybackButton
 {
 	public PlaybackEndButton(int x, int y)
 	{
-		super(x, y, Textures.PLAYBACK_END);
+		super(x, y);
 	}
 
 	@Override
 	public boolean isEnabled()
 	{
-		Main main = Main.instance;
-		return main.project.getAnimation() != null && main.animState.time < main.project.getAnimation().getLength();
+		ExtendedAnimationState state = Main.instance.project.getAnimationState();
+		return state != null && state.time < state.anim.get().getLength();
 	}
 
 	@Override
 	public void onRelease()
 	{
-		Main.instance.animMode = EnumPlaybackMode.PAUSED;
-		Main.instance.animState.time = Main.instance.project.getAnimation().getLength();
+		ExtendedAnimationState state = Main.instance.project.getAnimationState();
+		state.animMode = EnumPlaybackMode.PAUSED;
+		state.time = state.anim.get().getLength();
+	}
+
+	@Override
+	public ResourceLocation getIcon()
+	{
+		return Textures.PLAYBACK_END;
 	}
 }

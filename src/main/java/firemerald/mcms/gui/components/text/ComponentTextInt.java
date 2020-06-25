@@ -1,6 +1,6 @@
 package firemerald.mcms.gui.components.text;
 
-import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.util.font.FontRenderer;
@@ -10,99 +10,70 @@ public class ComponentTextInt extends ComponentText
 	protected int val;
 	protected int min, max;
 	protected boolean error = false;
-	private final Consumer<Integer> onValueChange;
+	private final IntConsumer onValueChange;
 	private final String ambient;
+	private int initialVal;
 	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int val, int min, int max, Consumer<Integer> onValueChange)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int val, int min, int max, IntConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, val, min, max, onValueChange, null);
 	}
 	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int min, int max, Consumer<Integer> onValueChange)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int min, int max, IntConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, 0, min, max, onValueChange, null);
 	}
 	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int val, Consumer<Integer> onValueChange)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int val, IntConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, val, Integer.MIN_VALUE, Integer.MAX_VALUE, onValueChange, null);
 	}
 	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Consumer<Integer> onValueChange)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, IntConsumer onValueChange)
 	{
 		this(x1, y1, x2, y2, font, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, onValueChange, null);
 	}
 	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int val, int min, int max)
-	{
-		this(x1, y1, x2, y2, font, val, min, max, null, null);
-	}
-	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int min, int max)
-	{
-		this(x1, y1, x2, y2, font, 0, min, max, (String) null);
-	}
-	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int val)
-	{
-		this(x1, y1, x2, y2, font, val, Integer.MIN_VALUE, Integer.MAX_VALUE, (String) null);
-	}
-	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font)
-	{
-		this(x1, y1, x2, y2, font, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, (String) null);
-	}
-	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Integer val, int min, int max, Consumer<Integer> onValueChange, String ambient)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Integer val, int min, int max, IntConsumer onValueChange, String ambient)
 	{
 		super(x1, y1, x2, y2, font, null);
 		setBounds(min, max);
-		if (val != null) setVal(val);
-		else if (ambient == null) setVal(0);
-		else setText("");
+		if (val != null) this.setValNoUpdate(val);
+		else if (ambient == null) this.setValNoUpdate(0);
+		else this.setTextNoUpdate("");
 		this.onValueChange = onValueChange;
 		this.ambient = ambient;
 	}
 	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int min, int max, Consumer<Integer> onValueChange, String ambient)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int min, int max, IntConsumer onValueChange, String ambient)
 	{
 		this(x1, y1, x2, y2, font, null, min, max, onValueChange, ambient);
 	}
 	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Integer val, Consumer<Integer> onValueChange, String ambient)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Integer val, IntConsumer onValueChange, String ambient)
 	{
 		this(x1, y1, x2, y2, font, val, Integer.MIN_VALUE, Integer.MAX_VALUE, onValueChange, ambient);
 	}
 	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Consumer<Integer> onValueChange, String ambient)
+	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, IntConsumer onValueChange, String ambient)
 	{
 		this(x1, y1, x2, y2, font, null, Integer.MIN_VALUE, Integer.MAX_VALUE, onValueChange, ambient);
 	}
 	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Integer val, int min, int max, String ambient)
+	@Override
+	public boolean shouldUndo()
 	{
-		this(x1, y1, x2, y2, font, val, min, max, null, ambient);
+		return super.shouldUndo() || this.onValueChange != null;
 	}
 	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, int min, int max, String ambient)
+	public void setValNoUpdate(int val)
 	{
-		this(x1, y1, x2, y2, font, (Integer) null, min, max, ambient);
-	}
-	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, Integer val, String ambient)
-	{
-		this(x1, y1, x2, y2, font, val, Integer.MIN_VALUE, Integer.MAX_VALUE, ambient);
-	}
-	
-	public ComponentTextInt(int x1, int y1, int x2, int y2, FontRenderer font, String ambient)
-	{
-		this(x1, y1, x2, y2, font, (Integer) null, Integer.MIN_VALUE, Integer.MAX_VALUE, ambient);
+		this.setTextNoUpdate(Integer.toString(this.initialVal = this.val = val));
 	}
 	
 	public void setVal(int val)
 	{
-		this.val = val;
-		this.setText(Integer.toString(val));
+		this.setText(Integer.toString(this.initialVal = this.val = val));
 	}
 	
 	public int getVal()
@@ -129,9 +100,9 @@ public class ComponentTextInt extends ComponentText
 	}
 	
 	@Override
-	public void onTextUpdate()
+	public void onTextUpdateAction()
 	{
-		super.onTextUpdate();
+		super.onTextUpdateAction();
 		try
 		{
 			val = Integer.parseInt(text);
@@ -152,6 +123,30 @@ public class ComponentTextInt extends ComponentText
 		{
 			error = true;
 		}
+	}
+
+	@Override
+	public Runnable getUndo()
+	{
+		final Runnable sup = super.getUndo();
+		final IntConsumer onValueChange = this.onValueChange;
+		final int initialVal = this.initialVal;
+		return () -> {
+			sup.run();
+			if (onValueChange != null) onValueChange.accept(initialVal);
+		};
+	}
+
+	@Override
+	public Runnable getRedo()
+	{
+		final Runnable sup = super.getRedo();
+		final IntConsumer onValueChange = this.onValueChange;
+		final int val = this.val;
+		return () -> {
+			sup.run();
+			if (onValueChange != null) onValueChange.accept(val);
+		};
 	}
 	
 	public boolean isValid()

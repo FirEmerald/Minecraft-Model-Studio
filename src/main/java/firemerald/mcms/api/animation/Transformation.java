@@ -5,12 +5,15 @@ import org.joml.Quaterniond;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
+import firemerald.mcms.Main;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.math.EulerXYZRotation;
 import firemerald.mcms.api.math.EulerZYXRotation;
 import firemerald.mcms.api.math.IRotation;
 import firemerald.mcms.api.math.QuaternionRotation;
 import firemerald.mcms.gui.popups.GuiPopupException;
+import firemerald.mcms.util.IEditable;
+import firemerald.mcms.util.history.IHistoryAction;
 
 public class Transformation
 {
@@ -164,5 +167,45 @@ public class Transformation
 			return t.translation.equals(translation) && t.rotation.getQuaternion().equals(rotation.getQuaternion());
 		}
 		else return false;
+	}
+	
+	public static class ChangeRotationAction implements IHistoryAction<ChangeRotationAction>
+	{
+		public final Transformation transform;
+		public final IRotation rotation;
+		public final ChangeRotationAction opposite;
+		public final IEditable editable;
+		
+		public ChangeRotationAction(IEditable editable, Transformation transform, IRotation rotation)
+		{
+			this.editable = editable;
+			this.transform = transform;
+			this.rotation = rotation;
+			this.opposite = new ChangeRotationAction(this);
+		}
+		
+		private ChangeRotationAction(ChangeRotationAction opposite)
+		{
+			this.editable = opposite.editable;
+			this.transform = opposite.transform;
+			this.rotation = transform.rotation;
+			this.opposite = opposite;
+		}
+		
+		@Override
+		public ChangeRotationAction perform()
+		{
+			if (Main.instance.getEditing() == editable) Main.instance.setEditing(null);
+			this.transform.rotation = rotation;
+			Main.instance.setEditing(editable);
+			return opposite;
+		}
+	}
+	
+	public void setRotationTo(IEditable editable, IRotation rotation)
+	{
+		IRotation old = this.rotation;
+		(this.rotation = rotation).setFromQuaternion(old.getQuaternion());
+		Main.instance.project.onAction(new ChangeRotationAction(editable, this, old));
 	}
 }

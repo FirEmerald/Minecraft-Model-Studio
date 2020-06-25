@@ -58,27 +58,23 @@ public class QuaternionRotation implements IRotation
 	private ComponentTextDouble rotWT;
 	
 	@Override
-	public int onSelect(EditorPanes editorPanes, int editorY, Runnable preUpdate, Runnable onUpdate)
+	public int onSelect(EditorPanes editorPanes, int editorY, Runnable onUpdate)
 	{
 		GuiElementContainer editor = editorPanes.editor.container;
 		int editorX = editorPanes.editor.minX;
 		editor.addElement(rotXT = new ComponentTextDouble(     editorX      , editorY, editorX + 75 , editorY + 20, Main.instance.fontMsg, q.x(), -180, 180, value -> {
-			preUpdate.run();
 			q.x = value;
 			onUpdate.run();
 		}));
 		editor.addElement(rotYT = new ComponentTextDouble(     editorX + 75 , editorY, editorX + 150, editorY + 20, Main.instance.fontMsg, q.y(), -180, 180, value -> {
-			preUpdate.run();
 			q.y = value;
 			onUpdate.run();
 		}));
 		editor.addElement(rotZT = new ComponentTextDouble(     editorX + 150, editorY, editorX + 225, editorY + 20, Main.instance.fontMsg, q.z(), -180, 180, value -> {
-			preUpdate.run();
 			q.z = value;
 			onUpdate.run();
 		}));
 		editor.addElement(rotWT = new ComponentTextDouble(     editorX + 225, editorY, editorX + 300, editorY + 20, Main.instance.fontMsg, q.w(), -180, 180, value -> {
-			preUpdate.run();
 			q.w = value;
 			onUpdate.run();
 		}));

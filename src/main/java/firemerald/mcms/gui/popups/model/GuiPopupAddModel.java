@@ -7,8 +7,6 @@ import org.joml.Matrix4d;
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.model.IModel;
-import firemerald.mcms.api.model.MultiModel;
 import firemerald.mcms.api.model.ObjData;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.ButtonItem20;
@@ -19,11 +17,13 @@ import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.gui.decoration.DecoPane;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.model.ComponentMeshTrue;
+import firemerald.mcms.model.ProjectModel;
 import firemerald.mcms.model.RenderObjectComponents;
 import firemerald.mcms.util.FileUtils;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.Textures;
+import firemerald.mcms.util.history.HistoryAction;
 import firemerald.mcms.util.mesh.Mesh;
 
 public class GuiPopupAddModel extends GuiPopup
@@ -45,7 +45,7 @@ public class GuiPopupAddModel extends GuiPopup
 		final int cy = 20;
 		this.addElement(pane = new DecoPane(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20, 2, 16));
 		int y = cy;
-		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, MiscUtil.ensureUnique("Untitled", project.getAnimationNames()), text -> {}));
+		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, MiscUtil.ensureUnique("Untitled", project.getAnimationNames()), null));
 		y += 20;
 		this.addElement(file = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, "", text -> {}));
 		this.addElement(browse = new ButtonItem20(cx + cw - 20, y, Textures.ITEM_BROWSE, () -> {
@@ -55,7 +55,7 @@ public class GuiPopupAddModel extends GuiPopup
 		browse.enabled = true;
 		y += 20;
 		this.addElement(scaleLabel = new ComponentFloatingLabel(cx, y, cx + 36, y + 20, Main.instance.fontMsg, "scale"));
-		this.addElement(scale = new ComponentTextFloat(cx + 36, y, cx + cw, y + 20, Main.instance.fontMsg, 1f / project.getScale(), 0, Float.POSITIVE_INFINITY));
+		this.addElement(scale = new ComponentTextFloat(cx + 36, y, cx + cw, y + 20, Main.instance.fontMsg, 1f / project.getScale(), 0, Float.POSITIVE_INFINITY, null));
 		y += 20;
 		this.addElement(ok = new StandardButton(cx, cy + ch - 20, cx + 80, cy + ch, 1, 4, "load", this::apply));
 		this.addElement(cancel = new StandardButton(cx + cw - 80, cy + ch - 20, cx + cw, cy + ch, 1, 4, "cancel", this::deactivate));
@@ -100,15 +100,16 @@ public class GuiPopupAddModel extends GuiPopup
 		try
 		{
 			ObjData data = new ObjData(new File(file.getText()));
-			IModel model = new MultiModel();
-			RenderObjectComponents root = new RenderObjectComponents(name.getText(), new Transformation(), null);
+			final ProjectModel model = new ProjectModel();
+			RenderObjectComponents.Actual root = new RenderObjectComponents.Actual(name.getText(), new Transformation(), null);
 			data.groupObjects.forEach((name, mesh) -> {
 				Mesh m = RenderUtil.makeMesh(mesh, data, new Matrix4d().scale(scale.getVal()));
 				root.addComponent(new ComponentMeshTrue(m, name));
 			});
 			model.addRootBone(root, true);
-			project.onAction();
-			project.addModel(MiscUtil.ensureUnique(name.getText(), project.getModelNames()), model);
+			final String name = MiscUtil.ensureUnique(this.name.getText(), project.getModelNames());
+			project.addModel(name, model);
+			project.onAction(new HistoryAction(() -> project.removeModel(name), () -> project.addModel(name, model)));
 		}
 		catch (Exception e)
 		{

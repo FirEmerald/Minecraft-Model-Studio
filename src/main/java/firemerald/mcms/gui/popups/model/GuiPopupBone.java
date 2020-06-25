@@ -13,16 +13,19 @@ import firemerald.mcms.gui.components.DropdownButton;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.decoration.DecoPane;
+import firemerald.mcms.model.IEditableParent;
+import firemerald.mcms.util.IntReference;
+import firemerald.mcms.util.history.HistoryAction;
 
-public class GuiPopupBone extends GuiPopup
+public class GuiPopupBone<T extends Bone<T>> extends GuiPopup
 {
-	public final Bone parent;
+	public final T parent;
 	public final DecoPane pane;
 	public final ComponentText name;
 	public final DropdownButton nameOptions;
 	public final StandardButton ok, cancel;
 	
-	public GuiPopupBone(Bone parent)
+	public GuiPopupBone(T parent)
 	{
 		this.parent = parent;
 		Project project = Main.instance.project;
@@ -39,7 +42,13 @@ public class GuiPopupBone extends GuiPopup
 			project.getDisplayBoneNames(parent, possible);
 			names = possible.toArray(new String[possible.size()]);
 		}
-		this.addElement(name = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, names[0], text -> names[0] = text));
+		this.addElement(name = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, names[0], text -> names[0] = text) {
+			@Override
+			public boolean shouldUndo()
+			{
+				return false;
+			}
+		});
 		this.addElement(nameOptions = new DropdownButton(cx + cw - 20, y, cx + cy, y + 20, name, names, (ind, val) -> name.setText(val)));
 		
 		this.addElement(ok = new StandardButton(cx, cy + ch - 20, cx + 80, cy + ch, 1, 4, "add", this::apply));
@@ -74,10 +83,32 @@ public class GuiPopupBone extends GuiPopup
 	
 	public void apply()
 	{
-		Main.instance.project.onAction();
 		deactivate();
-		IRigged<?> rigged = Main.instance.project.getRig();
-		Bone newBone = rigged.makeNew(name.getText(), new Transformation(), parent);
+		final T parent = this.parent;
+		@SuppressWarnings("unchecked")
+		final IRigged<?, T> rigged = (IRigged<?, T>) Main.instance.project.getRig();
+		final T newBone = rigged.makeNew(name.getText(), new Transformation(), parent);
+		final IntReference index = new IntReference();
+		Main.instance.project.onAction(new HistoryAction(() -> {
+			IEditableParent p = (parent == null ? rigged : parent);
+			index.val = p.getChildIndex(newBone);
+			p.removeChild(newBone);
+			Main main = Main.instance;
+			main.project.updateSkeletonLocalAlt();
+			//main.setEditing(newBone);
+			Main.instance.editorPanes.selector.updateBase();
+		}, () -> {
+			if (parent != null)
+			{
+				parent.addChildAt(newBone, index.val);
+				rigged.updateBonesList();
+			}
+			else rigged.addChild(newBone);
+			Main main = Main.instance;
+			main.project.updateSkeletonLocalAlt();
+			//main.setEditing(newBone);
+			Main.instance.editorPanes.selector.updateBase();
+		}));
 		if (parent != null) rigged.updateBonesList();
 		else rigged.addChild(newBone);
 		Main main = Main.instance;

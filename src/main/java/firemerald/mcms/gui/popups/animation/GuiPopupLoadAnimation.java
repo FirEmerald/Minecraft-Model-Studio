@@ -17,6 +17,7 @@ import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.util.FileUtils;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class GuiPopupLoadAnimation extends GuiPopup
 {
@@ -35,9 +36,9 @@ public class GuiPopupLoadAnimation extends GuiPopup
 		final int cy = 20;
 		this.addElement(pane = new DecoPane(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20, 2, 16));
 		int y = cy;
-		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, MiscUtil.ensureUnique("Untitled", project.getAnimationNames()), text -> {}));
+		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, MiscUtil.ensureUnique("Untitled", project.getAnimationNames()), null));
 		y += 20;
-		this.addElement(file = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, "", text -> {}));
+		this.addElement(file = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, "", null));
 		this.addElement(browse = new ButtonItem20(cx + cw - 20, y, Textures.ITEM_BROWSE, () -> {
 			File file = FileUtils.getOpenFile("anim;xml;json;bin", "");
 			if (file != null) this.file.setText(file.toString());
@@ -80,14 +81,13 @@ public class GuiPopupLoadAnimation extends GuiPopup
 	public void apply()
 	{
 		deactivate();
-		Project project = Main.instance.project;
+		final Project project = Main.instance.project;
 		try
 		{
-			Animation anim = new Animation(FileUtil.readFile(new File(file.getText())));
-			String name = MiscUtil.ensureUnique(this.name.getText(), project.getAnimationNames());
-			project.onAction();
+			final Animation anim = new Animation(FileUtil.readFile(new File(file.getText())));
+			final String name = MiscUtil.ensureUnique(this.name.getText(), project.getAnimationNames());
+			project.onAction(new HistoryAction(() -> project.removeAnimation(name), () -> project.addAnimation(name, anim)));
 			project.addAnimation(name, anim);
-			Main.instance.animState.time = 0;
 		}
 		catch (Exception e)
 		{

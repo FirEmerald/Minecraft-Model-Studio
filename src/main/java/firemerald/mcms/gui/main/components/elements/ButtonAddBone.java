@@ -8,7 +8,7 @@ import firemerald.mcms.util.Textures;
 
 public class ButtonAddBone extends EditableButton
 {
-	private Bone bone;
+	private Bone<?> bone;
 	
 	public ButtonAddBone(int x, int y)
 	{
@@ -21,13 +21,14 @@ public class ButtonAddBone extends EditableButton
 		return Textures.EDITABLE_ADD_BONE;
 	}
 	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void onRelease()
 	{
 		new GuiPopupBone(bone).activate();
 	}
 	
-	public void setBone(Bone bone)
+	public void setBone(Bone<?> bone)
 	{
 		this.bone = bone;
 	}

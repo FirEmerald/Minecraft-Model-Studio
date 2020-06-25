@@ -2,7 +2,6 @@ package firemerald.mcms.gui.main.components;
 
 import java.awt.Menu;
 import java.awt.MenuItem;
-import java.awt.MenuShortcut;
 import java.awt.PopupMenu;
 import java.io.File;
 import java.io.FileWriter;
@@ -10,26 +9,38 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.function.Supplier;
 
+import org.apache.logging.log4j.Level;
+
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.AnimationState;
+import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.model.Skeleton;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.gui.plugins.GuiPopupPlugins;
+import firemerald.mcms.gui.popups.GuiPopupCopy;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.gui.popups.GuiPopupMenu;
 import firemerald.mcms.gui.popups.GuiPopupMessageOK;
 import firemerald.mcms.gui.popups.GuiPopupUnsavedChanges;
 import firemerald.mcms.gui.popups.project.GuiPopupNewProject;
+import firemerald.mcms.gui.popups.texture.GuiPopupEditTexture;
+import firemerald.mcms.gui.popups.texture.GuiPopupLoadTexture;
+import firemerald.mcms.gui.popups.texture.GuiPopupNewTexture;
 import firemerald.mcms.gui.themes.GuiThemes;
 import firemerald.mcms.model.RenderObjectComponents;
 import firemerald.mcms.plugin.PluginLoader;
 import firemerald.mcms.texture.Color;
+import firemerald.mcms.texture.ReloadingTexture;
+import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.FileUtils;
 import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.font.FormattedText;
-import firemerald.mcms.window.api.Key;
+import firemerald.mcms.util.history.HistoryAction;
+import firemerald.mcms.util.hotkey.Action;
 
 public class ComponentTitleBar extends ComponentPanelMain
 {
@@ -63,34 +74,26 @@ public class ComponentTitleBar extends ComponentPanelMain
         	menu.add(newProject);
         	MenuItem openProject = new MenuItem("Open Project...");
         	openProject.addActionListener(action -> {
-        		Main.instance.project.loadFrom();
-        		Main.instance.onGuiUpdate(GuiUpdate.PROJECT);
+        		Main.instance.doAction(Action.LOAD);
         	});
         	menu.add(openProject);
         	MenuItem editProject = new MenuItem("Edit Project");
         	menu.add(editProject);
         	MenuItem saveProject = new MenuItem("Save Project");
         	saveProject.addActionListener(action -> {
-        		Main.instance.project.save();
+        		Main.instance.doAction(Action.SAVE);
         	});
         	menu.add(saveProject);
         	MenuItem saveProjectAs = new MenuItem("Save Project as...");
         	saveProjectAs.addActionListener(action -> {
-        		Main.instance.project.saveAs();
+        		Main.instance.doAction(Action.SAVE_AS);
         	});
         	menu.add(saveProjectAs);
         	MenuItem exportProject = new MenuItem("Export Project");
         	exportProject.addActionListener(action -> {
-        		Main.instance.project.export();
+        		Main.instance.doAction(Action.EXPORT);
         	});
         	menu.add(exportProject);
-        	menu.add("-");
-        	MenuItem importSkeleton = new MenuItem("Import Skeleton");
-        	menu.add(importSkeleton);
-        	MenuItem exportSkeleton = new MenuItem("Export Skeleton");
-        	menu.add(exportSkeleton);
-        	//TODO overwrite last skeleton
-        	menu.add("-");
         	MenuItem exit = new MenuItem("Exit");
         	exit.addActionListener(action -> Main.instance.tryClose());
         	menu.add(exit);
@@ -99,19 +102,19 @@ public class ComponentTitleBar extends ComponentPanelMain
         this.addElement(editMenu = new TitleButton(64, 0, 128, 16, 1, 0, "Edit", () -> {
             PopupMenu menu = new PopupMenu();
         	MenuItem undo = new MenuItem("Undo");
-        	undo.addActionListener(action -> Main.instance.project.undo());
-        	if (Main.instance.project.undoActions.isEmpty()) undo.setEnabled(false);
+        	undo.addActionListener(action -> Main.instance.doAction(Action.UNDO));
+        	if (!Main.instance.project.canUndo()) undo.setEnabled(false);
         	menu.add(undo);
         	MenuItem redo = new MenuItem("Redo");
-        	redo.addActionListener(action -> Main.instance.project.redo());
-        	if (Main.instance.project.redoActions.isEmpty()) redo.setEnabled(false);
+        	redo.addActionListener(action -> Main.instance.doAction(Action.REDO));
+        	if (!Main.instance.project.canRedo()) redo.setEnabled(false);
         	menu.add(redo);
             return menu;
         }));
         this.addElement(modelMenu = new TitleButton(128, 0, 192, 16, 1, 0, "Model", () -> {
             PopupMenu menu = new PopupMenu();
         	MenuItem importModel = new MenuItem("Import Model");
-        	menu.add(importModel);
+        	menu.add(importModel); //TODO
         	MenuItem exportModel = new MenuItem("Export Model");
         	if (Main.instance.project.getModel() == null) exportModel.setEnabled(false);
         	else exportModel.addActionListener(action -> {
@@ -144,7 +147,7 @@ public class ComponentTitleBar extends ComponentPanelMain
         				writer = new FileWriter(file);
         				Main main = Main.instance;
         				Project project = main.project;
-        				AnimationState[] anims = new AnimationState[] {main.animState};
+        				AnimationState[] anims = project.getStates();
         				writer.write(RenderObjectComponents.createObj(project.getModel(), project.getModel().getPose(anims)).toString());
         			}
         			catch (IOException e)
@@ -155,10 +158,96 @@ public class ComponentTitleBar extends ComponentPanelMain
         		}
         	});
         	menu.add(exportPosedModel);
+        	MenuItem importSkeleton = new MenuItem("Import Skeleton");
+        	importSkeleton.addActionListener(action -> {
+        		File loadFile = FileUtils.getOpenFile("skel;xml;json;bin", "");
+        		if (loadFile != null)
+        		{
+        			try
+        			{
+						AbstractElement el = FileUtil.readFile(loadFile);
+						Skeleton skel = new Skeleton(el);
+						Main.instance.project.getRig().applySkeleton(skel);
+						Main.instance.onGuiUpdate(GuiUpdate.MODEL);
+					}
+        			catch (IOException e)
+        			{
+        				GuiPopupException.onException("Couldn't import skeleton from " + loadFile, e);
+					}
+        		}
+        	});
+        	importSkeleton.setEnabled(Main.instance.project.getRig() != null);
+        	menu.add(importSkeleton);
+        	MenuItem exportSkeleton = new MenuItem("Export Skeleton");
+        	exportSkeleton.addActionListener(action -> {
+        		File saveFile = FileUtils.getSaveFile("skel;xml;json;bin", "");
+        		if (saveFile != null)
+        		{
+        			FileUtil.DataType dataType = FileUtil.getAppropriateDataType(saveFile.toString());
+        			AbstractElement root = dataType.newElement("project");
+        			Main.instance.project.getRig().getSkeleton().save(root);
+        			try
+        			{
+        				dataType.saveElement(root, saveFile);
+        			}
+        			catch (Exception e)
+        			{
+        				GuiPopupException.onException("Couldn't export skeleton to " + saveFile, e);
+        			}
+        		}
+        	});
+        	exportSkeleton.setEnabled(Main.instance.project.getRig() != null);
+        	menu.add(exportSkeleton);
             return menu;
         }));
         this.addElement(textureMenu = new TitleButton(192, 0, 256, 16, 1, 0, "Texture", () -> {
             PopupMenu menu = new PopupMenu();
+        	MenuItem newTexture = new MenuItem("New Texture");
+        	newTexture.addActionListener(action -> new GuiPopupNewTexture().activate());
+        	menu.add(newTexture);
+        	MenuItem addTexture = new MenuItem("Add Texture From File");
+        	addTexture.addActionListener(action -> new GuiPopupLoadTexture().activate());
+        	menu.add(addTexture);
+        	MenuItem importTexture = new MenuItem("Load Texture");
+        	importTexture.addActionListener(action -> {
+        		File file = FileUtils.getOpenFile(FileUtils.getLoadImageFilter(), "");
+    			if (file != null) try
+    			{
+    				final String name = Main.instance.project.getTextureName();
+    				final Texture prevTex = Main.instance.project.getTexture();
+    				final Texture newTex = new ReloadingTexture(file);
+    				Main.instance.project.addTexture(name, newTex);
+    				Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addTexture(name, prevTex), () -> Main.instance.project.addTexture(name, newTex)));
+    			}
+    			catch (IOException e)
+    			{
+    				GuiPopupException.onException("Couldn't load texture file: " + file.getAbsolutePath().toString(), e, Level.WARN);
+    			}
+        	});
+        	menu.add(importTexture);
+        	MenuItem cloneTexture = new MenuItem("Clone Texture");
+        	cloneTexture.addActionListener(action -> {
+    			Project project = Main.instance.project;
+    			new GuiPopupCopy<>(MiscUtil.ensureUnique(project.getTextureName(), project.getTextureNames()), project.getTexture(), (name, copy) -> project.addTexture(name, copy), (name) -> project.removeTexture(name)).activate();
+        	});
+        	menu.add(cloneTexture);
+        	MenuItem exportTexture = new MenuItem("Export Texture");
+        	exportTexture.addActionListener(action -> {
+        		File file = FileUtils.getSaveFile(FileUtils.getLoadImageFilter(), "");
+        		if (file != null) Main.instance.project.getTexture().saveTexture(file);
+        	});
+        	menu.add(exportTexture);
+        	MenuItem editTexture = new MenuItem("Edit Texture");
+        	editTexture.addActionListener(action -> new GuiPopupEditTexture().activate());
+        	menu.add(editTexture);
+        	MenuItem removeTexture = new MenuItem("Remove Texture");
+        	removeTexture.addActionListener(action -> {
+    			final String name = Main.instance.project.getTextureName();
+    			final Texture tex = Main.instance.project.getTexture();
+    			Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addTexture(name, tex), () -> Main.instance.project.removeTexture(name)));
+    			Main.instance.project.removeTexture();
+    		});
+        	menu.add(removeTexture);
             return menu;
         }));
         this.addElement(optionsMenu = new TitleButton(256, 0, 320, 16, 1, 0, "Options", () -> {

@@ -24,10 +24,12 @@ import firemerald.mcms.gui.popups.texture.GuiPopupEditTexture;
 import firemerald.mcms.gui.popups.texture.GuiPopupLoadTexture;
 import firemerald.mcms.gui.popups.texture.GuiPopupNewTexture;
 import firemerald.mcms.texture.ReloadingTexture;
+import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.FileUtils;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class ComponentTexturePanel extends ComponentPanelMain
 {
@@ -66,32 +68,35 @@ public class ComponentTexturePanel extends ComponentPanelMain
 		{
 			try
 			{
-				Main.instance.project.onAction();
-				Main.instance.project.addTexture(Main.instance.project.getTextureName(), new ReloadingTexture(file));
+				final String name = Main.instance.project.getTextureName();
+				final Texture prevTex = Main.instance.project.getTexture();
+				final Texture newTex = new ReloadingTexture(file);
+				Main.instance.project.addTexture(name, newTex);
+				Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addTexture(name, prevTex), () -> Main.instance.project.addTexture(name, newTex)));
 			}
 			catch (IOException e)
 			{
 				GuiPopupException.onException("Couldn't load texture file: " + file.getAbsolutePath().toString(), e, Level.WARN);
 			}
-			//Main.instance.project.getTexture().load(file);
-			//Main.instance.gui.onGuiUpdate(GuiUpdate.TEXTURE);
 		}));
 		this.addElement(cloneTexture = new ButtonItem16(48, h - 16, Textures.ITEM_COPY, () -> {
 			Project project = Main.instance.project;
-			new GuiPopupCopy(MiscUtil.ensureUnique(project.getTextureName(), project.getTextureNames()), (name) -> project.addTexture(name, project.getTexture().cloneObject())).activate();
+			new GuiPopupCopy<>(MiscUtil.ensureUnique(project.getTextureName(), project.getTextureNames()), project.getTexture(), (name, copy) -> project.addTexture(name, copy), (name) -> project.removeTexture(name)).activate();
 		}));
 		this.addElement(saveTexture = new ButtonSaveFileItem(64, h - 16, Textures.ITEM_SAVE, FileUtils.getSaveImageFilter(), (file) -> Main.instance.project.getTexture().saveTexture(file)));
 		this.addElement(editTexture = new ButtonItem16(80, h - 16, Textures.ITEM_EDIT, () -> new GuiPopupEditTexture().activate()));
 		this.addElement(removeTexture = new ButtonItem16(96, h - 16, Textures.ITEM_REMOVE, () -> {
-			Main.instance.project.onAction();
+			final String name = Main.instance.project.getTextureName();
+			final Texture tex = Main.instance.project.getTexture();
+			Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addTexture(name, tex), () -> Main.instance.project.removeTexture(name)));
 			Main.instance.project.removeTexture();
 		}));
 		newTexture.enabled = addTexture.enabled = true;
 		this.addElement(textureSelector = new SelectorButton(112, h - 16, w, h, Main.instance.project.getTextureNames().isEmpty() ? "no textures available" : Main.instance.project.getTextureName() == null ? "no texture selected" : Main.instance.project.getTextureName(), MiscUtil.array("none", Main.instance.project.getTextureNames()), (ind, value) -> {
-			Main.instance.project.onAction();
+			//Main.instance.project.onAction(); TODO undo?
 			if (ind == 0)
 			{
-				Main.instance.project.setTexture(null);
+				Main.instance.project.setTexture((String) null);
 				return "no texture selected";
 			}
 			else

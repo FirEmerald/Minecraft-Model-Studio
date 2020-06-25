@@ -1,5 +1,8 @@
 package firemerald.mcms.gui.components.text;
 
+import firemerald.mcms.Main;
+import firemerald.mcms.util.history.HistoryAction;
+
 public class ComponentIncrementDouble extends ComponentIncrement
 {
 	protected double increment;
@@ -27,6 +30,9 @@ public class ComponentIncrementDouble extends ComponentIncrement
 	@Override
 	public void increment()
 	{
-		text.setVal(text.getVal() + increment);
+		final double prevVal = text.getVal();
+		final double newVal = prevVal + increment;
+		Main.instance.project.onAction(new HistoryAction(() -> text.setVal(prevVal), () -> text.setVal(prevVal)));
+		text.setVal(newVal);
 	}
 }

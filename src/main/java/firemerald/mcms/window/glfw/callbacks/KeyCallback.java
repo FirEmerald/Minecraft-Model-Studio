@@ -34,7 +34,7 @@ public class KeyCallback extends GLFWKeyCallback
 		{
 			if (entry.getValue().isPressed(this.window, key, mods))
 			{
-				entry.getKey().action.run();
+				main.doAction(entry.getKey());
 				return;
 			}
 		}

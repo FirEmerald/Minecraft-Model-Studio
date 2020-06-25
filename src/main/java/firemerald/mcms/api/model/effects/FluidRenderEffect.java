@@ -1,10 +1,14 @@
-package firemerald.mcms.api.model;
+package firemerald.mcms.api.model.effects;
 
 import static org.lwjgl.opengl.GL15.*;
+
+import org.eclipse.jdt.annotation.Nullable;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.model.IRigged;
+import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
@@ -18,7 +22,7 @@ import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
 import firemerald.mcms.util.mesh.Mesh;
 
-public class FluidRenderEffect extends PosedBoneEffect
+public class FluidRenderEffect extends StagedPosedBoneEffect
 {
 	protected int index = 0;
 	protected float sizeX = 1, sizeY = 1, sizeZ = 1, margin = 0.00390625f;
@@ -63,14 +67,24 @@ public class FluidRenderEffect extends PosedBoneEffect
 				23, 21, 22,
 		}, Mesh.DrawMode.TRIANGLES, GL_DYNAMIC_DRAW);
 
-	public FluidRenderEffect(String name, Bone parent, Transformation transform, int index)
+	public FluidRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, int index)
+	{
+		this(name, parent, transform, EffectRenderStage.POST_BONE, index);
+	}
+
+	public FluidRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, EffectRenderStage stage, int index)
 	{
 		this(name, parent, transform, index, 1f, 1f, 1f, 0.00390625f);
 	}
 
-	public FluidRenderEffect(String name, Bone parent, Transformation transform, int index, float sizeX, float sizeY, float sizeZ, float margin)
+	public FluidRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, int index, float sizeX, float sizeY, float sizeZ, float margin)
 	{
-		super(name, parent, transform);
+		this(name, parent, transform, EffectRenderStage.POST_BONE, index, sizeX, sizeY, sizeZ, margin);
+	}
+
+	public FluidRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, EffectRenderStage stage, int index, float sizeX, float sizeY, float sizeZ, float margin)
+	{
+		super(name, parent, transform, stage);
 		this.index = index;
 		this.sizeX = sizeX;
 		this.sizeY = sizeY;
@@ -156,7 +170,6 @@ public class FluidRenderEffect extends PosedBoneEffect
 	
 	public void setSizeX(float sizeX)
 	{
-		Main.instance.project.onAction();
 		this.sizeX = sizeX;
 		setMesh();
 	}
@@ -168,7 +181,6 @@ public class FluidRenderEffect extends PosedBoneEffect
 	
 	public void setSizeY(float sizeY)
 	{
-		Main.instance.project.onAction();
 		this.sizeY = sizeY;
 		setMesh();
 	}
@@ -180,7 +192,6 @@ public class FluidRenderEffect extends PosedBoneEffect
 	
 	public void setSizeZ(float sizeZ)
 	{
-		Main.instance.project.onAction();
 		this.sizeZ = sizeZ;
 		setMesh();
 	}
@@ -192,7 +203,6 @@ public class FluidRenderEffect extends PosedBoneEffect
 	
 	public void setMargin(float margin)
 	{
-		Main.instance.project.onAction();
 		this.margin = margin;
 		setMesh();
 	}
@@ -204,7 +214,6 @@ public class FluidRenderEffect extends PosedBoneEffect
 	
 	public void setIndex(int index)
 	{
-		Main.instance.project.onAction();
 		this.index = index;
 		setMesh();
 	}
@@ -213,17 +222,11 @@ public class FluidRenderEffect extends PosedBoneEffect
 	{
 		return index;
 	}
-
-	@Override
-	public void preRender(Runnable defaultTex) {}
-
-	@Override
-	public void postRenderBone(Runnable defaultTex) {}
 	
 	public static final ResourceLocation TEX = new ResourceLocation(Main.ID, "water.png");
 	
 	@Override
-	public void postRenderChildren(Runnable defaultTexture) //TODO
+	public void render(Runnable defaultTexture) //TODO
 	{
 		Shader.MODEL.push();
 		Shader.MODEL.matrix().mul(transform.getTransformation());
@@ -356,7 +359,7 @@ public class FluidRenderEffect extends PosedBoneEffect
 	}
 
 	@Override
-	public FluidRenderEffect cloneObject(Bone clonedParent)
+	public FluidRenderEffect cloneObject(RenderBone<?> clonedParent)
 	{
 		return new FluidRenderEffect(this.name, clonedParent, transform.copy(), index, sizeX, sizeY, sizeZ, margin);
 	}
@@ -374,9 +377,15 @@ public class FluidRenderEffect extends PosedBoneEffect
 	}
 
 	@Override
-	public FluidRenderEffect copy(IEditableParent newParent, IRigged<?> iRigged)
+	public FluidRenderEffect copy(IEditableParent newParent, IRigged<?, ?> iRigged)
 	{
-		if (newParent instanceof Bone) return cloneObject((Bone) newParent);
+		if (newParent instanceof RenderBone<?>) return cloneObject((RenderBone<?>) newParent);
 		else return null;
+	}
+
+	@Override
+	public EffectRenderStage getDefaultStage()
+	{
+		return EffectRenderStage.POST_BONE;
 	}
 }

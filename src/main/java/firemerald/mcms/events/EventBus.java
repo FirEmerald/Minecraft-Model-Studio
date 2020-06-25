@@ -325,18 +325,37 @@ public class EventBus
 	@SuppressWarnings("unchecked")
 	public <E extends Event> boolean post(E event)
 	{
-		List<ListenerInfo<?>> list = this.listeners.get(event.getClass());
-		if (list != null)
+		if (Main.instance.state.eventLogging) //log event times
 		{
-			String prevID = PluginLoader.INSTANCE.activePlugin;
-			Main.LOGGER.log(Level.DEBUG, "Firing " + event.getClass().getName() + " on " + name);
-			long time = System.nanoTime();
-			list.forEach(info -> ((ListenerInfo<? super E>) info).call(event));
-			PluginLoader.INSTANCE.activePlugin = prevID;
-			long endTime = System.nanoTime();
-			Main.LOGGER.log(Level.DEBUG, "Took " + MiscUtil.toSecondsDecimal(endTime - time) + " seconds");
+			List<ListenerInfo<?>> list = this.listeners.get(event.getClass());
+			if (list != null)
+			{
+				String prevID = PluginLoader.INSTANCE.activePlugin;
+				Main.LOGGER.log(Level.DEBUG, "Firing " + event.getClass().getName() + " on " + name);
+				long time = System.nanoTime();
+				list.forEach(info -> {
+					long time2 = System.nanoTime();
+					((ListenerInfo<? super E>) info).call(event);
+					long endTime = System.nanoTime();
+					Main.LOGGER.log(Level.DEBUG, "Firing on " + info.plugin + " Took " + MiscUtil.toSecondsDecimal(endTime - time2) + " seconds");
+				});
+				PluginLoader.INSTANCE.activePlugin = prevID;
+				long endTime = System.nanoTime();
+				Main.LOGGER.log(Level.DEBUG, "Took " + MiscUtil.toSecondsDecimal(endTime - time) + " seconds");
+			}
+			else Main.LOGGER.log(Level.DEBUG, "Not firing " + event.getClass().getName() + " on " + name + " as there are no registered listeners for the event");
 		}
-		else Main.LOGGER.log(Level.DEBUG, "Not firing " + event.getClass().getName() + " on " + name + " as there are no registered listeners for the event");
+		else
+		{
+			List<ListenerInfo<?>> list = this.listeners.get(event.getClass());
+			if (list != null)
+			{
+				String prevID = PluginLoader.INSTANCE.activePlugin;
+				list.forEach(info -> 
+				((ListenerInfo<? super E>) info).call(event));
+				PluginLoader.INSTANCE.activePlugin = prevID;
+			}
+		}
 		return event.isCanceled();
 	}
 }

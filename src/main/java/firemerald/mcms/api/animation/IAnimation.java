@@ -9,8 +9,9 @@ import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.api.util.ISaveable;
+import firemerald.mcms.util.IClonableObject;
 
-public interface IAnimation extends ISaveable
+public interface IAnimation extends ISaveable, IClonableObject<IAnimation>
 {
 	/**
 	 * gets the transformation matrices to apply to the given bones.
@@ -21,7 +22,7 @@ public interface IAnimation extends ISaveable
 	 * @param bones the model's bones
 	 * @return a map paring bones to transformation matrices
 	 */
-	public Map<String, Matrix4d> getBones(Map<String, Matrix4d> map, float frame, Collection<Bone> bones);
+	public Map<String, Matrix4d> getBones(Map<String, Matrix4d> map, float frame, Collection<? extends Bone<?>> bones);
 	
 	/**
 	 * gets the animation's running length, or loop length for looping animations. This can be used to detect when an animation has completed.
@@ -29,9 +30,7 @@ public interface IAnimation extends ISaveable
 	 */
 	public float getLength();
 	
-	public IAnimation cloneObject();
-	
-	public void reverseAnimation(IRigged<?> rig);
+	public void reverseAnimation(IRigged<?, ?> rig);
 	
 	@Override
 	public default void save(AbstractElement el)

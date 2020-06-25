@@ -11,6 +11,7 @@ import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.gui.decoration.DecoPane;
 import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.MiscUtil;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class GuiPopupNewTexture extends GuiPopup
 {
@@ -34,15 +35,15 @@ public class GuiPopupNewTexture extends GuiPopup
 		final int lSize = 44;
 		this.addElement(pane = new DecoPane(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20, 2, 16));
 		int y = cy;
-		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, MiscUtil.ensureUnique("Untitled", project.getTextureNames()), text -> {}));
+		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, MiscUtil.ensureUnique("Untitled", project.getTextureNames()), null));
 		y += 20;
 		this.addElement(labelWidth = new ComponentFloatingLabel(cx, y, cx + lSize, y + 20, Main.instance.fontMsg, "width"));
-		this.addElement(width = new ComponentTextInt(cx + lSize, y, cx + cw - 10, y + 20, Main.instance.fontMsg, null, 1, Integer.MAX_VALUE, "default"));
+		this.addElement(width = new ComponentTextInt(cx + lSize, y, cx + cw - 10, y + 20, Main.instance.fontMsg, null, 1, Integer.MAX_VALUE, null, "default"));
 		this.addElement(widthUp = new ComponentIncrementInt(cx + cw - 10, y, width, 1));
 		this.addElement(widthDown = new ComponentIncrementInt(cx + cw - 10, y + 10, width, -1));
 		y += 20;
 		this.addElement(labelHeight = new ComponentFloatingLabel(cx, y, cx + lSize, y + 20, Main.instance.fontMsg, "height"));
-		this.addElement(height = new ComponentTextInt(cx + lSize, y, cx + cw - 10, y + 20, Main.instance.fontMsg, null, 1, Integer.MAX_VALUE, "default"));
+		this.addElement(height = new ComponentTextInt(cx + lSize, y, cx + cw - 10, y + 20, Main.instance.fontMsg, null, 1, Integer.MAX_VALUE, null, "default"));
 		this.addElement(heightUp = new ComponentIncrementInt(cx + cw - 10, y, height, 1));
 		this.addElement(heightDown = new ComponentIncrementInt(cx + cw - 10, y + 10, height, -1));
 		y += 20;
@@ -91,11 +92,11 @@ public class GuiPopupNewTexture extends GuiPopup
 	{
 		deactivate();
 		Project project = Main.instance.project;
-		project.onAction();
 		int w = width.getText().length() == 0 ? project.getTextureWidth() : width.getVal();
 		int h = height.getText().length() == 0 ? project.getTextureHeight() : height.getVal();
 		Texture tex = new Texture(w, h);
 		String name = MiscUtil.ensureUnique(this.name.getText(), project.getTextureNames());
 		project.addTexture(name, tex);
+		project.onAction(new HistoryAction(() -> project.removeTexture(name), () -> project.addTexture(name, tex)));
 	}
 }

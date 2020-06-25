@@ -30,7 +30,7 @@ public interface IRotation
 		}
 
 		@Override
-		public int onSelect(EditorPanes editorPanes, int editorY, Runnable preUpdate, Runnable onUpdate)
+		public int onSelect(EditorPanes editorPanes, int editorY, Runnable onUpdate)
 		{
 			return editorY;
 		}
@@ -55,7 +55,7 @@ public interface IRotation
 	
 	public IRotation copy();
 	
-	public int onSelect(EditorPanes editorPanes, int editorY, Runnable preUpdate, Runnable onUpdate);
+	public int onSelect(EditorPanes editorPanes, int editorY, Runnable onUpdate);
 	
 	public void onDeselect(EditorPanes editorPanes);
 }

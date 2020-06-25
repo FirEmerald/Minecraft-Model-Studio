@@ -16,5 +16,9 @@ public interface IEditableParent
 	
 	public void addChildAfter(IModelEditable child, IModelEditable position);
 	
+	public int getChildIndex(IModelEditable child);
+	
+	public void addChildAt(IModelEditable child, int index);
+	
 	public void removeChild(IModelEditable child);
 }

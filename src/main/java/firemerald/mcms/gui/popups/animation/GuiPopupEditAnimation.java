@@ -20,6 +20,7 @@ import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.gui.decoration.DecoPane;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MiscUtil;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class GuiPopupEditAnimation extends GuiPopup
 {
@@ -45,10 +46,10 @@ public class GuiPopupEditAnimation extends GuiPopup
 		final int cy = 20;
 		this.addElement(pane = new DecoPane(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20, 2, 16));
 		int y = cy;
-		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, Main.instance.project.getAnimationName(), text -> {}));
+		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, Main.instance.project.getAnimationName(), null));
 		y += 20;
 		this.addElement(labelLength = new ComponentFloatingLabel(cx, y, cx + 50, y + 20, Main.instance.fontMsg, "length"));
-		this.addElement(length = new ComponentTextFloat(cx + 50, y, cx + cw - 10, y + 20, Main.instance.fontMsg, anim.getLength(), 0, Float.MAX_VALUE));
+		this.addElement(length = new ComponentTextFloat(cx + 50, y, cx + cw - 10, y + 20, Main.instance.fontMsg, anim.getLength(), 0, Float.MAX_VALUE, null));
 		this.addElement(lengthUp = new ComponentIncrementFloat(cx + cw - 10, y, length, .05f));
 		this.addElement(lengthDown = new ComponentIncrementFloat(cx + cw - 10, y + 10, length, -.05f));
 		y += 20;
@@ -107,22 +108,27 @@ public class GuiPopupEditAnimation extends GuiPopup
 	{
 		deactivate();
 		Project project = Main.instance.project;
-		project.onAction();
+		IAnimation animation = project.getAnimation();
+		final IAnimation oldAnimation = animation.cloneObject();
+		final IAnimation newAnimation;
+		final String oldName = project.getAnimationName();
 		project.getAnimation().setRelative(relative.state);
-		if (project.getAnimation() instanceof Animation)
+		if (animation instanceof Animation)
 		{
-			Animation anim = (Animation) project.getAnimation();
+			Animation anim = (Animation) animation;
 			if (length.getVal() == 0) //convert to pose
 			{
 				Pose pose = new Pose(relative.state);
-				anim.animation.forEach((bone, animation) -> {
-					Transformation transform = animation.get(0f);
+				newAnimation = pose;
+				anim.animation.forEach((bone, a) -> {
+					Transformation transform = a.get(0f);
 					if (transform != null) pose.pose.put(bone, transform);
 				});
-				project.addAnimation(project.getAnimationName(), pose);
+				project.addAnimation(oldName, pose);
 			}
 			else
 			{
+				newAnimation = anim;
 				anim.loop = loop.state;
 				if (length.getVal() != anim.getLength())
 				{
@@ -133,22 +139,37 @@ public class GuiPopupEditAnimation extends GuiPopup
 				}
 			}
 		}
-		else if (project.getAnimation() instanceof Pose)
+		else if (animation instanceof Pose)
 		{
-			Pose pose = (Pose) project.getAnimation();
-			if (length.getVal() == 0) pose.setRelative(relative.state);
+			Pose pose = (Pose) animation;
+			if (length.getVal() == 0)
+			{
+				pose.setRelative(relative.state);
+				newAnimation = pose;
+			}
 			else //convert to animation
 			{
 				Animation anim = new Animation(length.getVal(), loop.state, relative.state);
+				newAnimation = anim;
 				pose.pose.forEach((bone, transform) -> {
 					NavigableMap<Float, Transformation> map = anim.animation.get(bone);
 					if (map == null) anim.animation.put(bone, map = new TreeMap<>());
 					map.put(0f, transform);
 				});
-				project.addAnimation(project.getAnimationName(), anim);
+				project.addAnimation(oldName, anim);
 			}
 		}
-		if (!name.getText().equals(project.getAnimationName())) project.setAnimationName(MiscUtil.ensureUnique(this.name.getText(), project.getAnimationNames()));
+		else newAnimation = animation;
+		final String newName;
+		if (!name.getText().equals(oldName)) project.setAnimationName(newName = MiscUtil.ensureUnique(this.name.getText(), project.getAnimationNames()));
+		else newName = oldName;
 		Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
+		project.onAction(new HistoryAction(() -> {
+			if (!oldName.equals(newName)) project.setAnimationName(newName, oldName);
+			project.addAnimation(oldName, oldAnimation);
+		}, () -> {
+			if (!oldName.equals(newName)) project.setAnimationName(oldName, newName);
+			project.addAnimation(newName, newAnimation);
+		}));
 	}
 }

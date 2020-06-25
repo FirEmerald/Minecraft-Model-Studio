@@ -40,8 +40,8 @@ public class GuiPopupSelector extends GuiPopup
 			final String str = values[i];
 			pane.addElement(new StandardButton(0, y, w, y += h, values[i], () ->
 			{
-				action.accept(j, str);
 				deactivate();
+				action.accept(j, str);
 			}));
 		}
 		pane.updateComponentSize();

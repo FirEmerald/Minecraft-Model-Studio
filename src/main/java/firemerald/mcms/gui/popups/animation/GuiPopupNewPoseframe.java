@@ -15,6 +15,7 @@ import firemerald.mcms.gui.decoration.DecoPane;
 import firemerald.mcms.gui.main.components.animation.ComponentFramesBar;
 import firemerald.mcms.gui.main.components.animation.ComponentPoseFrame;
 import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class GuiPopupNewPoseframe extends GuiPopup
 {
@@ -79,7 +80,6 @@ public class GuiPopupNewPoseframe extends GuiPopup
 		deactivate();
 		Main main = Main.instance;
 		Project project = main.project;
-		project.onAction();
 		Pose anim = (Pose) project.getAnimation();
 		Transformation transform = null;
 		if (main.getEditing() instanceof ComponentPoseFrame)
@@ -95,7 +95,7 @@ public class GuiPopupNewPoseframe extends GuiPopup
 				if (project.useBackingSkeleton()) transform = project.getSkeleton().getBone(name.getText()).defaultTransform.copy();
 				else
 				{
-					IRigged<?> rigged = project.getRig();
+					IRigged<?, ?> rigged = project.getRig();
 					if (rigged != null) transform = rigged.getBone(name.getText()).defaultTransform.copy();
 					if (transform == null) transform = new Transformation();
 				}
@@ -104,7 +104,20 @@ public class GuiPopupNewPoseframe extends GuiPopup
 		final Transformation transformation = transform;
 		if (!anim.pose.containsKey(name.getText())) //TODO if already has a keyframe
 		{
-			anim.pose.put(name.getText(), transformation);
+			final String name = this.name.getText();
+			project.onAction(new HistoryAction(() -> {
+				if (Main.instance.getEditing() instanceof ComponentPoseFrame)
+				{
+					ComponentPoseFrame frame =  (ComponentPoseFrame) Main.instance.getEditing();
+					if (frame.transform == transformation) Main.instance.setEditing(null);
+				}
+				anim.pose.remove(name);
+				Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
+			}, () -> {
+				anim.pose.put(name, transformation);
+				Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
+			}));
+			anim.pose.put(name, transformation);
 			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 			framesBar.keyFrames.get(0f).forEach(keyframe -> {
 				if (keyframe.transform == transformation) Main.instance.setEditing(keyframe);

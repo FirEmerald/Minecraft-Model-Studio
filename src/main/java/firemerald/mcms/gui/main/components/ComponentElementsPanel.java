@@ -7,6 +7,8 @@ import java.util.Set;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
+import firemerald.mcms.api.animation.AnimationState;
+import firemerald.mcms.api.model.IModel;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.gui.components.ButtonItem16;
 import firemerald.mcms.gui.components.SelectorButton;
@@ -28,6 +30,7 @@ import firemerald.mcms.model.RenderObjectComponents;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class ComponentElementsPanel extends ComponentPanelMain
 {
@@ -65,14 +68,15 @@ public class ComponentElementsPanel extends ComponentPanelMain
 		this.addElement(loadModel = new ButtonItem16(32, h - 16, Textures.ITEM_LOAD, () -> new GuiPopupLoadModel().activate()));
 		this.addElement(cloneModel = new ButtonItem16(48, h - 16, Textures.ITEM_COPY, () -> {
 			Project project = Main.instance.project;
-			new GuiPopupCopy(MiscUtil.ensureUnique(project.getModelName(), project.getModelNames()), (name) -> project.addModel(name, project.getModel().cloneObject())).activate();
+			new GuiPopupCopy<>(MiscUtil.ensureUnique(project.getModelName(), project.getModelNames()), project.getModel(), (name, copy) -> project.addModel(name, copy), (name) -> project.removeModel(name)).activate();
 		}));
 		this.addElement(saveModel = new ButtonSaveFileItem(64, h - 16, Textures.ITEM_SAVE, "obj", (file) -> {
 			Writer writer = null;
 			try
 			{
 				writer = new FileWriter(file);
-				writer.write(RenderObjectComponents.createObj(Main.instance.project.getModel(), Main.instance.project.getModel().getPose()).toString());
+				AnimationState[] anims = Main.instance.project.getStates();
+				writer.write(RenderObjectComponents.createObj(Main.instance.project.getModel(), Main.instance.project.getModel().getPose(anims)).toString());
 			}
 			catch (IOException e)
 			{
@@ -82,15 +86,17 @@ public class ComponentElementsPanel extends ComponentPanelMain
 		}));
 		this.addElement(editModel = new ButtonItem16(80, h - 16, Textures.ITEM_EDIT, () -> new GuiPopupModel(true).activate()));
 		this.addElement(removeModel = new ButtonItem16(96, h - 16, Textures.ITEM_REMOVE, () -> {
+			final String name = Main.instance.project.getModelName();
+			final IModel<?, ? extends RenderObjectComponents<?>> model = Main.instance.project.getModel();
+			Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addModel(name, model), () -> Main.instance.project.removeModel()));
 			Main.instance.project.removeModel();
-			Main.instance.project.onAction();
 		}));
 		newModel.enabled = addModel.enabled = true;
 		Project project = Main.instance.project;
 		this.addElement(modelSelector = new SelectorButton(112, h - 16, w, h, project.getModelName() == null ? project.useBackingSkeleton() ? "model skeleton" : "no model selected" : project.getModelName(), allModelNames(project), (ind, value) -> {
 			Project proj = Main.instance.project;
-			proj.onAction();
-			if (proj.useBackingSkeleton() && ind == 0) proj.setModel(null);
+			//proj.onAction(); TODO undo?
+			if (proj.useBackingSkeleton() && ind == 0) proj.setModel((String) null);
 			else proj.setModel(value);
 		}));
 		// TODO components

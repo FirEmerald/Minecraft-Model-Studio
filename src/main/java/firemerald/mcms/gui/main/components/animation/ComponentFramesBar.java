@@ -146,7 +146,7 @@ public class ComponentFramesBar extends ScrollableComponentPane //TODO bones not
 	public boolean canScrollV(float mx, float my)
 	{
 		if (Modifier.CONTROL.isDown(Main.instance.window)) return true;
-		else return super.canScrollH(mx, my);
+		else return super.canScrollV(mx, my);
 	}
 
 	@Override
@@ -163,6 +163,8 @@ public class ComponentFramesBar extends ScrollableComponentPane //TODO bones not
 			if (scrollH < 0) scrollH = 0;
 			else if (scrollH > scrollSizeH) scrollH = scrollSizeH;
 			this.setup(); //TODO only update positions and scroll
+			this.onScrolledH();
+			this.onScrolled();
 		}
 		else super.onMouseScroll(mx, my, scrollX, scrollY);
 	}

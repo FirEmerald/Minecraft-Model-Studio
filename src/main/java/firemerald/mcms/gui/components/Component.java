@@ -3,6 +3,8 @@ package firemerald.mcms.gui.components;
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.IGuiHolder;
 import firemerald.mcms.theme.GuiTheme;
+import firemerald.mcms.util.history.IHistoryAction;
+import firemerald.mcms.util.hotkey.Action;
 import firemerald.mcms.window.api.Cursor;
 import firemerald.mcms.window.api.Key;
 
@@ -139,5 +141,17 @@ public abstract class Component implements IComponent
 	public void setThemeOverride(GuiTheme theme)
 	{
 		this.theme = theme;
+	}
+
+	@Override
+	public boolean onHotkey(Action action)
+	{
+		return false;
+	}
+
+	@Override
+	public boolean onAction(IHistoryAction<?> action)
+	{
+		return false;
 	}
 }

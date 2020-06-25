@@ -2,13 +2,29 @@ package firemerald.mcms.gui;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.util.history.ActionHistory;
+import firemerald.mcms.util.history.IHistoryAction;
+import firemerald.mcms.util.hotkey.Action;
 
 public abstract class GuiPopup extends GuiScreen
 {
 	public GuiScreen under;
+	public final ActionHistory undoStack;
+	public boolean active = false;
+	
+	public GuiPopup()
+	{
+		this(true);
+	}
+	
+	public GuiPopup(boolean useUndoStack)
+	{
+		undoStack = useUndoStack ? new ActionHistory() : null;
+	}
 	
 	public void activate()
 	{
+		active = true;
 		Main.instance.openGui(this);
 	}
 	
@@ -21,6 +37,7 @@ public abstract class GuiPopup extends GuiScreen
 	
 	public void deactivate()
 	{
+		active = false;
 		Main.instance.closePopup();
 	}
 	
@@ -39,5 +56,29 @@ public abstract class GuiPopup extends GuiScreen
 	{
 		super.onGuiUpdate(reason);
 		if (under != null) under.onGuiUpdate(reason);
+	}
+	
+	@Override
+	public boolean onHotkey(Action action)
+	{
+		if (active && undoStack != null && (action == Action.UNDO || action == Action.REDO))
+		{
+			Main.instance.project.pushUndoStack(undoStack);
+			if (!super.onHotkey(action)) action.action.run();
+			Main.instance.project.popUndoStack();
+			return true;
+		}
+		else return super.onHotkey(action);
+	}
+
+	@Override
+	public boolean onAction(IHistoryAction<?> action)
+	{
+		if (active && undoStack != null)
+		{
+			if (!super.onAction(action)) undoStack.onAction(action);
+			return true;
+		}
+		else return super.onAction(action);
 	}
 }

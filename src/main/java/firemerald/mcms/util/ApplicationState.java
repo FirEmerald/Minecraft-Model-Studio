@@ -12,6 +12,7 @@ import javax.xml.transform.TransformerException;
 import firemerald.mcms.Main;
 import firemerald.mcms.api.data.*;
 import firemerald.mcms.api.util.FileUtil;
+import firemerald.mcms.events.ApplicationStateEvent;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.RGB;
@@ -31,6 +32,7 @@ public class ApplicationState
 	private boolean showNodes = false, showBones = false;
 	private final List<ColorModel> colorHistory = new ArrayList<>();
 	private static final int MAX_COLOR_HISTORY = 16;
+	public boolean eventLogging = false;
 	
 	public ApplicationState()
 	{
@@ -161,7 +163,11 @@ public class ApplicationState
 					if (colorEl.getName().equals("rgb")) colorHistory.add(new RGB(colorEl.getInt("r", 0, 255, 0) / 255f, colorEl.getInt("g", 0, 255, 0) / 255f, colorEl.getInt("b", 0, 255, 0) / 255f));
 				}
 				break;
+			case "debug":
+				eventLogging = rootChild.getBoolean("eventLogging");
+				break;
 			}
+			Main.instance.EVENT_BUS.post(new ApplicationStateEvent.Load(root));
 			try
 			{
 				setThemeNoStateUpdate(GuiTheme.parseTheme(theme));
@@ -213,6 +219,9 @@ public class ApplicationState
 					colorEl.setInt("b", (int) (rgb.b * 255));
 				});
 			}
+			AbstractElement debug = root.addChild("debug");
+			debug.setBoolean("eventLogging", eventLogging);
+			Main.instance.EVENT_BUS.post(new ApplicationStateEvent.Save(root));
 			root.saveXML(FILE);
 		}
 		catch (IOException | TransformerException e)

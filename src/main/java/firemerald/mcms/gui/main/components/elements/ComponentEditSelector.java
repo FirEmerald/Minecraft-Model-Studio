@@ -181,6 +181,19 @@ public class ComponentEditSelector extends ScrollableComponentPane
 		{
 			if (model != null) model.removeChild(child);
 		}
+		
+		@Override
+		public int getChildIndex(IModelEditable child)
+		{
+			if (model != null) return model.getChildIndex(child);
+			else return -1;
+		}
+
+		@Override
+		public void addChildAt(IModelEditable child, int index)
+		{
+			if (model != null) model.addChildAt(child, index);
+		}
 
 		@Override
 		public void movedTo(IEditableParent oldParent, IEditableParent newParent) {}
@@ -195,7 +208,7 @@ public class ComponentEditSelector extends ScrollableComponentPane
 		public void setVisible(boolean visible) {}
 
 		@Override
-		public IModelEditable copy(IEditableParent newParent, IRigged<?> model)
+		public IModelEditable copy(IEditableParent newParent, IRigged<?, ?> model)
 		{
 			return null;
 		}

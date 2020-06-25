@@ -20,7 +20,9 @@ import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.gui.decoration.DecoPane;
 import firemerald.mcms.gui.main.components.animation.ComponentFramesBar;
 import firemerald.mcms.gui.main.components.animation.ComponentKeyFrame;
+import firemerald.mcms.gui.main.components.animation.ComponentPoseFrame;
 import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.util.history.HistoryAction;
 
 public class GuiPopupNewKeyframe extends GuiPopup
 {
@@ -57,7 +59,7 @@ public class GuiPopupNewKeyframe extends GuiPopup
 		this.addElement(nameOptions = new DropdownButton(cx + cw - 20, y, cx + cw, y + 20, name, names, (ind, val) -> name.setText(val)));
 		y += 20;
 		this.addElement(labelTime = new ComponentFloatingLabel(cx, y, cx + 50, y + 20, Main.instance.fontMsg, "time"));
-		this.addElement(time = new ComponentTextFloat(cx + 50, y, cx + cw - 10, y + 20, Main.instance.fontMsg, defFrame, 0, anim.getLength()));
+		this.addElement(time = new ComponentTextFloat(cx + 50, y, cx + cw - 10, y + 20, Main.instance.fontMsg, defFrame, 0, anim.getLength(), null));
 		this.addElement(timeUp = new ComponentIncrementFloat(cx + cw - 10, y, time, .05f));
 		this.addElement(timeDown = new ComponentIncrementFloat(cx + cw - 10, y + 10, time, -.05f));
 		y += 20;
@@ -102,10 +104,10 @@ public class GuiPopupNewKeyframe extends GuiPopup
 		deactivate();
 		Main main = Main.instance;
 		Project project = main.project;
-		project.onAction();
 		Animation anim = (Animation) project.getAnimation();
-		NavigableMap<Float, Transformation> map = anim.animation.get(name.getText());
-		if (map == null) anim.animation.put(name.getText(), map = new TreeMap<>());
+		NavigableMap<Float, Transformation> map2 = anim.animation.get(name.getText());
+		if (map2 == null) anim.animation.put(name.getText(), map2 = new TreeMap<>());
+		final NavigableMap<Float, Transformation> map = map2;
 		Float time = this.time.getVal();
 		Transformation transform = null;
 		if (main.getEditing() instanceof ComponentKeyFrame)
@@ -129,7 +131,7 @@ public class GuiPopupNewKeyframe extends GuiPopup
 						if (project.useBackingSkeleton()) lower = project.getSkeleton().getBone(name.getText()).defaultTransform.copy();
 						else
 						{
-							IRigged<?> rigged = project.getRig();
+							IRigged<?, ?> rigged = project.getRig();
 							if (rigged != null) lower = rigged.getBone(name.getText()).defaultTransform.copy();
 							if (lower == null) lower = new Transformation();
 						}
@@ -150,6 +152,18 @@ public class GuiPopupNewKeyframe extends GuiPopup
 		final Transformation transformation = transform;
 		if (!map.containsKey(time)) //TODO if already has a keyframe
 		{
+			project.onAction(new HistoryAction(() -> {
+				if (Main.instance.getEditing() instanceof ComponentPoseFrame)
+				{
+					ComponentPoseFrame frame =  (ComponentPoseFrame) Main.instance.getEditing();
+					if (frame.transform == transformation) Main.instance.setEditing(null);
+				}
+				map.remove(time);
+				Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
+			}, () -> {
+				map.put(time, transformation);
+				Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
+			}));
 			map.put(time, transformation);
 			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 			framesBar.keyFrames.get(time).forEach(keyframe -> {
