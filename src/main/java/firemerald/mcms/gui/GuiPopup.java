@@ -68,7 +68,7 @@ public abstract class GuiPopup extends GuiScreen
 			Main.instance.project.popUndoStack();
 			return true;
 		}
-		else return super.onHotkey(action);
+		else return true; //no actions while in a popup menu
 	}
 
 	@Override

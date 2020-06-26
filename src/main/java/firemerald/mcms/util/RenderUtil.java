@@ -131,6 +131,7 @@ public class RenderUtil
 	
 	public static final Mesh BONE_MESH;
 	public static final Mesh ITEM_MESH;
+	public static final Mesh SPHERE_MESH;
 	
 	static
 	{
@@ -164,6 +165,17 @@ public class RenderUtil
 			itemMesh = new Mesh();
 		}
 		ITEM_MESH = itemMesh;
+		Mesh sphereMesh = null;
+		try
+		{
+			sphereMesh = ObjUtil.makeMesh(new ObjData(Main.getResource(new ResourceLocation(Main.ID, "sphere.obj"))));
+		}
+		catch (Exception e)
+		{
+			GuiPopupException.onException("Couldn't load sphere mesh", e);
+			sphereMesh = new Mesh();
+		}
+		SPHERE_MESH = sphereMesh;
 	}
 	
 	public static void renderSkeleton(Bone<?> bone, Map<String, Matrix4d> transforms, boolean showNodes, boolean showBones)

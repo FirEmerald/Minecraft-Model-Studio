@@ -207,7 +207,9 @@ public class ApplicationState
 			viewer.setBoolean("showNodes", showNodes);
 			viewer.setBoolean("showBones", showBones);
 			AbstractElement hotkeys = options.addChild("hotkeys");
-			this.hotkeys.forEach((action, hotkey) -> hotkey.writeToElement(hotkeys.addChild(action.id)));
+			this.hotkeys.forEach((action, hotkey) -> {
+				if (hotkey != null) hotkey.writeToElement(hotkeys.addChild(action.id));
+			});
 			if (!colorHistory.isEmpty())
 			{
 				AbstractElement colorHistory = root.addChild("color_history");

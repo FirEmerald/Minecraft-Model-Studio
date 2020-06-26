@@ -65,7 +65,7 @@ public class Main
 {
 	//public static final String VERSION = "0.0.0.0";
 	public static final String ID = "mcms";
-	public static final String VERSION = "Alpha 20";
+	public static final String VERSION = "0.1";
 	public static final String BUILD_DATE = "06/24/2020 18:08";
 	public static final Logger LOGGER = LogManager.getLogger("MCMS"); //the main logger;
 	public static Main instance;
@@ -140,9 +140,14 @@ public class Main
 	public ITool tool = null;
 	public final EventBus EVENT_BUS = new EventBus("mcms_event_bus");
 	
-	public void doAction(Action action)
+	public boolean doAction(Action action)
 	{
-		if (action.canRun.getAsBoolean() && !getGui().onHotkey(action)) action.action.run();
+		if (action.canRun.getAsBoolean() && !getGui().onHotkey(action))
+		{
+			action.action.run();
+			return true;
+		}
+		else return false;
 	}
 	
 	public void openGui(@NonNull GuiScreen gui)

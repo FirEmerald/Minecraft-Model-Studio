@@ -143,10 +143,14 @@ public class Project
 	{
 		this.name = name;
 	}
-	
+
 	public int getTextureWidth()
 	{
 		return viewTextureWidth;
+	}
+	public int getProjectTextureWidth()
+	{
+		return textureWidth;
 	}
 	
 	public void setTextureWidth(int textureWidth)
@@ -204,10 +208,15 @@ public class Project
 			Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 		}
 	}
-	
+
 	public int getTextureHeight()
 	{
 		return viewTextureHeight;
+	}
+	
+	public int getProjectTextureHeight()
+	{
+		return textureHeight;
 	}
 	
 	public void setTextureHeight(int textureHeight)
@@ -308,6 +317,29 @@ public class Project
 	public boolean useBackingSkeleton()
 	{
 		return useBackingSkeleton;
+	}
+	
+	public void setBackingSkeleton(boolean use)
+	{
+		if (!use)
+		{
+			this.useBackingSkeleton = false;
+			this.skeleton = null;
+			this.rebuildBoneView();
+		}
+		else
+		{
+			this.useBackingSkeleton = true;
+			this.skeleton = new Skeleton();
+			this.models.values().forEach(model -> {
+				skeleton.applySkeletonTransforms(model.getSkeleton());
+				model.applySkeletonTransforms(skeleton = model.getSkeleton().applySkeleton(skeleton));
+				model.getRootBones().forEach(bone -> addBoneView(bone, boneView));
+			});
+			this.models.values().forEach(model -> model.applySkeletonTransforms(skeleton));
+			this.rebuildBoneView();
+		}
+		Main.instance.onGuiUpdate(GuiUpdate.PROJECT);
 	}
 	
 	public IRigged<?, ?> getRig()

@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.joml.Matrix4d;
 import org.joml.Quaterniond;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.joml.Vector4d;
 import org.joml.Vector4f;
@@ -38,6 +39,7 @@ import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.TextureRaytraceResult;
 import firemerald.mcms.util.mesh.Mesh;
 import firemerald.mcms.window.api.Key;
+import firemerald.mcms.window.api.Modifier;
 import firemerald.mcms.window.api.MouseButtons;
 
 public class ComponentModelViewer extends Component
@@ -46,15 +48,17 @@ public class ComponentModelViewer extends Component
 	private final FrameBuffer fb;
 	private int sizeW, sizeH;
 	double fov = 70 * Math.PI / 180;
-	public final Matrix4d modelm = new Matrix4d(), view = new Matrix4d(), projection = new Matrix4d(), inverse = new Matrix4d();
+	public final Matrix4d modelm = new Matrix4d(), originm = new Matrix4d(), view = new Matrix4d(), projection = new Matrix4d(), inverse = new Matrix4d();
 	public Quaterniond rotationq = new Quaterniond();
 	public final Mesh renderFB = new Mesh();
 	public ThemeElement rect;
-	
+
 	public float orbitX = 0, orbitY = 0, orbitZ = 0;
+	public float lookX = 0, lookY = 0, lookZ = 0;
 	public float orbitYaw = 0, orbitPitch = 0;
 	public float orbitZoom = 5;
-	public float orbitMX, orbitMY;
+	public float orbitMX, orbitMY, lookVX, lookVY, lookVZ, panVX, panVY, panVZ;
+	public int orbit = -1, look = -1, pan = -1;
 	
 	public ComponentModelViewer(int x1, int y1, int x2, int y2, GuiMain gui)
 	{
@@ -84,18 +88,24 @@ public class ComponentModelViewer extends Component
 			if (rect != null) rect.release();
 			rect = getTheme().genBox(x2 - x1, y2 - y1, 1);
 		}
+		else if (reason == GuiUpdate.PROJECT)
+		{
+			this.updateMatricies();
+		}
 	}
 	
 	public void updateMatricies()
 	{
 		modelm.identity();
+		originm.identity();
 		view.identity();
 		projection.identity();
 		/*
 		view.translate(0, 0, 0.01f * (float) (-this.sizeH / (2 * Math.tan(fov * 0.5))));
 		*/
 		view.translate(0, 0, -orbitZoom);
-		modelm.mul((rotationq = new Quaterniond().rotateX(orbitPitch).rotateY(orbitYaw)).get(new Matrix4d())).translate(orbitX, orbitY, orbitZ);
+		originm.translate(orbitX, orbitY, orbitZ).mul((rotationq = new Quaterniond().rotateX(orbitPitch).rotateY(orbitYaw)).get(new Matrix4d())).scale(.03125f * orbitZoom);
+		modelm.translate(orbitX, orbitY, orbitZ).mul((rotationq = new Quaterniond().rotateX(orbitPitch).rotateY(orbitYaw)).get(new Matrix4d())).translate(lookX, lookY, lookZ);
 		modelm.scale(Main.instance.project.getScale());
 		projection.perspective((float) fov, (float) this.sizeW / this.sizeH, .1f, 1000);
 		inverse.identity().mul(projection).mul(view).mul(modelm).invert();
@@ -184,6 +194,16 @@ public class ComponentModelViewer extends Component
 		shader.updateView();
 		shader.updateProjection();
     	Main.listGLErrors("pre-render");
+    	if (!state.showNodes() && !state.showBones() && (pan >= 0 || look >= 0 || Modifier.CONTROL.isDown(Main.instance.window) || Modifier.SHIFT.isDown(Main.instance.window)))
+    	{
+    		Shader.MODEL.push();
+    		originm.get(Shader.MODEL.matrix());
+    		shader.updateModel();
+    		main.textureManager.unbindTexture();
+    		RenderUtil.SPHERE_MESH.render();
+    		Shader.MODEL.pop();
+    		shader.updateModel();
+    	}
     	IModel<?, ?> model = project.getModel();
     	ExtendedAnimationState[] states = project.getStates();
     	if (model != null)
@@ -206,6 +226,16 @@ public class ComponentModelViewer extends Component
 		if (state.showNodes() || state.showBones())
 		{
 			glClear(GL_DEPTH_BUFFER_BIT);
+	    	if (pan >= 0 || look >= 0 || Modifier.CONTROL.isDown(Main.instance.window) || Modifier.SHIFT.isDown(Main.instance.window))
+	    	{
+	    		Shader.MODEL.push();
+	    		originm.get(Shader.MODEL.matrix());
+	    		shader.updateModel();
+	    		main.textureManager.unbindTexture();
+	    		RenderUtil.SPHERE_MESH.render();
+	    		Shader.MODEL.pop();
+	    		shader.updateModel();
+	    	}
 	    	if (model != null) renderBones(model, states);
 	    	else
 	    	{
@@ -220,6 +250,21 @@ public class ComponentModelViewer extends Component
 	    		if (m != model) renderBones(m, states);
 	    	});
 		}
+    	if (pan >= 0 || look >= 0 || Modifier.CONTROL.isDown(Main.instance.window) || Modifier.SHIFT.isDown(Main.instance.window))
+    	{
+    		Shader.MODEL.push();
+    		originm.get(Shader.MODEL.matrix());
+    		shader.updateModel();
+    		main.textureManager.unbindTexture();
+    		RenderUtil.SPHERE_MESH.render();
+    		shader.setColor(0, 0, 0, .5f);
+    		GL11.glDepthFunc(GL11.GL_GREATER);
+    		RenderUtil.SPHERE_MESH.render();
+    		shader.setColor(1, 1, 1, 1);
+    		GL11.glDepthFunc(GL11.GL_LEQUAL);
+    		Shader.MODEL.pop();
+    		shader.updateModel();
+    	}
         glDisable(GL_CULL_FACE);
     	Main.listGLErrors("post-render");
 		
@@ -248,10 +293,34 @@ public class ComponentModelViewer extends Component
 	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
-		if (button == MouseButtons.MIDDLE || (Main.instance.getEditorMode() != EditorMode.TEXTURE && button == MouseButtons.RIGHT))
+		if (orbit < 0 && pan < 0 && look < 0 && (button == MouseButtons.MIDDLE || (Main.instance.getEditorMode() != EditorMode.TEXTURE && button == MouseButtons.RIGHT)))
 		{
-			orbitMX = mx;
-			orbitMY = my;
+			if ((mods & Modifier.SHIFT.flag) != 0)
+			{
+				pan = button;
+		    	float rmx = ((mx - x1) * 2) / sizeW - 1;
+		    	float rmy = 1 - ((my - y1) * 2) / sizeH;
+		    	Vector3f p1 = MathUtils.toVector3f(rotationq.conjugate(new Quaterniond()).transform(new Vector3d(rmx, rmy, 0)));
+		    	panVX = p1.x();
+		    	panVY = p1.y();
+		    	panVZ = p1.z();
+			}
+			else if ((mods & Modifier.CONTROL.flag) != 0)
+			{
+				look = button;
+		    	float rmx = ((mx - x1) * 2) / sizeW - 1;
+		    	float rmy = 1 - ((my - y1) * 2) / sizeH;
+		    	Vector3f p1 = MathUtils.toVector3f(rotationq.conjugate(new Quaterniond()).transform(new Vector3d(rmx, rmy, 0)));
+		    	lookVX = p1.x();
+		    	lookVY = p1.y();
+		    	lookVZ = p1.z();
+			}
+			else
+			{
+				orbit = button;
+				orbitMX = mx;
+				orbitMY = my;
+			}
 		}
 		else
 		{
@@ -323,13 +392,42 @@ public class ComponentModelViewer extends Component
 	@Override
 	public void onDrag(float mx, float my, int button)
 	{
-		if (button == MouseButtons.MIDDLE || (Main.instance.getEditorMode() != EditorMode.TEXTURE && button == MouseButtons.RIGHT))
+		if (button == orbit)
 		{
 			final float scaleY = MathUtils.DEG_TO_RAD_F * .25f, scaleP = MathUtils.DEG_TO_RAD_F * .25f;
 			orbitYaw += scaleY * (mx - orbitMX);
 			orbitPitch += scaleP * (my - orbitMY);
 			orbitMX = mx;
 			orbitMY = my;
+			updateMatricies();
+		}
+		else if (button == look)
+		{
+	    	float rmx = ((mx - x1) * 2) / sizeW - 1;
+	    	float rmy = 1 - ((my - y1) * 2) / sizeH;
+	    	Vector3d p1 = rotationq.conjugate(new Quaterniond()).transform(new Vector3d(rmx, rmy, 0));
+	    	p1.sub(lookVX, lookVY, lookVZ);
+	    	lookVX += p1.x();
+	    	lookVY += p1.y();
+	    	lookVZ += p1.z();
+			this.lookX += p1.x() * this.orbitZoom;
+			this.lookY += p1.y() * this.orbitZoom;
+			this.lookZ += p1.z() * this.orbitZoom;
+			updateMatricies();
+		}
+		else if (button == pan)
+		{
+	    	float rmx = ((mx - x1) * 2) / sizeW - 1;
+	    	float rmy = 1 - ((my - y1) * 2) / sizeH;
+	    	Vector3d p1 = rotationq.conjugate(new Quaterniond()).transform(new Vector3d(rmx, rmy, 0));
+	    	p1.sub(panVX, panVY, panVZ);
+	    	panVX += p1.x();
+	    	panVY += p1.y();
+	    	panVZ += p1.z();
+	    	p1 = rotationq.transform(p1);
+			this.orbitX += p1.x() * this.orbitZoom;
+			this.orbitY += p1.y() * this.orbitZoom;
+			this.orbitZ += p1.z() * this.orbitZoom;
 			updateMatricies();
 		}
 		else
@@ -384,10 +482,9 @@ public class ComponentModelViewer extends Component
 	public void onMouseReleased(float mx, float my, int button, int mods)
 	{
 		this.prevHit = null;
-		if (button == MouseButtons.MIDDLE || (Main.instance.getEditorMode() != EditorMode.TEXTURE && button == MouseButtons.RIGHT))
-		{
-			
-		}
+		if (button == orbit) orbit = -1;
+		else if (button == pan) pan = -1;
+		else if (button == look) look = -1;
 		else
 		{
 			Project project = Main.instance.project;
@@ -434,66 +531,11 @@ public class ComponentModelViewer extends Component
 	{
 		if (mods == 0)
 		{
-			final float trans = 0.25f;
 			switch (key)
 			{
-			case D:
-			{
-				Vector4d t = rotationq.invert(new Quaterniond()).get(new Matrix4d()).transform(new Vector4d(trans, 0, 0, 0));
-				orbitX += t.x();
-				orbitY += t.y();
-				orbitZ += t.z();
-				updateMatricies();
-				break;
-			}
-			case A:
-			{
-				Vector4d t = rotationq.invert(new Quaterniond()).get(new Matrix4d()).transform(new Vector4d(-trans, 0, 0, 0));
-				orbitX += t.x();
-				orbitY += t.y();
-				orbitZ += t.z();
-				updateMatricies();
-				break;
-			}
-			case W:
-			{
-				Vector4d t = rotationq.invert(new Quaterniond()).get(new Matrix4d()).transform(new Vector4d(0, trans, 0, 0));
-				orbitX += t.x();
-				orbitY += t.y();
-				orbitZ += t.z();
-				updateMatricies();
-				break;
-			}
-			case S:
-			{
-				Vector4d t = rotationq.invert(new Quaterniond()).get(new Matrix4d()).transform(new Vector4d(0, -trans, 0, 0));
-				orbitX += t.x();
-				orbitY += t.y();
-				orbitZ += t.z();
-				updateMatricies();
-				break;
-			}
-			case E:
-			{
-				Vector4d t = rotationq.invert(new Quaterniond()).get(new Matrix4d()).transform(new Vector4d(0, 0, trans, 0));
-				orbitX += t.x();
-				orbitY += t.y();
-				orbitZ += t.z();
-				updateMatricies();
-				break;
-			}
-			case Q:
-			{
-				Vector4d t = rotationq.invert(new Quaterniond()).get(new Matrix4d()).transform(new Vector4d(0, 0, -trans, 0));
-				orbitX += t.x();
-				orbitY += t.y();
-				orbitZ += t.z();
-				updateMatricies();
-				break;
-			}
 			case R:
 			{
-				orbitX = orbitY = orbitZ = orbitPitch = orbitYaw = 0;
+				lookX = lookY = lookZ = orbitX = orbitY = orbitZ = orbitPitch = orbitYaw = 0;
 				updateMatricies();
 				break;
 			}

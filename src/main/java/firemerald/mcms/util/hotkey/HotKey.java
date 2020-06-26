@@ -54,7 +54,7 @@ public class HotKey
 	
 	public boolean isPressed(Window window, Key key, int modifiers)
 	{
-		return key != Key.UNKNOWN && key == this.key && (modifiers & this.modifiers) == this.modifiers;
+		return key == this.key && (modifiers & this.modifiers) == this.modifiers;
 	}
 	
 	@Override
@@ -86,6 +86,18 @@ public class HotKey
 			StringJoiner joiner = new StringJoiner("*");
 			modifiers.forEach(modifier -> joiner.add(modifier));
 			el.setString("modifiers", joiner.toString());
+		}
+	}
+	
+	@Override
+	public boolean equals(Object o)
+	{
+		if (o == this) return true;
+		else if (o == null || o.getClass() != this.getClass()) return false;
+		else
+		{
+			HotKey key = (HotKey) o;
+			return key.key == this.key && key.modifiers == this.modifiers;
 		}
 	}
 }

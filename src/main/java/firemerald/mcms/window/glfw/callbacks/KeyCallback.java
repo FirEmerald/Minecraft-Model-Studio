@@ -32,10 +32,9 @@ public class KeyCallback extends GLFWKeyCallback
 		mods = ModifierConverter.getModifiers(mods);
 		if (action == GLFW.GLFW_PRESS) for (Entry<Action, HotKey> entry : Main.instance.state.hotkeys.entrySet())
 		{
-			if (entry.getValue().isPressed(this.window, key, mods))
+			if (entry.getValue() != null && entry.getValue().isPressed(this.window, key, mods))
 			{
-				main.doAction(entry.getKey());
-				return;
+				if (main.doAction(entry.getKey())) return;
 			}
 		}
 		//if (action == GLFW.GLFW_PRESS && code == GLFW.GLFW_KEY_V && (mods & GLFW.GLFW_MOD_CONTROL) > 0) System.out.println(ClipboardUtil.getRTF());

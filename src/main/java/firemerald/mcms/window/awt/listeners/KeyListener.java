@@ -32,20 +32,21 @@ public class KeyListener implements java.awt.event.KeyListener
 		int mods = ModifierConverter.getModifiers(event.getModifiersEx());
 		boolean prevState = state.get(key.ordinal());
 		state.set(key.ordinal());
-		for (Entry<Action, HotKey> entry : Main.instance.state.hotkeys.entrySet())
-		{
-			if (entry.getValue().isPressed(this.window, key, mods))
+		window.actions.add(() -> {
+			for (Entry<Action, HotKey> entry : Main.instance.state.hotkeys.entrySet())
 			{
-				window.actions.add(() -> main.doAction(entry.getKey()));
-				return;
+				if (entry.getValue() != null && entry.getValue().isPressed(this.window, key, mods))
+				{
+					if (main.doAction(entry.getKey())) return;
+				}
 			}
-		}
-		GuiScreen gui;
-		if ((gui = main.getGui()) != null)
-		{
-			if (prevState) window.actions.add(() -> gui.onKeyRepeat(key, event.getExtendedKeyCode(), mods));
-			else window.actions.add(() -> gui.onKeyPressed(key, event.getExtendedKeyCode(), ModifierConverter.getModifiers(event.getModifiersEx())));
-		}
+			GuiScreen gui;
+			if ((gui = main.getGui()) != null)
+			{
+				if (prevState) gui.onKeyRepeat(key, event.getExtendedKeyCode(), mods);
+				else gui.onKeyPressed(key, event.getExtendedKeyCode(), ModifierConverter.getModifiers(event.getModifiersEx()));
+			}
+		});
 	}
 
 	@Override

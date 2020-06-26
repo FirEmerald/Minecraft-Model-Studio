@@ -11,6 +11,7 @@ import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.gui.plugins.GuiPopupPlugins;
 import firemerald.mcms.gui.popups.GuiPopupMenu;
 import firemerald.mcms.gui.popups.GuiPopupMessageOK;
+import firemerald.mcms.gui.popups.hotkeys.GuiPopupHotkeys;
 import firemerald.mcms.gui.themes.GuiThemes;
 import firemerald.mcms.plugin.PluginLoader;
 import firemerald.mcms.texture.Color;
@@ -45,7 +46,7 @@ public class ComponentTitleBar extends ComponentPanelMain
             PopupMenu menu = new PopupMenu();
             addAction(menu, "New project", Action.NEW_PROJECT);
             addAction(menu, "Open project...", Action.LOAD_PROJECT);
-            //addAction(menu, "Edit Project", Action.ED);
+            addAction(menu, "Edit Project", Action.EDIT_PROJECT);
             addAction(menu, "Save project", Action.SAVE_PROJECT);
             addAction(menu, "Save project as...", Action.SAVE_PROJECT_AS);
             addAction(menu, "Export project", Action.EXPORT_PROJECT);
@@ -101,7 +102,7 @@ public class ComponentTitleBar extends ComponentPanelMain
             PopupMenu menu = new PopupMenu();
             if (!Main.instance.state.showNodes())
             {
-                MenuItem showNodes = new MenuItem("Show Nodes");
+                MenuItem showNodes = new MenuItem("Show nodes");
                 showNodes.addActionListener(action -> {
                 	Main.instance.state.setShowNodes(true);
                 });
@@ -109,7 +110,7 @@ public class ComponentTitleBar extends ComponentPanelMain
             }
             else
             {
-                MenuItem hideNodes = new MenuItem("Hide Nodes");
+                MenuItem hideNodes = new MenuItem("Hide nodes");
                 hideNodes.addActionListener(action -> {
                 	Main.instance.state.setShowNodes(false);
                 });
@@ -117,7 +118,7 @@ public class ComponentTitleBar extends ComponentPanelMain
             }
             if (!Main.instance.state.showBones())
             {
-                MenuItem showBones = new MenuItem("Show Bones");
+                MenuItem showBones = new MenuItem("Show bones");
                 showBones.addActionListener(action -> {
                 	Main.instance.state.setShowBones(true);
                 });
@@ -125,17 +126,22 @@ public class ComponentTitleBar extends ComponentPanelMain
             }
             else
             {
-                MenuItem hideBones = new MenuItem("Hide Bones");
+                MenuItem hideBones = new MenuItem("Hide bones");
                 hideBones.addActionListener(action -> {
                 	Main.instance.state.setShowBones(false);
                 });
                 menu.add(hideBones);
             }
-        	MenuItem theme = new MenuItem("Change Theme");
+        	MenuItem theme = new MenuItem("Change theme");
         	theme.addActionListener(action -> {
         		new GuiThemes().activate();
         	});
         	menu.add(theme);
+        	MenuItem hotkeys = new MenuItem("Hotkeys");
+        	hotkeys.addActionListener(action -> {
+        		new GuiPopupHotkeys().activate();
+        	});
+        	menu.add(hotkeys);
             return menu;
         }));
         this.addElement(helpMenu = new TitleButton(x, 0, x += w, 16, 1, 0, "Help", () -> {
