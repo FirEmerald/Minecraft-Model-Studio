@@ -1,7 +1,6 @@
-package firemerald.mcms.model;
+package firemerald.mcms.api.model;
 
 import firemerald.mcms.api.animation.Transformation;
-import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.util.IEditable;
 import firemerald.mcms.util.ResourceLocation;
 

@@ -11,7 +11,6 @@ import org.joml.Matrix4d;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.util.RaytraceResult;
-import firemerald.mcms.model.IModelEditable;
 
 public abstract class Model<M extends Model<M, T>, T extends Bone<T>> implements IModel<M, T>
 {

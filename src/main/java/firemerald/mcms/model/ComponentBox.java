@@ -4,6 +4,8 @@ import static org.lwjgl.opengl.GL15.*;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.model.IEditableParent;
+import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;

@@ -2,9 +2,9 @@ package firemerald.mcms.gui.main.components.texture;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
+import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.gui.components.Component;
 import firemerald.mcms.gui.components.scrolling.*;
-import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.texture.Texture;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.EditorMode;

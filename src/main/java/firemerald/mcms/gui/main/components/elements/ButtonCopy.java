@@ -1,8 +1,8 @@
 package firemerald.mcms.gui.main.components.elements;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.model.IModelEditable;
-import firemerald.mcms.model.IEditableParent;
+import firemerald.mcms.api.model.IEditableParent;
+import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
 import firemerald.mcms.util.history.HistoryAction;

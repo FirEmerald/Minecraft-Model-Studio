@@ -10,7 +10,6 @@ import org.joml.Matrix4d;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.util.RaytraceResult;
-import firemerald.mcms.model.IModelEditable;
 
 public abstract class MultiModel<M extends MultiModel<M, T>, T extends Bone<T>> implements IModel<M, T>
 {

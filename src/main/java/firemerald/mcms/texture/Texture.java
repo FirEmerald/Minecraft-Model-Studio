@@ -22,9 +22,9 @@ import org.lwjgl.system.MemoryUtil;
 
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.util.FileUtil;
+import firemerald.mcms.api.util.IClonableObject;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.util.FileUtils;
-import firemerald.mcms.util.IClonableObject;
 
 public class Texture implements IClonableObject<Texture>
 {

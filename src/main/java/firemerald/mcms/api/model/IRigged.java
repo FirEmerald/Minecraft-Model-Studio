@@ -15,7 +15,6 @@ import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.model.Bone.Actual;
 import firemerald.mcms.api.util.ISaveable;
 import firemerald.mcms.api.util.ISelfTyped;
-import firemerald.mcms.model.IEditableParent;
 
 public interface IRigged<T extends IRigged<T, B>, B extends Bone<B>> extends ISelfTyped<T>, ISaveable, IEditableParent, ITransformsProvider
 {	

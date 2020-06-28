@@ -9,6 +9,7 @@ import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.math.EulerZYXRotation;
 import firemerald.mcms.api.math.IRotation;
 import firemerald.mcms.api.math.QuaternionRotation;
+import firemerald.mcms.api.model.IEditableParent;
 import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
@@ -16,7 +17,6 @@ import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.model.IEditableParent;
 
 public abstract class PosedBoneEffect extends BoneEffect
 {
@@ -38,9 +38,9 @@ public abstract class PosedBoneEffect extends BoneEffect
 	}
 	
 	@Override
-	public void addDataToXML(AbstractElement el, float scale)
+	public void saveToXML(AbstractElement el, float scale)
 	{
-		super.addDataToXML(el, scale);
+		super.saveToXML(el, scale);
 		transform.save(el, scale);
 	}
 

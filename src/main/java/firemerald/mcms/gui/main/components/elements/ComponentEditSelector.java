@@ -9,13 +9,13 @@ import java.util.Map;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
+import firemerald.mcms.api.model.IEditableParent;
+import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.gui.IGuiElement;
 import firemerald.mcms.gui.components.scrolling.ScrollableComponentPane;
 import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.model.IModelEditable;
-import firemerald.mcms.model.IEditableParent;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.ResourceLocation;
 

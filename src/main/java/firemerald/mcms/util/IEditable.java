@@ -1,7 +1,7 @@
 package firemerald.mcms.util;
 
+import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.model.IModelEditable;
 
 public interface IEditable
 {

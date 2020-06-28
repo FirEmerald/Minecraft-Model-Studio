@@ -21,6 +21,7 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL;
 
+import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.events.ApplicationEvent;
 import firemerald.mcms.events.EventBus;
@@ -33,7 +34,6 @@ import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.gui.popups.GuiPopupUnsavedChanges;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.plugin.PluginLoader;
 import firemerald.mcms.shader.Shader;
 import firemerald.mcms.texture.BlendMode;
@@ -65,8 +65,8 @@ public class Main
 {
 	//public static final String VERSION = "0.0.0.0";
 	public static final String ID = "mcms";
-	public static final String VERSION = "0.1";
-	public static final String BUILD_DATE = "06/24/2020 18:08";
+	public static final String VERSION = "0.1.1";
+	public static final String BUILD_DATE = "06/27/2020 22:33";
 	public static final Logger LOGGER = LogManager.getLogger("MCMS"); //the main logger;
 	public static Main instance;
 	public static final int MIN_W = 640, MIN_H = 480;

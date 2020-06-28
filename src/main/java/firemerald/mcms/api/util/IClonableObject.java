@@ -1,4 +1,4 @@
-package firemerald.mcms.util;
+package firemerald.mcms.api.util;
 
 public interface IClonableObject<T>
 {

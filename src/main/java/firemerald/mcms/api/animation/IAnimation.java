@@ -8,8 +8,8 @@ import org.joml.Matrix4d;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.IRigged;
+import firemerald.mcms.api.util.IClonableObject;
 import firemerald.mcms.api.util.ISaveable;
-import firemerald.mcms.util.IClonableObject;
 
 public interface IAnimation extends ISaveable, IClonableObject<IAnimation>
 {

@@ -9,7 +9,6 @@ import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.components.scrolling.ScrollableComponentPaneVertical;
 import firemerald.mcms.util.IntReference;
 import firemerald.mcms.util.Quadruple;
-import firemerald.mcms.util.Triple;
 import firemerald.mcms.util.hotkey.Action;
 import firemerald.mcms.util.hotkey.HotKey;
 

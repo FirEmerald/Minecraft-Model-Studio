@@ -3,7 +3,7 @@ package firemerald.mcms.gui.main.components.elements;
 import java.util.ArrayList;
 import java.util.List;
 
-import firemerald.mcms.model.IModelEditable;
+import firemerald.mcms.api.model.IModelEditable;
 
 public class SelectorEntry
 {

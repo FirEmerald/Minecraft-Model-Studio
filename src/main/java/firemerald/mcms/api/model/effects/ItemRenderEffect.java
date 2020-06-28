@@ -5,6 +5,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.model.IEditableParent;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.gui.GuiElementContainer;
@@ -15,7 +16,6 @@ import firemerald.mcms.gui.components.text.ComponentIncrementInt;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.model.IEditableParent;
 import firemerald.mcms.shader.Shader;
 import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.ResourceLocation;
@@ -107,7 +107,6 @@ public class ItemRenderEffect extends StagedPosedBoneEffect
 	public void render(Runnable defaultTexture) //TODO
 	{
 		Shader.MODEL.push();
-		Shader.MODEL.matrix().mul(transform.getTransformation());
 		Shader.MODEL.matrix().scale(scale / Main.instance.project.getScale());
 		Shader.MODEL.matrix().mul(transformType.matrix());
 		Main.instance.shader.updateModel();
@@ -128,9 +127,9 @@ public class ItemRenderEffect extends StagedPosedBoneEffect
 	}
 	
 	@Override
-	public void addDataToXML(AbstractElement el, float scale)
+	public void saveToXML(AbstractElement el, float scale)
 	{
-		super.addDataToXML(el, scale);
+		super.saveToXML(el, scale);
 		el.setInt("slot", slot);
 		if (this.scale != 1f) el.setFloat("scale", this.scale);
 		el.setEnum("transformType", transformType);

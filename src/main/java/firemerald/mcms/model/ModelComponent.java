@@ -19,6 +19,8 @@ import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.math.EulerZYXRotation;
 import firemerald.mcms.api.math.IRotation;
 import firemerald.mcms.api.math.QuaternionRotation;
+import firemerald.mcms.api.model.IEditableParent;
+import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.api.model.IRaytraceTarget;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.api.model.ObjData;

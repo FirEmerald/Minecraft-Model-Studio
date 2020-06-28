@@ -1,4 +1,4 @@
-package firemerald.mcms.model;
+package firemerald.mcms.api.model;
 
 import java.util.Collection;
 

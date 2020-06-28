@@ -37,23 +37,26 @@ public abstract class StagedPosedBoneEffect extends PosedBoneEffect
 	}
 	
 	@Override
-	public void addDataToXML(AbstractElement el, float scale)
+	public void saveToXML(AbstractElement el, float scale)
 	{
-		super.addDataToXML(el, scale);
+		super.saveToXML(el, scale);
 		el.setEnum("renderStage", stage);
 	}
 	
-	public void preRender(Runnable defaultTex)
+	@Override
+	public void doPreRender(Runnable defaultTex)
 	{
 		if (stage == EffectRenderStage.PRE_BONE) render(defaultTex);
 	}
 
-	public void postRenderBone(Runnable defaultTex)
+	@Override
+	public void doPostRenderBone(Runnable defaultTex)
 	{
 		if (stage == EffectRenderStage.POST_BONE) render(defaultTex);
 	}
 
-	public void postRenderChildren(Runnable defaultTex)
+	@Override
+	public void doPostRenderChildren(Runnable defaultTex)
 	{
 		if (stage == EffectRenderStage.POST_CHILDREN) render(defaultTex);
 	}

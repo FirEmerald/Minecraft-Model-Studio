@@ -12,7 +12,6 @@ import org.joml.Matrix4d;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.Bone.Actual;
-import firemerald.mcms.model.IModelEditable;
 
 public class Skeleton implements IRigged<Skeleton, Bone.Actual>
 {
@@ -180,11 +179,13 @@ public class Skeleton implements IRigged<Skeleton, Bone.Actual>
 		return new Actual(name, transformation, parent);
 	}
 
+	@Override
 	public Skeleton getSkeleton()
 	{
 		return this;
 	}
 	
+	@Override
 	public String getElementName()
 	{
 		return "skeleton";

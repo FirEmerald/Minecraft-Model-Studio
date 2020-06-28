@@ -11,14 +11,15 @@ import org.joml.Matrix4d;
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.model.IEditableParent;
+import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.api.util.TriFunction;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.model.IEditableParent;
-import firemerald.mcms.model.IModelEditable;
+import firemerald.mcms.shader.Shader;
 import firemerald.mcms.util.ResourceLocation;
 
 public abstract class BoneEffect implements IModelEditable
@@ -99,13 +100,12 @@ public abstract class BoneEffect implements IModelEditable
 		name = el.getString("name", "unnamed");
 	}
 	
-	public void addToXML(AbstractElement addTo, float scale)
+	public void addToXML(AbstractElement el, float scale)
 	{
-		AbstractElement el = addTo.addChild(getXMLName());
-		addDataToXML(el, scale);
+		saveToXML(el.addChild(getXMLName()), scale);
 	}
 	
-	public void addDataToXML(AbstractElement el, float scale)
+	public void saveToXML(AbstractElement el, float scale)
 	{
 		el.setString("name", name);
 	}
@@ -211,11 +211,41 @@ public abstract class BoneEffect implements IModelEditable
 	@Override
 	public void addChildAt(IModelEditable child, int index) {}
 	
-	public abstract void preRender(Runnable defaultTex);
+	public void preRender(Runnable defaultTex)
+	{
+		Shader.MODEL.push();
+		Shader.MODEL.matrix().mul(transform.getTransformation());
+		Main.instance.shader.updateModel();
+		doPreRender(defaultTex);
+		Shader.MODEL.pop();
+		Main.instance.shader.updateModel();
+	}
+	
+	public abstract void doPreRender(Runnable defaultTex);
 
-	public abstract void postRenderBone(Runnable defaultTex);
+	public void postRenderBone(Runnable defaultTex)
+	{
+		Shader.MODEL.push();
+		Shader.MODEL.matrix().mul(transform.getTransformation());
+		Main.instance.shader.updateModel();
+		doPostRenderBone(defaultTex);
+		Shader.MODEL.pop();
+		Main.instance.shader.updateModel();
+	}
+	
+	public abstract void doPostRenderBone(Runnable defaultTex);
 
-	public abstract void postRenderChildren(Runnable defaultTex);
+	public void postRenderChildren(Runnable defaultTex)
+	{
+		Shader.MODEL.push();
+		Shader.MODEL.matrix().mul(transform.getTransformation());
+		Main.instance.shader.updateModel();
+		doPostRenderChildren(defaultTex);
+		Shader.MODEL.pop();
+		Main.instance.shader.updateModel();
+	}
+
+	public abstract void doPostRenderChildren(Runnable defaultTex);
 	
 	public abstract String getXMLName();
 

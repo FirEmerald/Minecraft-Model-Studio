@@ -35,14 +35,15 @@ public class EffectsData implements ISaveable
 	{
 		this.effects.clear();
 		root.getChildren().forEach(el -> 
-		effects.put(el.getName(), el.getChildren().stream().map(
-				child -> BoneEffect.constructIfRegistered(child.getName(), null, el, scale)).filter(effect -> effect != null).collect(Collectors.toList())));
+		effects.put(el.getString("name", ""), el.getChildren().stream().map(
+				child -> BoneEffect.constructIfRegistered(child.getName(), null, child, scale)).filter(effect -> effect != null).collect(Collectors.toList())));
 	}
 
 	public void save(AbstractElement root, float scale)
 	{
 		effects.forEach((name, effects) -> {
-			AbstractElement el = root.addChild(name);
+			AbstractElement el = root.addChild("bone");
+			el.setString("name", name);
 			effects.forEach(effect -> effect.addToXML(el, scale));
 		});
 	}

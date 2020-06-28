@@ -3,11 +3,11 @@ package firemerald.mcms.gui.popups;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import firemerald.mcms.Main;
+import firemerald.mcms.api.util.IClonableObject;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.decoration.DecoPane;
-import firemerald.mcms.util.IClonableObject;
 import firemerald.mcms.util.history.HistoryAction;
 
 public class GuiPopupCopy<T> extends GuiPopup

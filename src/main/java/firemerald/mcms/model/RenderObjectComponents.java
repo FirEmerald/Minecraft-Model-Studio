@@ -12,6 +12,7 @@ import org.joml.Matrix4d;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IModel;
+import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.api.model.ObjData;
 import firemerald.mcms.api.model.RenderBone;

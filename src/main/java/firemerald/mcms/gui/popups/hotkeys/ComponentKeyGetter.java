@@ -102,6 +102,7 @@ public class ComponentKeyGetter extends StandardButton
 	}
 	*/
 	
+	@Override
 	public void onUnfocus()
 	{
 		this.isSetting = false;

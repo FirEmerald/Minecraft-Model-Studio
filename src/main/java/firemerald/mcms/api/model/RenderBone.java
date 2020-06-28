@@ -14,7 +14,6 @@ import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.effects.BoneEffect;
-import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.shader.Shader;
 
 public abstract class RenderBone<T extends RenderBone<T>> extends ObjectBone<T>
@@ -169,7 +168,7 @@ public abstract class RenderBone<T extends RenderBone<T>> extends ObjectBone<T>
 	public void addChildrenToXML(AbstractElement addTo, float scale)
 	{
 		super.addChildrenToXML(addTo, scale);
-		this.effects.forEach(effect -> effect.addToXML(addTo, scale));
+		this.effects.forEach(effect -> effect.saveToXML(addTo, scale));
 	}
 
 	@Override

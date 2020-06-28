@@ -7,13 +7,13 @@ import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.model.Bone;
+import firemerald.mcms.api.model.IEditableParent;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.DropdownButton;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.decoration.DecoPane;
-import firemerald.mcms.model.IEditableParent;
 import firemerald.mcms.util.IntReference;
 import firemerald.mcms.util.history.HistoryAction;
 

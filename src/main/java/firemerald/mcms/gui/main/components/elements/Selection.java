@@ -1,10 +1,10 @@
 package firemerald.mcms.gui.main.components.elements;
 
 import firemerald.mcms.Main;
+import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.gui.components.ComponentButton;
 import firemerald.mcms.gui.components.IComponent;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.model.IModelEditable;
 import firemerald.mcms.shader.Shader;
 import firemerald.mcms.util.mesh.Mesh;
 import firemerald.mcms.util.mesh.Meshes;
