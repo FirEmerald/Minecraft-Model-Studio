@@ -63,10 +63,9 @@ import firemerald.mcms.window.glfw.GLFWWindow;
 
 public class Main
 {
-	//public static final String VERSION = "0.0.0.0";
 	public static final String ID = "mcms";
-	public static final String VERSION = "0.1.1";
-	public static final String BUILD_DATE = "06/27/2020 22:33";
+	public static final String VERSION = "0.1.2";
+	public static final String BUILD_DATE = "06/29/2020 18:04";
 	public static final Logger LOGGER = LogManager.getLogger("MCMS"); //the main logger;
 	public static Main instance;
 	public static final int MIN_W = 640, MIN_H = 480;

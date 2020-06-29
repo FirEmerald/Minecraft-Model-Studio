@@ -168,7 +168,7 @@ public abstract class RenderBone<T extends RenderBone<T>> extends ObjectBone<T>
 	public void addChildrenToXML(AbstractElement addTo, float scale)
 	{
 		super.addChildrenToXML(addTo, scale);
-		this.effects.forEach(effect -> effect.saveToXML(addTo, scale));
+		this.effects.forEach(effect -> effect.addToXML(addTo, scale));
 	}
 
 	@Override

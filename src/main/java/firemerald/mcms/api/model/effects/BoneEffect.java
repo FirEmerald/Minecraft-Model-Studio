@@ -87,6 +87,12 @@ public abstract class BoneEffect implements IModelEditable
 		if (parent == null) this.parent = null;
 		else (this.parent = parent).addEffect(this);
 	}
+	
+	@Override
+	public String getBoneName()
+	{
+		return parent != null ? parent.getBoneName() : null;
+	}
 
 	public Matrix4d getTransformation()
 	{

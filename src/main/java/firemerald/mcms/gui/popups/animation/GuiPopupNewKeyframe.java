@@ -9,6 +9,7 @@ import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.Animation;
 import firemerald.mcms.api.animation.Transformation;
+import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
@@ -44,7 +45,11 @@ public class GuiPopupNewKeyframe extends GuiPopup
 		List<String> possible = project.getAllBoneNames();
 		String[] names = possible.toArray(new String[possible.size()]);
 		String defName;
-		if (main.getEditingModel() != null) defName = main.getEditingModel().getName();
+		if (main.getEditingModel() != null)
+		{
+			defName = main.getEditingModel().getBoneName();
+			if (defName == null) defName = names[0];
+		}
 		else defName = names[0];
 		float defFrame;
 		if (main.getEditing() instanceof ComponentKeyFrame) defFrame = ((ComponentKeyFrame) main.getEditing()).time;
@@ -132,7 +137,11 @@ public class GuiPopupNewKeyframe extends GuiPopup
 						else
 						{
 							IRigged<?, ?> rigged = project.getRig();
-							if (rigged != null) lower = rigged.getBone(name.getText()).defaultTransform.copy();
+							if (rigged != null)
+							{
+								Bone<?> bone = rigged.getBone(name.getText());
+								if (bone != null) bone.defaultTransform.copy();
+							}
 							if (lower == null) lower = new Transformation();
 						}
 					}
@@ -169,6 +178,7 @@ public class GuiPopupNewKeyframe extends GuiPopup
 			framesBar.keyFrames.get(time).forEach(keyframe -> {
 				if (keyframe.transform == transformation) Main.instance.setEditing(keyframe);
 			});
+			Main.instance.project.getAnimationState().time = time;
 		}
 	}
 }

@@ -72,7 +72,7 @@ public class PrintStreamLauncherLogger extends PrintStream
 	@Override
 	public void println(String s)
 	{
-		this.print("[LaunchWrapper - " + this.level.name() + "] " + s + "\n");
+		this.print(String.format(logger.name, level.name()) + s + "\n");
 	}
 	
 	@Override

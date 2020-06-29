@@ -36,6 +36,6 @@ public class ButtonLockModel extends PlaybackButton
 	{
 		Project proj = Main.instance.project;
 		IModel<?, ? extends RenderObjectComponents<?>> model = proj.getModel();
-		return model == null || proj.lockedModels.containsKey(model) ? Textures.EDITABLE_LOCK : Textures.EDITABLE_UNLOCK;
+		return model == null || proj.lockedModels.containsKey(model) ? Textures.EDITABLE_UNLOCKED : Textures.EDITABLE_LOCKED;
 	}
 }

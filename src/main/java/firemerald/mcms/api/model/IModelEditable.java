@@ -10,6 +10,8 @@ public interface IModelEditable extends IEditableParent, IEditable
 	
 	public String getName();
 	
+	public String getBoneName();
+	
 	public void movedTo(IEditableParent oldParent, IEditableParent newParent);
 	
 	public boolean isVisible();

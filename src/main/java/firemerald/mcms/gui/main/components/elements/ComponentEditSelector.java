@@ -141,6 +141,12 @@ public class ComponentEditSelector extends ScrollableComponentPane
 		}
 
 		@Override
+		public String getBoneName()
+		{
+			return null;
+		}
+
+		@Override
 		public Collection<? extends IModelEditable> getChildren()
 		{
 			return model == null ? Collections.emptyList() : model.getChildren();

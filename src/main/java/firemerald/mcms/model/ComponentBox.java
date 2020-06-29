@@ -139,7 +139,7 @@ public class ComponentBox extends ComponentMesh
 	{
 		float texSizeU = Main.instance.project.getTextureWidth();
 		float texSizeV = Main.instance.project.getTextureHeight();
-		float tU = texU * texScale / texSizeU, tV = texV * texScale / texSizeV;
+		float tU = texU / texSizeU, tV = texV / texSizeV;
 		float tUX = lengthX * texScale / texSizeU, tUZ = lengthZ * texScale / texSizeU;
 		float tVY = lengthY * texScale / texSizeV, tVZ = lengthZ * texScale / texSizeV;
 		float u0 = tU, u1 = u0 + tUZ, u2 = u1 + tUX, u3a = u2 + tUZ, u3b = u2 + tUX, u4 = u3a + tUX;

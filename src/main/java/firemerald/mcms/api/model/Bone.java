@@ -67,6 +67,12 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 		}
 	}
 	
+	@Override
+	public String getBoneName()
+	{
+		return name;
+	}
+	
 	public abstract String getXMLName();
 
 	private ComponentFloatingLabel labelName;

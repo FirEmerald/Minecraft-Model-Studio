@@ -8,27 +8,31 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.StringJoiner;
 
 public class LaunchWrapper
 {
-	public static final LauncherLogger LOGGER = new LauncherLogger(new File("logs/launchwrapper.log"));
+	public static final PrintStream OUT = System.out, ERR = System.err;
+	public static final LauncherLogger LOGGER = new LauncherLogger("[LaunchWrapper - %s] ", new File("logs/launchwrapper.log"), OUT, ERR);
 	private static ProgressBars progressBars;
 	private static int item;
 	private static boolean isMDK = false;
 	
 	static
 	{
-		System.setOut(new PrintStreamLauncherLogger(System.out, LOGGER, Level.STDOUT));
-		System.setErr(new PrintStreamLauncherLogger(System.err, LOGGER, Level.STDERR));
+		System.setOut(new PrintStreamLauncherLogger(OUT, LOGGER, Level.STDOUT));
+		System.setErr(new PrintStreamLauncherLogger(ERR, LOGGER, Level.STDERR));
 	}
 	
 	public static void main(String[] args)
@@ -44,7 +48,7 @@ public class LaunchWrapper
 			}
 			catch (MalformedURLException e)
 			{
-				LOGGER.log(Level.ERROR, "Couldn't grab classpath source " + source + " for coremodding, this may cause issues and/or crashes", e);
+				LOGGER.fatal("Couldn't grab classpath source " + source + " for coremodding, this may cause issues and/or crashes", e);
 			}
 		}
 		if (!isMDK)
@@ -82,7 +86,13 @@ public class LaunchWrapper
 		}
 		catch (Throwable e)
 		{
-			LOGGER.error("MCMS crashed", e);
+			LOGGER.fatal("MCMS crashed", e);
+			Date date = new Date();
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
+			LauncherLogger crashLogger = new LauncherLogger("", new File("crash-logs/crash-" + formatter.format(date) + ".log"), OUT, ERR);
+			System.setOut(new PrintStreamLauncherLogger(OUT, crashLogger, Level.STDOUT));
+			System.setErr(new PrintStreamLauncherLogger(ERR, crashLogger, Level.STDERR));
+			crashLogger.fatal(e);
 		}
 		LOGGER.debug("Main thread exit");
 	}

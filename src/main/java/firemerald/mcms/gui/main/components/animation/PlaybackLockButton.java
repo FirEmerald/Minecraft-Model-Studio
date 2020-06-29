@@ -30,6 +30,6 @@ public class PlaybackLockButton extends PlaybackButton
 	public ResourceLocation getIcon()
 	{
 		ExtendedAnimationState state = Main.instance.project.getAnimationState();
-		return state == null || !state.locked ? Textures.EDITABLE_LOCK : Textures.EDITABLE_UNLOCK;
+		return state == null || !state.locked ? Textures.EDITABLE_UNLOCKED : Textures.EDITABLE_LOCKED;
 	}
 }

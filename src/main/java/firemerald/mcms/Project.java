@@ -1391,6 +1391,7 @@ public class Project
 					animation.right.scale = data.scale;
 					animation.right.animLoop = data.loop;
 					animation.right.animMode = data.mode;
+					animation.right.locked = true;
 				}
 				else Main.LOGGER.warn("Could not restore locked animation " + animName + " as it did not exist in the project file");
 			}
@@ -1430,7 +1431,7 @@ public class Project
 			}
 			else animationState = pair.right;
 		}
-		if (model != null) model.updateTex();
+		this.models.values().forEach(IModel::updateTex);
 		Main.instance.onGuiUpdate(GuiUpdate.PROJECT);
 	}
 	

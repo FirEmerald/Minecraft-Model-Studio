@@ -11,13 +11,15 @@ import java.util.Map;
 
 public class LauncherLogger
 {
+	public final String name;
 	public final Path logFile;
 	public final PrintStream out;
 	public final PrintStream err;
 	public final Map<Level, PrintStreamLauncherLogger> wrappers = new HashMap<>();
 	
-	public LauncherLogger(File logFile)
+	public LauncherLogger(String name, File logFile, PrintStream out, PrintStream err)
 	{
+		this.name = name;
 		logFile.getParentFile().mkdirs();
 		this.logFile = logFile.toPath();
 		if (logFile.exists()) logFile.delete();
@@ -29,8 +31,8 @@ public class LauncherLogger
 		{
 			e.printStackTrace();
 		}
-		this.out = System.out;
-		this.err = System.err;
+		this.out = out;
+		this.err = err;
 		for (Level level : Level.values()) wrappers.put(level, new PrintStreamLauncherLogger(out, this, level));
 	}
 	
@@ -61,7 +63,7 @@ public class LauncherLogger
 	
 	public void log(Level level, String message)
 	{
-		this.logRaw(level, "[LaunchWrapper - " + level.name() + "] " + message + "\n");
+		this.logRaw(level, String.format(name, level.name()) + message + "\n");
 	}
 	
 	public void info(String message, Throwable t)
@@ -91,7 +93,37 @@ public class LauncherLogger
 	
 	public void log(Level level, String message, Throwable t)
 	{
-		this.logRaw(level, "[LaunchWrapper - " + level.name() + "] " + message + "\n");
+		this.logRaw(level, String.format(name, level.name()) + message + "\n");
+		log(level, t);
+	}
+	
+	public void info(Throwable t)
+	{
+		this.log(Level.INFO, t);
+	}
+	
+	public void warn(Throwable t)
+	{
+		this.log(Level.WARN, t);
+	}
+	
+	public void error(Throwable t)
+	{
+		this.log(Level.ERROR, t);
+	}
+	
+	public void fatal(Throwable t)
+	{
+		this.log(Level.FATAL, t);
+	}
+	
+	public void debug(Throwable t)
+	{
+		this.log(Level.DEBUG, t);
+	}
+	
+	public void log(Level level, Throwable t)
+	{
 		t.printStackTrace(wrappers.get(level));
 	}
 	

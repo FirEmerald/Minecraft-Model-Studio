@@ -120,6 +120,12 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		this.transformation = new Matrix4d(from.transformation);
 	}
 	
+	@Override
+	public String getBoneName()
+	{
+		return parent != null ? parent.getBoneName() : null;
+	}
+	
 	public Matrix4d transformation()
 	{
 		return transformation;

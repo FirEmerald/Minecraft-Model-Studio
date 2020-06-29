@@ -144,7 +144,7 @@ public class ItemRenderEffect extends StagedPosedBoneEffect
 	@Override
 	public ItemRenderEffect cloneObject(RenderBone<?> clonedParent)
 	{
-		return new ItemRenderEffect(this.name, clonedParent, transform, slot, scale, transformType);
+		return new ItemRenderEffect(this.name, clonedParent, transform.copy(), slot, scale, transformType);
 	}
 
 	@Override
