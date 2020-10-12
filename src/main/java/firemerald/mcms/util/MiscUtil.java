@@ -125,4 +125,41 @@ public class MiscUtil
 		while (post.charAt(post.length() - 1) == '0' && post.length() > 1) post = post.substring(0, post.length() - 1);
 		return pre + "." + post;
 	}
+
+	public static boolean getBoolean(String val) throws Exception
+	{
+		if (val.equalsIgnoreCase("true") || val.equalsIgnoreCase("yes")) return true;
+		else if (val.equalsIgnoreCase("false") || val.equalsIgnoreCase("no")) return false;
+		else throw new Exception("Not a boolean value: " + val);
+	}
+
+	public static boolean getBoolean(String val, boolean def)
+	{
+		try
+		{
+			return getBoolean(val);
+		}
+		catch (Exception e)
+		{
+			return def;
+		}
+	}
+
+	public static <T extends Enum<?>> T getEnum(String val, T[] values) throws Exception
+	{
+		for (T t : values) if (t.name().equalsIgnoreCase(val)) return t;
+		throw new Exception("Not an enum of " + values.getClass().getName() + ":" + val);
+	}
+	
+	public static <T extends Enum<?>> T getEnum(String val, T[] values, T def)
+	{
+		try
+		{
+			return getEnum(val, values);
+		}
+		catch (Exception e)
+		{
+			return def;
+		}
+	}
 }

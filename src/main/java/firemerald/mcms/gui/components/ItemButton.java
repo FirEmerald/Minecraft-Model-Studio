@@ -1,7 +1,6 @@
 package firemerald.mcms.gui.components;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.gui.components.ComponentButton;
 import firemerald.mcms.shader.Shader;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;

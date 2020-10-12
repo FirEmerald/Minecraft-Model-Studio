@@ -6,6 +6,7 @@ import org.joml.Matrix4d;
 
 import firemerald.mcms.api.util.IClonableObject;
 import firemerald.mcms.api.util.RaytraceResult;
+import firemerald.mcms.util.GuiUpdate;
 
 public interface IModel<M extends IModel<M, T>, T extends Bone<T>> extends IRaytraceTarget, IRigged<IModel<M, T>, T>, IClonableObject<IModel<M, T>>
 {
@@ -26,5 +27,10 @@ public interface IModel<M extends IModel<M, T>, T extends Bone<T>> extends IRayt
 	public default String getElementName()
 	{
 		return "model";
+	}
+	
+	public default void onGuiUpdate(GuiUpdate reason)
+	{
+		this.getRootBones().forEach(child -> child.onGuiUpdate(reason));
 	}
 }

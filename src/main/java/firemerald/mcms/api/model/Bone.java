@@ -21,7 +21,9 @@ import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
+import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.model.EditorPanes;
+import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
@@ -72,6 +74,11 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 	{
 		return name;
 	}
+
+	public void onGuiUpdate(GuiUpdate reason)
+	{
+		this.children.forEach(child -> child.onGuiUpdate(reason));
+	}
 	
 	public abstract String getXMLName();
 
@@ -93,6 +100,7 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 		editorPanes.addBone.setBone(this);
 		editorPanes.addItem.setBone(this);
 		editorPanes.addFluid.setBone(this);
+		editorPanes.addEffect.setBone(this);
 		editorPanes.copy.setEditable(parent, this);
 		editorPanes.remove.setEditable(parent, this);
 
@@ -155,6 +163,7 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 		editorPanes.addBone.setBone(null);
 		editorPanes.addItem.setBone(null);
 		editorPanes.addFluid.setBone(null);
+		editorPanes.addEffect.setBone(null);
 		editorPanes.copy.setEditable(null, null);
 		editorPanes.remove.setEditable(null, null);
 		GuiElementContainer editor = editorPanes.editor.container;
@@ -453,6 +462,10 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 			String name = el.getString("name", "unnamed bone");
 			Transformation transform = new Transformation(el, scale);
 			makeBone(name, transform, self()).loadFromXML(el, scale);
+		}
+		else
+		{
+			GuiPopupException.onException("Encountered unknown model element " + el.getName(), new Exception());
 		}
 	}
 	

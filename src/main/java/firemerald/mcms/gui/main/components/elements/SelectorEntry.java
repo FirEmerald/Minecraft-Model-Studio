@@ -72,4 +72,30 @@ public class SelectorEntry
 		this.children.remove(child);
 		this.editable.removeChild(child.editable);
 	}
+	
+	public boolean areAnyChildrenUnfolded()
+	{
+		return children.parallelStream().anyMatch(child -> child.expanded || child.areAnyChildrenUnfolded());
+	}
+	
+	public boolean areAnyChildrenFolded()
+	{
+		return children.parallelStream().anyMatch(child -> !child.expanded || child.areAnyChildrenFolded());
+	}
+	
+	public void foldAllChildren()
+	{
+		children.parallelStream().forEach(child -> {
+			child.expanded = false;
+			child.foldAllChildren();
+		});
+	}
+	
+	public void unfoldAllChildren()
+	{
+		children.parallelStream().forEach(child -> {
+			child.expanded = true;
+			child.unfoldAllChildren();
+		});
+	}
 }

@@ -34,6 +34,11 @@ public class ComponentEditSelector extends ScrollableComponentPane
 		base.expanded = true;
 	}
 	
+	public SelectorEntry getBase()
+	{
+		return base;
+	}
+	
 	@Override
 	public void onGuiUpdate(GuiUpdate reason)
 	{

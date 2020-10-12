@@ -237,6 +237,18 @@ public class Action
 		Main.instance.project.onAction(new HistoryAction(() -> Main.instance.project.addAnimation(name, animation), () -> Main.instance.project.removeAnimation(name)));
 		Main.instance.project.removeAnimation();
 	}, null);
+	public static final Action FOLD_ALL = new Action("fold_all", "folds everything", () -> {
+		return Main.instance.editorPanes.selector.getBase().areAnyChildrenUnfolded();
+	}, () -> {
+		Main.instance.editorPanes.selector.getBase().foldAllChildren();
+		Main.instance.editorPanes.selector.updateList();
+	}, new HotKey(Key.KP_DIVIDE, Modifier.CONTROL, Modifier.SHIFT));
+	public static final Action UNFOLD_ALL = new Action("unfold_all", "unfolds everything", () -> {
+		return Main.instance.editorPanes.selector.getBase().areAnyChildrenFolded();
+	}, () -> {
+		Main.instance.editorPanes.selector.getBase().unfoldAllChildren();
+		Main.instance.editorPanes.selector.updateList();
+	}, new HotKey(Key.KP_MULTIPLY, Modifier.CONTROL, Modifier.SHIFT));
 	
 	public static final Action DEBUG_STENCIL = new Action("debug_stencil", "debug the stencil buffer (EXTREME LAG!) by saving the contents at each update", () -> RenderUtil.save = !RenderUtil.save, null);
 

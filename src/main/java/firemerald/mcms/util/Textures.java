@@ -7,10 +7,10 @@ public interface Textures
 	public static final ResourceLocation
 		BOX = new ResourceLocation(Main.ID, "box.png"),
 		EDITABLE_ADD_BONE = new ResourceLocation(Main.ID, "editables/add_bone.png"),
-		EDITABLE_ADD_ITEM = new ResourceLocation(Main.ID, "editables/add_item.png"),
-		EDITABLE_ADD_FLUID = new ResourceLocation(Main.ID, "editables/add_fluid.png"), //TODO texture
 		EDITABLE_ADD_BOX = new ResourceLocation(Main.ID, "editables/add_box.png"),
-		EDITABLE_ADD_MESH = new ResourceLocation(Main.ID, "editables/add_mesh.png"),
+		EDITABLE_ADD_FLUID = new ResourceLocation(Main.ID, "editables/add_fluid.png"),
+		EDITABLE_ADD_ITEM = new ResourceLocation(Main.ID, "editables/add_item.png"),
+		EDITABLE_ADD_EFFECT = new ResourceLocation(Main.ID, "editables/add_effect.png"),
 		EDITABLE_ADD_FRAME = new ResourceLocation(Main.ID, "editables/add_frame.png"),
 		EDITABLE_COPY = new ResourceLocation(Main.ID, "editables/copy.png"),
 		EDITABLE_MOVE_FRAME = new ResourceLocation(Main.ID, "editables/move_frame.png"),

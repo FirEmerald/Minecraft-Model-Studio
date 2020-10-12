@@ -1,9 +1,12 @@
 package firemerald.mcms.api.model.effects;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.eclipse.jdt.annotation.Nullable;
 import org.joml.Matrix4d;
@@ -20,23 +23,36 @@ import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.model.EditorPanes;
 import firemerald.mcms.shader.Shader;
+import firemerald.mcms.texture.Texture;
+import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.ResourceLocation;
+import firemerald.mcms.util.Triple;
 
 public abstract class BoneEffect implements IModelEditable
 {
 	private static final Map<String, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect>> EFFECT_TYPES = new HashMap<>();
+	private static final List<Triple<String, ResourceLocation, Consumer<RenderBone<?>>>> MODDED_EFFECTS = new ArrayList<>(); //preserve ordering
+	public static final List<Triple<String, ResourceLocation, Consumer<RenderBone<?>>>> MODDED_EFFECTS_VIEW = Collections.unmodifiableList(MODDED_EFFECTS);
 
 	/**
 	 * Register a Bone Effect type
 	 * 
 	 * @param name the bone effect's name - the bone effect's XML name <i>must</i> be {domain}:{path with "/"'s replaced with "."'s} or it will not load properly!
+	 * @param displayName the bone effect's display name, shown in the effect selection menu.
+	 * @param icon the bone effect's display icon, shown in the effect selection menu. should be 16x16.
+	 * @param creationGui creates and shows the GUI for adding the effect.
 	 * @param constructor the constructor lambda - constructs the bone effect. see the static constructor below for examples.
 	 * 
 	 * @return if the bone effect was registered
 	 */
-	public static boolean registerBoneType(ResourceLocation name, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor)
+	public static boolean registerBoneType(ResourceLocation name, String displayName, ResourceLocation icon, Consumer<RenderBone<?>> creationGui, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor)
 	{
-		return registerBoneType(name.toString().replace(':', '-').replace('/', '_'), constructor);
+		if (registerBoneType(name.toString().replace('/', '_'), constructor))
+		{
+			MODDED_EFFECTS.add(new Triple<>(displayName, icon, creationGui));
+			return true;
+		}
+		else return false;
 	}
 	
 	private static boolean registerBoneType(String name, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor)
@@ -127,9 +143,10 @@ public abstract class BoneEffect implements IModelEditable
 		editorPanes.addBone.setBone(null);
 		editorPanes.addItem.setBone(null);
 		editorPanes.addFluid.setBone(null);
+		editorPanes.addEffect.setBone(null);
 		editorPanes.copy.setEditable(parent, this);
 		editorPanes.remove.setEditable(parent, this);
-		editor.addElement(labelName = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20 , Main.instance.fontMsg, "Bone name"));
+		editor.addElement(labelName = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20 , Main.instance.fontMsg, "Effect name"));
 		editorY += 20;
 		editor.addElement(textName  = new ComponentText(          editorX      , editorY, editorX + 300, editorY + 20 , Main.instance.fontMsg, getName(), this::setName));
 		editorY += 20;
@@ -219,36 +236,45 @@ public abstract class BoneEffect implements IModelEditable
 	
 	public void preRender(Runnable defaultTex)
 	{
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().mul(transform.getTransformation());
-		Main.instance.shader.updateModel();
-		doPreRender(defaultTex);
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
+		if (this.visible)
+		{
+			Shader.MODEL.push();
+			Shader.MODEL.matrix().mul(transform.getTransformation());
+			Main.instance.shader.updateModel();
+			doPreRender(defaultTex);
+			Shader.MODEL.pop();
+			Main.instance.shader.updateModel();
+		}
 	}
 	
 	public abstract void doPreRender(Runnable defaultTex);
 
 	public void postRenderBone(Runnable defaultTex)
 	{
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().mul(transform.getTransformation());
-		Main.instance.shader.updateModel();
-		doPostRenderBone(defaultTex);
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
+		if (this.visible)
+		{
+			Shader.MODEL.push();
+			Shader.MODEL.matrix().mul(transform.getTransformation());
+			Main.instance.shader.updateModel();
+			doPostRenderBone(defaultTex);
+			Shader.MODEL.pop();
+			Main.instance.shader.updateModel();
+		}
 	}
 	
 	public abstract void doPostRenderBone(Runnable defaultTex);
 
 	public void postRenderChildren(Runnable defaultTex)
 	{
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().mul(transform.getTransformation());
-		Main.instance.shader.updateModel();
-		doPostRenderChildren(defaultTex);
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
+		if (this.visible)
+		{
+			Shader.MODEL.push();
+			Shader.MODEL.matrix().mul(transform.getTransformation());
+			Main.instance.shader.updateModel();
+			doPostRenderChildren(defaultTex);
+			Shader.MODEL.pop();
+			Main.instance.shader.updateModel();
+		}
 	}
 
 	public abstract void doPostRenderChildren(Runnable defaultTex);
@@ -258,4 +284,11 @@ public abstract class BoneEffect implements IModelEditable
 	public abstract void doCleanUp();
 
 	public abstract BoneEffect cloneObject(RenderBone<?> clonedParent);
+	
+	public @Nullable Texture getTexture(Texture prev)
+	{
+		return prev;
+	}
+	
+	public void onGuiUpdate(GuiUpdate reason) {}
 }

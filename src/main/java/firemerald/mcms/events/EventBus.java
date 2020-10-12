@@ -325,7 +325,7 @@ public class EventBus
 	@SuppressWarnings("unchecked")
 	public <E extends Event> boolean post(E event)
 	{
-		if (Main.instance.state.eventLogging) //log event times
+		if (Main.instance.state.eventBusLogging()) //log event times
 		{
 			List<ListenerInfo<?>> list = this.listeners.get(event.getClass());
 			if (list != null)

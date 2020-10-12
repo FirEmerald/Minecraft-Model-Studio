@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.function.Consumer;
 
 public class LaunchWrapper
 {
@@ -82,7 +83,7 @@ public class LaunchWrapper
 		LOGGER.info("Launching wrapped MCMS");
 		try
 		{
-			classLoader.loadClass("firemerald.mcms.plugin.PluginLoader").getMethod("launchGame", String[].class).invoke(null, new Object[] {args});
+			classLoader.loadClass("firemerald.mcms.plugin.PluginLoader").getMethod("launchGame", String[].class, Consumer.class).invoke(null, new Object[] {args, (Consumer<URL>) classLoader::addURL});
 		}
 		catch (Throwable e)
 		{

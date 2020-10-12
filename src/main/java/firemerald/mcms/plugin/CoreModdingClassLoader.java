@@ -39,6 +39,12 @@ public class CoreModdingClassLoader extends URLClassLoader
         	LaunchWrapper.LOGGER.warn("Failed to initialize coremodding features", e);
 		}
     }
+    
+    @Override
+    public void addURL(URL url)
+    {
+    	super.addURL(url);
+    }
 
 	/**
 	 * Finds and loads the class with the specified name from the URL searchpath. Any URLs referring to JAR files are loaded and opened as neededuntil the class is found.

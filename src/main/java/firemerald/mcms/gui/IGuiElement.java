@@ -52,6 +52,26 @@ public interface IGuiElement
 		return getHolderOffsetY() + getY2();
 	}
 	
+	public default int getSelectorX1(GuiPopup selector)
+	{
+		return getTrueX1();
+	}
+	
+	public default int getSelectorY1(GuiPopup selector)
+	{
+		return getTrueY1();
+	}
+	
+	public default int getSelectorX2(GuiPopup selector)
+	{
+		return getTrueX2();
+	}
+	
+	public default int getSelectorY2(GuiPopup selector)
+	{
+		return getTrueY2();
+	}
+	
 	default public GuiTheme getTheme()
 	{
 		return Main.instance.getTheme();

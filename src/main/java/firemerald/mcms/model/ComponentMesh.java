@@ -11,6 +11,7 @@ import firemerald.mcms.Main;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.shader.Shader;
+import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.MathUtil;
 import firemerald.mcms.util.TextureRaytraceResult;
 import firemerald.mcms.util.mesh.Mesh;
@@ -158,10 +159,19 @@ public abstract class ComponentMesh extends ModelComponent
 	protected RaytraceResult doRaytrace(float fx, float fy, float fz, float dx, float dy, float dz, Matrix4d transformation)
 	{
 		RaytraceResult result = null;
-		if (mesh instanceof Mesh)
+		if (mesh != null)
 		{
-			Vector3f res = MathUtil.rayTraceMeshUV(fx, fy, fz, dx, dy, dz, mesh, transformation);
-			if (res != null && (result == null || res.x() < result.m)) result = new TextureRaytraceResult(this, res.x(), Main.instance.project.getTexture(), res.y(), res.z()); //TODO texture
+			Texture tex = this.getTexture();
+			if (tex != null)
+			{
+				Vector3f res = MathUtil.rayTraceMeshUV(fx, fy, fz, dx, dy, dz, mesh, transformation);
+				if (res != null && (result == null || res.x() < result.m)) result = new TextureRaytraceResult(this, res.x(), tex, res.y(), res.z());
+			}
+			else
+			{
+				Float res = MathUtil.rayTraceMesh(fx, fy, fz, dx, dy, dz, mesh, transformation);
+				if (res != null && (result == null || res < result.m)) result = new RaytraceResult(this, res);
+			}
 		}
 		return result;
 	}

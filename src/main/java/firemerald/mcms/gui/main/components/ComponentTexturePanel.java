@@ -12,6 +12,7 @@ import firemerald.mcms.gui.components.scrolling.ScrollUp;
 import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.gui.main.components.items.ButtonAction;
 import firemerald.mcms.gui.main.components.texture.TextureViewer;
+import firemerald.mcms.util.ApplicationState.EnumLayout;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
@@ -76,21 +77,44 @@ public class ComponentTexturePanel extends ComponentPanelMain
 	public void onSize(int w, int h)
 	{
 		// TODO components
-		viewer.setSize(0, 0, w - 16, h - 32);
-		scrollBar.setSize(w - 16, 16, w, h - 48);
-		scrollUp.setSize(w - 16, 0, w, 16);
-		scrollDown.setSize(w - 16, h - 48, w, h - 32);
-		scrollBarH.setSize(16, h - 32, w - 32, h - 16);
-		scrollLeft.setSize(0, h - 32, 16, h - 16);
-		scrollRight.setSize(w - 32, h - 32, w - 16, h - 16);
-		newTexture.setSize(0, h - 16);
-		addTexture.setSize(16, h - 16);
-		loadTexture.setSize(32, h - 16);
-		cloneTexture.setSize(48, h - 16);
-		saveTexture.setSize(64, h - 16);
-		editTexture.setSize(80, h - 16);
-		removeTexture.setSize(96, h - 16);
-		textureSelector.setSize(112, h - 16, w, h);
+		if (Main.instance.state.getLayout() == EnumLayout.LAYOUT_A)
+		{
+			//new layout
+			viewer.setSize(0, 16, w - 16, h - 16);
+			scrollBar.setSize(w - 16, 32, w, h - 32);
+			scrollUp.setSize(w - 16, 16, w, 32);
+			scrollDown.setSize(w - 16, h - 32, w, h - 16);
+			scrollBarH.setSize(16, h - 16, w - 32, h);
+			scrollLeft.setSize(0, h - 16, 16, h);
+			scrollRight.setSize(w - 32, h - 16, w - 16, h);
+			newTexture.setSize(0, 0);
+			addTexture.setSize(16, 0);
+			loadTexture.setSize(32, 0);
+			cloneTexture.setSize(48, 0);
+			saveTexture.setSize(64, 0);
+			editTexture.setSize(80, 0);
+			removeTexture.setSize(96, 0);
+			textureSelector.setSize(112, 0, w, 16);
+		}
+		else
+		{
+			//old layout
+			viewer.setSize(0, 0, w - 16, h - 32);
+			scrollBar.setSize(w - 16, 16, w, h - 48);
+			scrollUp.setSize(w - 16, 0, w, 16);
+			scrollDown.setSize(w - 16, h - 48, w, h - 32);
+			scrollBarH.setSize(16, h - 32, w - 32, h - 16);
+			scrollLeft.setSize(0, h - 32, 16, h - 16);
+			scrollRight.setSize(w - 32, h - 32, w - 16, h - 16);
+			newTexture.setSize(0, h - 16);
+			addTexture.setSize(16, h - 16);
+			loadTexture.setSize(32, h - 16);
+			cloneTexture.setSize(48, h - 16);
+			saveTexture.setSize(64, h - 16);
+			editTexture.setSize(80, h - 16);
+			removeTexture.setSize(96, h - 16);
+			textureSelector.setSize(112, h - 16, w, h);
+		}
 	}
 	
 	@Override

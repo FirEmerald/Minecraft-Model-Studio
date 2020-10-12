@@ -12,6 +12,7 @@ public class StandardFloatingButton extends ComponentButton
 	protected String text;
 	public final Mesh inner = new Mesh();
 	public int outline = 1;
+	public int textOffset = 0;
 	
 	public StandardFloatingButton(int x1, int y1, int x2, int y2, String text, Runnable onRelease)
 	{
@@ -59,8 +60,8 @@ public class StandardFloatingButton extends ComponentButton
 		inner.render();
 		RenderUtil.endStencil();
 		//TODO button effects
-		if (textCentered) Main.instance.fontMsg.drawTextLineCentered(text, (x1 + x2) * 0.5f, ((y1 + y2) - Main.instance.fontMsg.height) * 0.5f, state.getColor(getTheme().getTextColor()));
-		else Main.instance.fontMsg.drawTextLine(text, x1 + outline + 1, ((y1 + y2) - Main.instance.fontMsg.height) * 0.5f, state.getColor(getTheme().getTextColor()));
+		if (textCentered) Main.instance.fontMsg.drawTextLineCentered(text, (textOffset + x1 + x2 + 2 * outline + 2) * 0.5f, ((y1 + y2) - Main.instance.fontMsg.height) * 0.5f, state.getColor(getTheme().getTextColor()));
+		else Main.instance.fontMsg.drawTextLine(text, textOffset + x1 + outline + 1, ((y1 + y2) - Main.instance.fontMsg.height) * 0.5f, state.getColor(getTheme().getTextColor()));
 		RenderUtil.popStencil();
 		Main.instance.shader.setColor(1, 1, 1, 1);
 	}

@@ -5,18 +5,19 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import org.apache.logging.log4j.Level;
@@ -42,7 +43,9 @@ public class PluginLoader
 	/**
 	 * The {@link URLClassLoader#addURL(URL url)} method
 	 */
+	/*
 	public static final Method ADD_URL;
+	*/
 	/**
 	 * The plugin loader instance
 	 */
@@ -70,6 +73,7 @@ public class PluginLoader
 			Logger stdErr = LogManager.getLogger("STDERR"); //the logger for System.err
 			System.setErr(new PrintStreamLogger(System.err, stdErr, Level.ERROR)); //replace the default error stream with one that goes to the logger
 		}
+		/*
 		try
 		{
 			ADD_URL = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
@@ -79,6 +83,7 @@ public class PluginLoader
 			throw new IllegalStateException("Couldn't access addURL.addURL(URL) method reflectively", e);
 		}
 		ADD_URL.setAccessible(true);
+		*/
 	}
 
 	/**
@@ -179,6 +184,24 @@ public class PluginLoader
 		Map<String, Object> map = new HashMap<>();
 		for (int i = 0; i < values.size(); i += 2) map.put((String) values.get(i), values.get(i + 1));
 		return map;
+	}
+
+	//literally copied from FileUtil but placed here because of coremodding
+	public static String getExtension(String fileName)
+	{
+	    char ch;
+	    int len;
+	    if(fileName==null || 
+	            (len = fileName.length())==0 || 
+	            (ch = fileName.charAt(len-1))=='/' || ch=='\\' || //in the case of a directory
+	             ch=='.' ) //in the case of . or ..
+	        return "";
+	    int dotInd = fileName.lastIndexOf('.'),
+	        sepInd = Math.max(fileName.lastIndexOf('/'), fileName.lastIndexOf('\\'));
+	    if( dotInd<=sepInd )
+	        return "";
+	    else
+	        return fileName.substring(dotInd+1).toLowerCase();
 	}
 	
 	/**
@@ -351,6 +374,7 @@ public class PluginLoader
 				wrapper.constructPlugin();
 				wrapper.candidate.isPlugin = true;
 				addPlugin(wrapper);
+				LOGGER.info("Loaded plugin " + wrapper.id + " from " + wrapper.candidate.file);
 			}
 			catch (ClassNotFoundException e)
 			{
@@ -386,9 +410,9 @@ public class PluginLoader
 	 * 
 	 * @param args the program arguments
 	 */
-	public static void launchGame(String[] args)
+	public static void launchGame(String[] args, Consumer<URL> addJar)
 	{
-		INSTANCE.getPlugins();
+		INSTANCE.getPlugins(addJar);
 		INSTANCE.constructCoreMods();
 		Main.launch(args);
 	}
@@ -396,25 +420,28 @@ public class PluginLoader
 	/**
 	 * Finds and loads all core mod and plugin wrappers
 	 */
-	private void getPlugins()
+	private void getPlugins(Consumer<URL> addJar)
 	{
-		coreMods = new ArrayList<>();
-		plugins = new ArrayList<>();
-		URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();
+		coreMods = Collections.synchronizedList(new ArrayList<>());
+		plugins = Collections.synchronizedList(new ArrayList<>());
+		URLClassLoader classLoader = (URLClassLoader) this.getClass().getClassLoader();
 		findClasspathFiles(classLoader);
-		this.pluginCandidates.forEach((candidate) ->
+		getPlugins(new File("plugins"));
+		this.pluginCandidates.parallelStream().forEach((candidate) ->
 		{
 			try
 			{
-				ADD_URL.invoke(classLoader, candidate.file.toURI().toURL());
+				synchronized(this) //prevent possible thread-unsafe issues
+				{
+					addJar.accept(candidate.file.toURI().toURL());
+				}
+				this.getPlugins(candidate); //continue to parse for plugins and coremods in parallel, but only if the mod could be added to classpath
 			}
-			catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | MalformedURLException e)
+			catch (MalformedURLException e)
 			{
 				LOGGER.warn("Couldn't add candidate jarfile " + candidate.file + " to classloader", e);
 			}
 		});
-		this.pluginCandidates.forEach((candidate) -> getPlugins(candidate));
-		getPlugins(new File("plugins"));
 	}
 	
 	/**
@@ -426,7 +453,12 @@ public class PluginLoader
 	{
 		LOGGER.info("Searching for plugins in " + directory.getAbsolutePath());
 		directory.mkdirs();
-		for (File file : directory.listFiles()) if (!file.isDirectory()) this.pluginCandidates.add(new PluginCandidate(file, false));
+		for (File file : directory.listFiles()) if (!file.isDirectory())
+		{
+			String ext = getExtension(file.getName());
+			if (!ext.equalsIgnoreCase("jar") && !ext.equalsIgnoreCase("zip")) continue;
+			this.pluginCandidates.add(new PluginCandidate(file, false));
+		}
 	}
 	
 	/**

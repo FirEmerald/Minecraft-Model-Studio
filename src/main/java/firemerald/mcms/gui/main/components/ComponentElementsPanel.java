@@ -14,6 +14,7 @@ import firemerald.mcms.gui.components.scrolling.ScrollUp;
 import firemerald.mcms.gui.main.GuiMain;
 import firemerald.mcms.gui.main.components.elements.ComponentEditSelector;
 import firemerald.mcms.gui.main.components.items.ButtonAction;
+import firemerald.mcms.util.ApplicationState.EnumLayout;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.Textures;
 import firemerald.mcms.util.hotkey.Action;
@@ -70,21 +71,42 @@ public class ComponentElementsPanel extends ComponentPanelMain
 	@Override
 	public void onSize(int w, int h)
 	{
-		selector.setSize(0, 32, w - 16, h - 32);
-		scrollBar.setSize(w - 16, 48, w, h - 48);
-		scrollUp.setSize(w - 16, 32, w, 48);
-		scrollDown.setSize(w - 16, h - 48, w, h - 32);
-		scrollBarH.setSize(16, h - 32, w - 32, h - 16);
-		scrollLeft.setSize(0, h - 32, 16, h - 16);
-		scrollRight.setSize(w - 32, h - 32, w - 16, h - 16);
-		newModel.setSize(0, h - 16);
-		addModel.setSize(16, h - 16);
-		loadModel.setSize(32, h - 16);
-		cloneModel.setSize(48, h - 16);
-		saveModel.setSize(64, h - 16);
-		editModel.setSize(80, h - 16);
-		removeModel.setSize(96, h - 16);
-		modelSelector.setSize(112, h - 16, w, h);
+		if (Main.instance.state.getLayout() == EnumLayout.LEGACY)
+		{
+			selector.setSize(0, 32, w - 16, h - 32);
+			scrollBar.setSize(w - 16, 48, w, h - 48);
+			scrollUp.setSize(w - 16, 32, w, 48);
+			scrollDown.setSize(w - 16, h - 48, w, h - 32);
+			scrollBarH.setSize(16, h - 32, w - 32, h - 16);
+			scrollLeft.setSize(0, h - 32, 16, h - 16);
+			scrollRight.setSize(w - 32, h - 32, w - 16, h - 16);
+			newModel.setSize(0, h - 16);
+			addModel.setSize(16, h - 16);
+			loadModel.setSize(32, h - 16);
+			cloneModel.setSize(48, h - 16);
+			saveModel.setSize(64, h - 16);
+			editModel.setSize(80, h - 16);
+			removeModel.setSize(96, h - 16);
+			modelSelector.setSize(112, h - 16, w, h);
+		}
+		else
+		{
+			selector.setSize(0, 48, w - 16, h - 16);
+			scrollBar.setSize(w - 16, 64, w, h - 32);
+			scrollUp.setSize(w - 16, 48, w, 64);
+			scrollDown.setSize(w - 16, h - 32, w, h - 16);
+			scrollBarH.setSize(16, h - 16, w - 32, h);
+			scrollLeft.setSize(0, h - 16, 16, h);
+			scrollRight.setSize(w - 32, h - 16, w - 16, h);
+			newModel.setSize(0, 0);
+			addModel.setSize(16, 0);
+			loadModel.setSize(32, 0);
+			cloneModel.setSize(48, 0);
+			saveModel.setSize(64, 0);
+			editModel.setSize(80, 0);
+			removeModel.setSize(96, 0);
+			modelSelector.setSize(112, 0, w, 16);
+		}
 		// TODO components
 	}
 	

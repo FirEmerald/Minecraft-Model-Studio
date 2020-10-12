@@ -255,6 +255,49 @@ public class FormattedText
 		return this;
 	}
 	
+	public int getWidth()
+	{
+		return checkWidth(0, 0);
+	}
+	
+	protected int checkWidth(int maxWidth, int curWidth)
+	{
+		for (int i = 0; i < text.length(); i++)
+		{
+			char c = text.charAt(i);
+			if (c == '\n')
+			{
+				if (curWidth > maxWidth) maxWidth = curWidth;
+				curWidth = 0;
+			}
+			else curWidth += font.widths[(int) c];
+		}
+		if (appended != null) return appended.checkWidth(maxWidth, curWidth);
+		else return Math.max(curWidth, maxWidth);
+	}
+	
+	public int getHeight()
+	{
+		return checkHeight(0, 0);
+	}
+	
+	protected int checkHeight(int maxHeight, int curHeight)
+	{
+		if (curHeight < font.height && curHeight < font.height) curHeight = font.height;
+		int numLines = text.split("\n").length;
+		if (numLines > 0) //more than one line
+		{
+			maxHeight += curHeight;
+			curHeight = font.height;
+			if (numLines > 1) //more than two lines
+			{
+				maxHeight += curHeight * (numLines - 2);
+			}
+		}
+		if (appended != null) return appended.checkHeight(maxHeight, curHeight);
+		else return maxHeight + curHeight;
+	}
+	
 	public int getNumLines()
 	{
 		return getNumNewLines() + 1;

@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import org.joml.Matrix4d;
 
+import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IModel;
@@ -16,7 +17,9 @@ import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.api.model.ObjData;
 import firemerald.mcms.api.model.RenderBone;
+import firemerald.mcms.api.model.effects.BoneEffect;
 import firemerald.mcms.api.util.RaytraceResult;
+import firemerald.mcms.texture.Texture;
 
 public abstract class RenderObjectComponents<T extends RenderObjectComponents<T>> extends RenderBone<T> implements IComponentParent
 {
@@ -45,6 +48,14 @@ public abstract class RenderObjectComponents<T extends RenderObjectComponents<T>
 	public RenderObjectComponents(String name, Transformation defaultTransform, T parent)
 	{
 		super(name, defaultTransform, parent);
+	}
+	
+	@Override
+	public Texture getTexture()
+	{
+		Texture tex = Main.instance.project.getTexture();
+		for (BoneEffect effect : effects) tex = effect.getTexture(tex);
+		return tex;
 	}
 
 	@Override
@@ -228,7 +239,6 @@ public abstract class RenderObjectComponents<T extends RenderObjectComponents<T>
 	public int onSelect(EditorPanes editorPanes, int editorY)
 	{
 		editorPanes.addBox.setParent(this);
-		editorPanes.addMesh.setParent(this);
 		return super.onSelect(editorPanes, editorY);
 	}
 
@@ -236,7 +246,6 @@ public abstract class RenderObjectComponents<T extends RenderObjectComponents<T>
 	public void onDeselect(EditorPanes editorPanes)
 	{
 		editorPanes.addBox.setParent(null);;
-		editorPanes.addMesh.setParent(null);
 		super.onDeselect(editorPanes);
 	}
 	

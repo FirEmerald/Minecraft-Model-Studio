@@ -17,6 +17,7 @@ import firemerald.mcms.model.ProjectModel;
 import firemerald.mcms.model.RenderObjectComponents;
 import firemerald.mcms.texture.ReloadingTexture;
 import firemerald.mcms.texture.Texture;
+import firemerald.mcms.util.ApplicationState.EnumLayout;
 import firemerald.mcms.util.GuiUpdate;
 
 public class GuiMain extends GuiScreen
@@ -121,6 +122,6 @@ public class GuiMain extends GuiScreen
 		texturePanel.setSize(w - 274, 16, w, 306);
 		elementsPanel.setSize(w - 274, 306, w, h - 112);
 		animationBar.setSize(0, h - 112, w, h);
-		Main.instance.editorPanes.setOffsets(0, 0, 0, 0);
+		Main.instance.editorPanes.setOffsets(0, 0, 0, Main.instance.state.getLayout() == EnumLayout.LEGACY ? 0 : 16);
 	}
 }

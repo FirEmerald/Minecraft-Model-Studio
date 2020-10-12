@@ -175,6 +175,7 @@ public class Main
 	
 	public void onGuiUpdate(GuiUpdate reason)
 	{
+		project.models.values().forEach(model -> model.onGuiUpdate(reason));
 		gui.onGuiUpdate(reason);
 	}
 	

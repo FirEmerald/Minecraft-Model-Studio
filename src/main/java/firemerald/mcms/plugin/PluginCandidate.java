@@ -35,4 +35,9 @@ public class PluginCandidate
 		this.file = file;
 		isPlugin = this.isSource = isSource;
 	}
+	
+	public String toString()
+	{
+		return "plugin_candidate[isSource:" + isSource + ",file=" + file + "]";
+	}
 }

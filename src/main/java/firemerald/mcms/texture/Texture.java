@@ -32,6 +32,7 @@ public class Texture implements IClonableObject<Texture>
 	public int w, h;
 	protected int texID;
 	protected boolean needsSet;
+	protected boolean textureWrap = true;
 	
 	protected Texture() 
 	{
@@ -118,13 +119,13 @@ public class Texture implements IClonableObject<Texture>
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
 			glTexParameterf(GL_TEXTURE_2D, EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+	    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, textureWrap ? GL_REPEAT : GL_CLAMP_TO_EDGE);
+	    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, textureWrap ? GL_REPEAT : GL_CLAMP_TO_EDGE);
 	    	glGenerateMipmap(GL_TEXTURE_2D);
 	    	needsSet = false;
 		}
-    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	}
 	
 	@Override
@@ -440,5 +441,16 @@ public class Texture implements IClonableObject<Texture>
 	public void setNeedsUpdate()
 	{
 		this.needsSet = true;
+	}
+	
+	public boolean wrap()
+	{
+		return this.textureWrap;
+	}
+	
+	public void setWrap(boolean wrap)
+	{
+		this.textureWrap = wrap;
+		this.setNeedsUpdate();
 	}
 }

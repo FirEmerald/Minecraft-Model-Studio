@@ -15,6 +15,7 @@ import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.effects.BoneEffect;
 import firemerald.mcms.shader.Shader;
+import firemerald.mcms.util.GuiUpdate;
 
 public abstract class RenderBone<T extends RenderBone<T>> extends ObjectBone<T>
 {
@@ -119,6 +120,13 @@ public abstract class RenderBone<T extends RenderBone<T>> extends ObjectBone<T>
 	public RenderBone(String name, Transformation defaultTransform, @Nullable T parent)
 	{
 		super(name, defaultTransform, parent);
+	}
+
+	@Override
+	public void onGuiUpdate(GuiUpdate reason)
+	{
+		super.onGuiUpdate(reason);
+		this.effects.forEach(effect -> effect.onGuiUpdate(reason));
 	}
 	
 	public void render(Map<String, Matrix4d> transformations, Runnable defaultTexture)

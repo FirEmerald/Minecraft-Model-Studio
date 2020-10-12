@@ -104,8 +104,11 @@ public class GuiPopupLoadModel extends GuiPopup
 			ObjData data = new ObjData(new File(file.getText()));
 			final RenderObjectComponents.Actual root = new RenderObjectComponents.Actual(MiscUtil.ensureUnique(name.getText(), project.getModel().getAllBoneNames()), new Transformation(), null);
 			data.groupObjects.forEach((name, mesh) -> {
-				Mesh m = RenderUtil.makeMesh(mesh, data, new Matrix4d().scale(scale.getVal()));
-				root.addComponent(new ComponentMeshTrue(m, name));
+				if (!mesh.isEmpty())
+				{
+					Mesh m = RenderUtil.makeMesh(mesh, data, new Matrix4d().scale(scale.getVal()));
+					root.addComponent(new ComponentMeshTrue(m, name));
+				}
 			});
 			@SuppressWarnings("unchecked")
 			final IModel<?, Actual> model = (IModel<?, Actual>) project.getModel();

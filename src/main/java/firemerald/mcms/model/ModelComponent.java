@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.joml.Matrix3d;
 import org.joml.Matrix4d;
 import org.joml.Vector2f;
@@ -32,6 +33,7 @@ import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.shader.Shader;
+import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.ObjUtil;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.mesh.Mesh;
@@ -343,7 +345,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	{
 		final int origY = editorY;
 		editorPanes.addBox.setParent(this);
-		editorPanes.addMesh.setParent(this);
 		editorPanes.copy.setEditable(parent, this);
 		editorPanes.remove.setEditable(parent, this);
 
@@ -429,7 +430,6 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	{
 		this.position.rotation.onDeselect(editorPanes);
 		editorPanes.addBox.setParent(null);
-		editorPanes.addMesh.setParent(null);
 		editorPanes.copy.setEditable(null, null);
 		editorPanes.remove.setEditable(null, null);
 		GuiElementContainer editor = editorPanes.editor.container;
@@ -704,4 +704,10 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	}
 	
 	public abstract ModelComponent cloneSelf(IComponentParent clonedParent);
+
+	@Override
+	public @Nullable Texture getTexture()
+	{
+		return parent == null ? null : parent.getTexture();
+	}
 }

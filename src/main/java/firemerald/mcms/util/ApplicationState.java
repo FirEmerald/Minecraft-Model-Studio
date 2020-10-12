@@ -24,6 +24,20 @@ import firemerald.mcms.window.api.Window;
 
 public class ApplicationState
 {
+	public static enum EnumLayout
+	{
+		LEGACY("Legacy"),
+		LAYOUT_A("Layout A"),
+		LAYOUT_B("Layout B");
+		
+		public final String displayName;
+		
+		EnumLayout(String displayName)
+		{
+			this.displayName = displayName;
+		}
+	}
+	
 	public static final File FILE = new File("state.xml");
 	
 	private final GuiTheme basicTheme = new BasicTheme();
@@ -32,7 +46,8 @@ public class ApplicationState
 	private boolean showNodes = false, showBones = false;
 	private final List<ColorModel> colorHistory = new ArrayList<>();
 	private static final int MAX_COLOR_HISTORY = 16;
-	public boolean eventLogging = false;
+	private boolean eventLogging = false;
+	private EnumLayout layout = EnumLayout.LAYOUT_A;
 	
 	public ApplicationState()
 	{
@@ -102,6 +117,29 @@ public class ApplicationState
 		this.showBones = showBones;
 		saveState();
 	}
+
+	public EnumLayout getLayout()
+	{
+		return layout;
+	}
+
+	public void setLayout(EnumLayout layout)
+	{
+		this.layout = layout;
+		if (Main.instance.getGui() != null) Main.instance.getGui().setSize(Main.instance.sizeW, Main.instance.sizeH);
+		saveState();
+	}
+
+	public boolean eventBusLogging()
+	{
+		return eventLogging;
+	}
+
+	public void setEventBusLogging(boolean eventBusLogging)
+	{
+		this.eventLogging = eventBusLogging;
+		saveState();
+	}
 	
 	public void loadState()
 	{
@@ -154,6 +192,10 @@ public class ApplicationState
 						}
 						else hotkeys.put(act, new HotKey(hotkeysChild));
 					}
+					break;
+				case "layout":
+					layout = optionsChild.getEnum("value", EnumLayout.values(), EnumLayout.LAYOUT_A);
+					break;
 				}
 				break;
 			case "color_history":
@@ -210,6 +252,8 @@ public class ApplicationState
 			this.hotkeys.forEach((action, hotkey) -> {
 				if (hotkey != null) hotkey.writeToElement(hotkeys.addChild(action.id));
 			});
+			AbstractElement layout = options.addChild("layout");
+			layout.setEnum("value", this.layout);
 			if (!colorHistory.isEmpty())
 			{
 				AbstractElement colorHistory = root.addChild("color_history");

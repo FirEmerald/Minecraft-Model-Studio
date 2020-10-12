@@ -15,6 +15,7 @@ import firemerald.mcms.gui.popups.hotkeys.GuiPopupHotkeys;
 import firemerald.mcms.gui.themes.GuiThemes;
 import firemerald.mcms.plugin.PluginLoader;
 import firemerald.mcms.texture.Color;
+import firemerald.mcms.util.ApplicationState.EnumLayout;
 import firemerald.mcms.util.font.FormattedText;
 import firemerald.mcms.util.hotkey.Action;
 
@@ -142,6 +143,17 @@ public class ComponentTitleBar extends ComponentPanelMain
         		new GuiPopupHotkeys().activate();
         	});
         	menu.add(hotkeys);
+        	Menu layout = new Menu("Layout");
+        	for (EnumLayout l : EnumLayout.values())
+        	{
+                MenuItem li = new MenuItem(l.displayName);
+                li.addActionListener(action -> {
+                	Main.instance.state.setLayout(l);
+                });
+                if (Main.instance.state.getLayout() == l) li.setEnabled(false);
+                layout.add(li);
+        	}
+        	menu.add(layout);
             return menu;
         }));
         this.addElement(helpMenu = new TitleButton(x, 0, x += w, 16, 1, 0, "Help", () -> {

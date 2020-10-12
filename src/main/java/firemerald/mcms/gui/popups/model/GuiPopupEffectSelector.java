@@ -1,48 +1,35 @@
-package firemerald.mcms.gui.popups;
+package firemerald.mcms.gui.popups.model;
 
 import java.util.function.BiConsumer;
 
-import org.joml.Vector4i;
-
 import firemerald.mcms.Main;
-import firemerald.mcms.api.util.TriFunction;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.IGuiElement;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.components.scrolling.ScrollableComponentPaneVertical;
 import firemerald.mcms.window.api.MouseButtons;
 
-public class GuiPopupSelector extends GuiPopup
+public class GuiPopupEffectSelector extends GuiPopup
 {
 	public final Runnable onCancel;
 	public IGuiElement from;
 	public final ScrollableComponentPaneVertical pane;
 	public final int numVals;
 	
-	public GuiPopupSelector(IGuiElement from, String[] values, BiConsumer<Integer, String> action)
+	public GuiPopupEffectSelector(IGuiElement from, String[] values, BiConsumer<Integer, String> action)
 	{
-		this(from, values, action, (Runnable) null);
+		this(from, values, action, null);
 	}
 	
-	public <T> GuiPopupSelector(IGuiElement from, T[] values, BiConsumer<Integer, T> action, TriFunction<T, Vector4i, Runnable, IGuiElement> newButton)
-	{
-		this(from, values, action, null, newButton);
-	}
-	
-	public GuiPopupSelector(IGuiElement from, String[] values, BiConsumer<Integer, String> action, Runnable onCancel)
-	{
-		this(from, values, action, onCancel, (str, size, onRelease) -> new StandardButton(size.x, size.y, size.z, size.w, str, onRelease));
-	}
-	
-	public <T> GuiPopupSelector(IGuiElement from, T[] values, BiConsumer<Integer, T> action, Runnable onCancel, TriFunction<T, Vector4i, Runnable, IGuiElement> newButton)
+	public GuiPopupEffectSelector(IGuiElement from, String[] values, BiConsumer<Integer, String> action, Runnable onCancel)
 	{
 		this.onCancel = onCancel;
 		this.from = from;
 		numVals = values.length;
-		int x1 = from.getSelectorX1(this);
-		int y1 = from.getSelectorY1(this);
-		int x2 = from.getSelectorX2(this);
-		int y2 = from.getSelectorY2(this);
+		int x1 = from.getTrueX1();
+		int y1 = from.getTrueY1();
+		int x2 = from.getTrueX2();
+		int y2 = from.getTrueY2();
 		this.addElement(pane = new ScrollableComponentPaneVertical(x1, y1, x2, y2));
 		int w = x2 - x1;
 		int h = y2 - y1;
@@ -50,11 +37,11 @@ public class GuiPopupSelector extends GuiPopup
 		for (int i = 0; i < values.length; i++)
 		{
 			final int j = i;
-			final T val = values[i];
-			pane.addElement(newButton.apply(val, new Vector4i(0, y, w, y += h), () ->
+			final String str = values[i];
+			pane.addElement(new StandardButton(0, y, w, y += h, values[i], () ->
 			{
 				deactivate();
-				action.accept(j, val);
+				action.accept(j, str);
 			}));
 		}
 		pane.updateComponentSize();
@@ -64,10 +51,10 @@ public class GuiPopupSelector extends GuiPopup
 	public void setSize(int wW, int wH)
 	{
 		super.setSize(wW, wH);
-		int x1 = from.getSelectorX1(this);
-		int y1 = from.getSelectorY1(this);
-		int x2 = from.getSelectorX2(this);
-		int y2 = from.getSelectorY2(this);
+		int x1 = from.getTrueX1();
+		int y1 = from.getTrueY1();
+		int x2 = from.getTrueX2();
+		int y2 = from.getTrueY2();
 		int h = y2 - y1;
 		int sY, eY;
 		if ((y2 + y1) > Main.instance.sizeH) //on bottom

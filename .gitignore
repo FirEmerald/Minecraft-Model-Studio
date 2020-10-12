@@ -2,6 +2,7 @@
 .settings/*
 Export/*
 logs/*
+crash-logs/*
 .metadata/*
 target/*
 state.xml
