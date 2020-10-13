@@ -29,8 +29,11 @@ import firemerald.mcms.api.model.Skeleton;
 import firemerald.mcms.api.model.effects.EffectsData;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.api.util.FileUtil.DataType;
+import firemerald.mcms.gui.popups.GuiPopupCopy;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.gui.popups.GuiPopupUnsavedChanges;
+import firemerald.mcms.gui.popups.model.GuiPopupLoadModel;
+import firemerald.mcms.gui.popups.model.GuiPopupModel;
 import firemerald.mcms.model.ProjectModel;
 import firemerald.mcms.model.RenderObjectComponents;
 import firemerald.mcms.texture.Texture;
@@ -41,8 +44,11 @@ import firemerald.mcms.util.IntReference;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Pair;
 import firemerald.mcms.util.Reference;
+import firemerald.mcms.util.TitlebarItems;
 import firemerald.mcms.util.history.ActionHistory;
+import firemerald.mcms.util.history.HistoryAction;
 import firemerald.mcms.util.history.IHistoryAction;
+import firemerald.mcms.util.hotkey.Action;
 
 public class Project
 {
@@ -122,6 +128,9 @@ public class Project
 		this.textureWidth = textureWidth;
 		this.textureHeight = textureHeight;
 		skeleton = useBackingSkeleton ? new Skeleton() : null;
+		//updateModelTitlebarElements();
+		//updateTextureTitlebarElements();
+		//updateAnimationTitlebarElements();
 	}
 	
 	public File getSource()
@@ -339,6 +348,7 @@ public class Project
 			this.models.values().forEach(model -> model.applySkeletonTransforms(skeleton));
 			this.rebuildBoneView();
 		}
+		updateRigTitlebarElements();
 		Main.instance.onGuiUpdate(GuiUpdate.PROJECT);
 	}
 	
@@ -529,6 +539,7 @@ public class Project
 					if (lockedModels.containsKey(model)) this.setTexture(lockedModels.get(model));
 				}
 			}
+			updateModelTitlebarElements();
 		}
 	}
 	
@@ -579,7 +590,93 @@ public class Project
 				}
 			}
 			catch (NoSuchElementException e) {}
+			updateModelTitlebarElements();
 		}
+	}
+	
+	public void updateModelTitlebarElements()
+	{
+		if (model != null)
+		{
+			TitlebarItems.LOAD_MODEL.setEnabled(true);
+			TitlebarItems.CLONE_MODEL.setEnabled(true);
+			TitlebarItems.EXPORT_MODEL.setEnabled(true);
+			TitlebarItems.EXPORT_UNPOSED_MODEL.setEnabled(true);
+			TitlebarItems.EDIT_MODEL.setEnabled(true);
+			TitlebarItems.REMOVE_MODEL.setEnabled(true);
+		}
+		else
+		{
+			TitlebarItems.LOAD_MODEL.setEnabled(false);
+			TitlebarItems.CLONE_MODEL.setEnabled(false);
+			TitlebarItems.EXPORT_MODEL.setEnabled(false);
+			TitlebarItems.EXPORT_UNPOSED_MODEL.setEnabled(false);
+			TitlebarItems.EDIT_MODEL.setEnabled(false);
+			TitlebarItems.REMOVE_MODEL.setEnabled(false);
+		}
+		updateRigTitlebarElements();
+	}
+	
+	public void updateRigTitlebarElements()
+	{
+		if (getRig() != null)
+		{
+			TitlebarItems.IMPORT_SKELETON.setEnabled(true);
+			TitlebarItems.EXPORT_SKELETON.setEnabled(true);
+		}
+		else
+		{
+			TitlebarItems.IMPORT_SKELETON.setEnabled(false);
+			TitlebarItems.EXPORT_SKELETON.setEnabled(false);
+		}
+	}
+
+	public void updateTextureTitlebarElements()
+	{
+		if (texture != null)
+		{
+			TitlebarItems.LOAD_TEXTURE.setEnabled(true);
+			TitlebarItems.CLONE_TEXTURE.setEnabled(true);
+			TitlebarItems.SAVE_TEXTURE.setEnabled(true);
+			TitlebarItems.EDIT_TEXTURE.setEnabled(true);
+			TitlebarItems.REMOVE_TEXTURE.setEnabled(true);
+		}
+		else
+		{
+			TitlebarItems.LOAD_TEXTURE.setEnabled(false);
+			TitlebarItems.CLONE_TEXTURE.setEnabled(false);
+			TitlebarItems.SAVE_TEXTURE.setEnabled(false);
+			TitlebarItems.EDIT_TEXTURE.setEnabled(false);
+			TitlebarItems.REMOVE_TEXTURE.setEnabled(false);
+		}
+	}
+
+	public void updateAnimationTitlebarElements()
+	{
+		if (animation != null)
+		{
+			TitlebarItems.LOAD_ANIMATION.setEnabled(true);
+			TitlebarItems.CLONE_ANIMATION.setEnabled(true);
+			TitlebarItems.SAVE_ANIMATION.setEnabled(true);
+			TitlebarItems.EDIT_ANIMATION.setEnabled(true);
+			TitlebarItems.REVERSE_ANIMATION.setEnabled(true);
+			TitlebarItems.REMOVE_ANIMATION.setEnabled(true);
+		}
+		else
+		{
+			TitlebarItems.LOAD_ANIMATION.setEnabled(false);
+			TitlebarItems.CLONE_ANIMATION.setEnabled(false);
+			TitlebarItems.SAVE_ANIMATION.setEnabled(false);
+			TitlebarItems.EDIT_ANIMATION.setEnabled(false);
+			TitlebarItems.REVERSE_ANIMATION.setEnabled(false);
+			TitlebarItems.REMOVE_ANIMATION.setEnabled(false);
+		}
+	}
+
+	public void updateHistoryTitlebarElements()
+	{
+		TitlebarItems.UNDO.setEnabled(currentHistory.canUndo());
+		TitlebarItems.REDO.setEnabled(currentHistory.canRedo());
 	}
 	
 	public void addModel(String modelName, IModel<?, ? extends RenderObjectComponents<?>> model)
@@ -592,6 +689,7 @@ public class Project
 			models.put(modelName, model);
 			this.modelName = modelName;
 			this.model = model;
+			updateModelTitlebarElements();
 			viewTextureWidth = textureWidth;
 			viewTextureHeight = textureHeight;
 			updateSkeletonLocal();
@@ -703,6 +801,7 @@ public class Project
 					Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 				}
 			}
+			updateTextureTitlebarElements();
 		}
 	}
 
@@ -744,6 +843,7 @@ public class Project
 				}
 			}
 			catch (NoSuchElementException e) {}
+			updateTextureTitlebarElements();
 		}
 	}
 	
@@ -758,6 +858,7 @@ public class Project
 			this.textureName = textureName;
 			this.texture = texture;
 			if (lockedModels.containsKey(model)) lockedModels.put(model, texture);
+			updateTextureTitlebarElements();
 			Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 		}
 	}
@@ -881,6 +982,7 @@ public class Project
 					this.animationState = animation.right;
 				}
 			}
+			updateAnimationTitlebarElements();
 			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 		}
 	}
@@ -902,6 +1004,7 @@ public class Project
 			this.animation = animation;
 			this.animationState = new ExtendedAnimationState(animation);
 			animations.put(animationName, new Pair<>(animation, animationState));
+			updateAnimationTitlebarElements();
 			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 		}
 	}
@@ -1042,12 +1145,14 @@ public class Project
 	{
 		undoStack.push(currentHistory);
 		currentHistory = stack;
+		updateHistoryTitlebarElements();
 	}
 	
 	public void popUndoStack()
 	{
 		if (undoStack.isEmpty()) throw new IllegalStateException("Undo stack underflow");
 		currentHistory = undoStack.pop();
+		updateHistoryTitlebarElements();
 	}
 	
 	public boolean canUndo()
@@ -1063,11 +1168,13 @@ public class Project
 	public void undo()
 	{
 		currentHistory.undo();
+		updateHistoryTitlebarElements();
 	}
 
 	public void redo()
 	{
 		currentHistory.redo();
+		updateHistoryTitlebarElements();
 	}
 	
 	public void onAction(IHistoryAction<?> undoThisAction)
@@ -1076,12 +1183,14 @@ public class Project
 		{
 			this.setNeedsSave();
 			currentHistory.onAction(undoThisAction);
+			updateHistoryTitlebarElements();
 		}
 	}
 	
 	public void clearActions()
 	{
 		currentHistory.clearActions();
+		updateHistoryTitlebarElements();
 	}
 	
 	private boolean needsSave;
@@ -1241,6 +1350,9 @@ public class Project
 		animation = null;
 		//Main.instance.clearActions();
 		clearActions();
+		updateModelTitlebarElements();
+		updateTextureTitlebarElements();
+		updateAnimationTitlebarElements();
 		Main.instance.onGuiUpdate(GuiUpdate.PROJECT);
 	}
 	
@@ -1432,6 +1544,10 @@ public class Project
 			else animationState = pair.right;
 		}
 		this.models.values().forEach(IModel::updateTex);
+		updateModelTitlebarElements();
+		updateTextureTitlebarElements();
+		updateAnimationTitlebarElements();
+		updateHistoryTitlebarElements();
 		Main.instance.onGuiUpdate(GuiUpdate.PROJECT);
 	}
 	

@@ -2,6 +2,8 @@ package firemerald.mcms;
 
 import static org.lwjgl.opengl.GL33.*;
 
+import java.awt.MenuItem;
+import java.awt.PopupMenu;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
@@ -9,8 +11,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.IntBuffer;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Function;
 
 import javax.imageio.ImageIO;
 
@@ -25,9 +29,10 @@ import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.events.ApplicationEvent;
 import firemerald.mcms.events.EventBus;
-import firemerald.mcms.events.GuiEvent;
 import firemerald.mcms.events.RenderEvent;
 import firemerald.mcms.events.TickEvent;
+import firemerald.mcms.events.gui.GuiEvent;
+import firemerald.mcms.events.gui.TitlebarInitEvent;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.GuiScreen;
 import firemerald.mcms.gui.main.GuiMain;
@@ -54,6 +59,7 @@ import firemerald.mcms.util.IEditable;
 import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.TextureManager;
+import firemerald.mcms.util.TitlebarItems;
 import firemerald.mcms.util.font.FontRenderer;
 import firemerald.mcms.util.hotkey.Action;
 import firemerald.mcms.util.mesh.Mesh;
@@ -137,7 +143,7 @@ public class Main
 		}
 	};
 	public ITool tool = null;
-	public final EventBus EVENT_BUS = new EventBus("mcms_event_bus");
+	public final EventBus eventBus = new EventBus("mcms_event_bus");
 	
 	public boolean doAction(Action action)
 	{
@@ -152,15 +158,15 @@ public class Main
 	public void openGui(@NonNull GuiScreen gui)
 	{
 		GuiEvent.Open event = new GuiEvent.Open(gui);
-		EVENT_BUS.post(event);
+		eventBus.post(event);
 		gui = event.getGui();
 		if (gui != null && gui != this.gui)
 		{
 			if (gui instanceof GuiPopup) ((GuiPopup) gui).under = this.gui;
-			else EVENT_BUS.post(new GuiEvent.Close(this.gui));
+			else eventBus.post(new GuiEvent.Close(this.gui));
 			this.gui = gui;
 			gui.setSize(sizeW, sizeH);
-			EVENT_BUS.post(new GuiEvent.Init(gui, sizeW, sizeH));
+			eventBus.post(new GuiEvent.Init(gui, sizeW, sizeH));
 		}
 	}
 	
@@ -168,7 +174,7 @@ public class Main
 	{
 		if (gui instanceof GuiPopup)
 		{
-			EVENT_BUS.post(new GuiEvent.Close(this.gui));
+			eventBus.post(new GuiEvent.Close(this.gui));
 			gui = ((GuiPopup) gui).under;
 		}
 	}
@@ -260,7 +266,7 @@ public class Main
 	public void run(String[] args)
 	{
 		PluginLoader.INSTANCE.constructPlugins();
-		EVENT_BUS.post(new ApplicationEvent.PreInitialization());
+		eventBus.post(new ApplicationEvent.PreInitialization());
 		try
 		{
 			watcher = new FileWatcher();
@@ -457,8 +463,8 @@ public class Main
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(1, 0, 0), new RGB(0, 1, 1), new RGB(1, 1, 1), "red");
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(0, 1, 0), new RGB(1, 0, 1), new RGB(1, 1, 1), "green");
 		//saveGradientSquare(155, 15, new RGB(0, 0, 0), new RGB(0, 0, 1), new RGB(1, 1, 0), new RGB(1, 1, 1), "blue");
-		EVENT_BUS.post(new ApplicationEvent.Initialization());
-		EVENT_BUS.post(new ApplicationEvent.PostInitialization());
+		eventBus.post(new ApplicationEvent.Initialization());
+		eventBus.post(new ApplicationEvent.PostInitialization());
 		if (args.length > 0)
 		{
 			File file = new File(args[0]);
@@ -488,12 +494,12 @@ public class Main
 			else thisTick = nanos - lastNanos;
 			lastNanos = nanos;
 			//System.out.println(thisTick);
-			EVENT_BUS.post(new TickEvent.Pre(thisTick));
+			eventBus.post(new TickEvent.Pre(thisTick));
 			window.tick(thisTick);
-			EVENT_BUS.post(new TickEvent.Post(thisTick));
-			EVENT_BUS.post(new RenderEvent.Pre());
+			eventBus.post(new TickEvent.Post(thisTick));
+			eventBus.post(new RenderEvent.Pre());
 			window.render();
-			EVENT_BUS.post(new RenderEvent.Post());
+			eventBus.post(new RenderEvent.Post());
 			String title = "Minecraft Model Studio - " + project.getName();
 			if (project.needsSave()) title += " *";
 			if (project.getSource() != null) title += " (" + project.getSource().toString() + ")";
@@ -507,7 +513,7 @@ public class Main
 				LOGGER.log(Level.WARN, e);
 			}
 		}
-		EVENT_BUS.post(new ApplicationEvent.Shutdown());
+		eventBus.post(new ApplicationEvent.Shutdown());
 		//tray.remove(trayIcon);
 		//tray = null;
 		//trayIcon = null;
@@ -891,5 +897,60 @@ public class Main
 	{
 		if (project.needsSave()) new GuiPopupUnsavedChanges(window::close).activate();
 		else window.close();
+	}
+	
+	public static Map<String, PopupMenu> makeTitlebar()
+	{
+		TitlebarInitEvent event = new TitlebarInitEvent();
+		Function<MenuItem, MenuItem> file = event.getOrMakeCategory("File");
+		file.apply(TitlebarItems.NEW_PROJECT);
+		file.apply(TitlebarItems.LOAD_PROJECT);
+		file.apply(TitlebarItems.EDIT_PROJECT);
+		file.apply(TitlebarItems.SAVE_PROJECT);
+		file.apply(TitlebarItems.SAVE_PROJECT_AS);
+		file.apply(TitlebarItems.EXPORT_PROJECT);
+		file.apply(TitlebarItems.EXIT);
+		Function<MenuItem, MenuItem> edit = event.getOrMakeCategory("Edit");
+		edit.apply(TitlebarItems.UNDO);
+		edit.apply(TitlebarItems.REDO);
+		Function<MenuItem, MenuItem> model = event.getOrMakeCategory("Model");
+		model.apply(TitlebarItems.NEW_MODEL);
+		model.apply(TitlebarItems.ADD_MODEL);
+		model.apply(TitlebarItems.LOAD_MODEL);
+		model.apply(TitlebarItems.CLONE_MODEL);
+		model.apply(TitlebarItems.EXPORT_MODEL);
+		model.apply(TitlebarItems.EXPORT_UNPOSED_MODEL);
+		model.apply(TitlebarItems.EDIT_MODEL);
+		model.apply(TitlebarItems.REMOVE_MODEL);
+		model.apply(TitlebarItems.IMPORT_SKELETON);
+		model.apply(TitlebarItems.EXPORT_SKELETON);
+		Function<MenuItem, MenuItem> texture = event.getOrMakeCategory("Texture");
+		texture.apply(TitlebarItems.NEW_TEXTURE);
+		texture.apply(TitlebarItems.ADD_TEXTURE);
+		texture.apply(TitlebarItems.LOAD_TEXTURE);
+		texture.apply(TitlebarItems.CLONE_TEXTURE);
+		texture.apply(TitlebarItems.SAVE_TEXTURE);
+		texture.apply(TitlebarItems.EDIT_TEXTURE);
+		texture.apply(TitlebarItems.REMOVE_TEXTURE);
+		Function<MenuItem, MenuItem> animation = event.getOrMakeCategory("Animation");
+		animation.apply(TitlebarItems.NEW_ANIMATION);
+		animation.apply(TitlebarItems.ADD_ANIMATION);
+		animation.apply(TitlebarItems.LOAD_ANIMATION);
+		animation.apply(TitlebarItems.CLONE_ANIMATION);
+		animation.apply(TitlebarItems.SAVE_ANIMATION);
+		animation.apply(TitlebarItems.EDIT_ANIMATION);
+		animation.apply(TitlebarItems.REVERSE_ANIMATION);
+		animation.apply(TitlebarItems.REMOVE_ANIMATION);
+		Function<MenuItem, MenuItem> options = event.getOrMakeCategory("Options");
+		options.apply(TitlebarItems.TOGGLE_NODES);
+		options.apply(TitlebarItems.TOGGLE_BONES);
+		options.apply(TitlebarItems.CHANGE_THEME);
+		options.apply(TitlebarItems.HOTKEYS);
+		options.apply(TitlebarItems.LAYOUT_MENU);
+		Function<MenuItem, MenuItem> help = event.getOrMakeCategory("Help");
+		help.apply(TitlebarItems.ABOUT_MCMS);
+		help.apply(TitlebarItems.PLUGINS);
+		Main.instance.eventBus.post(event);
+		return event.getTitlebar();
 	}
 }

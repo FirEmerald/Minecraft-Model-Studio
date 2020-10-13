@@ -1,5 +1,6 @@
-package firemerald.mcms.events;
+package firemerald.mcms.events.gui;
 
+import firemerald.mcms.events.Event;
 import firemerald.mcms.gui.GuiScreen;
 
 public abstract class GuiEvent extends Event

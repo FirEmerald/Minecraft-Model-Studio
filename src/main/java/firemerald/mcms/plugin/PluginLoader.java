@@ -471,7 +471,7 @@ public class PluginLoader
 		LOGGER.debug("Adding plugin with id " + plugin.id + " and class " + plugin.className);
 		activePlugin = plugin.id;
 		loadedPlugins.put(plugin.id, plugin);
-		Main.instance.EVENT_BUS.registerListeners(plugin.getPlugin());
+		Main.instance.eventBus.registerListeners(plugin.getPlugin());
 	}
 	
 	/**

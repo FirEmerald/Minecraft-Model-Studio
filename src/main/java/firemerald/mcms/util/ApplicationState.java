@@ -103,7 +103,16 @@ public class ApplicationState
 
 	public void setShowNodes(boolean showNodes)
 	{
-		this.showNodes = showNodes;
+		if (showNodes)
+		{
+			TitlebarItems.TOGGLE_NODES.setLabel("Hide nodes");
+			this.showNodes = true;
+		}
+		else
+		{
+			TitlebarItems.TOGGLE_NODES.setLabel("Show nodes");
+			this.showNodes = false;
+		}
 		saveState();
 	}
 
@@ -114,7 +123,16 @@ public class ApplicationState
 
 	public void setShowBones(boolean showBones)
 	{
-		this.showBones = showBones;
+		if (showBones)
+		{
+			TitlebarItems.TOGGLE_BONES.setLabel("Hide bones");
+			this.showBones = true;
+		}
+		else
+		{
+			TitlebarItems.TOGGLE_BONES.setLabel("Show bones");
+			this.showBones = false;
+		}
 		saveState();
 	}
 
@@ -125,6 +143,8 @@ public class ApplicationState
 
 	public void setLayout(EnumLayout layout)
 	{
+		TitlebarItems.LAYOUT_ITEMS.get(this.layout).setEnabled(true);
+		TitlebarItems.LAYOUT_ITEMS.get(layout).setEnabled(false);
 		this.layout = layout;
 		if (Main.instance.getGui() != null) Main.instance.getGui().setSize(Main.instance.sizeW, Main.instance.sizeH);
 		saveState();
@@ -177,8 +197,26 @@ public class ApplicationState
 					theme = optionsChild.getValue();
 					break;
 				case "viewer":
-					showNodes = optionsChild.getBoolean("showNodes", false);
-					showBones = optionsChild.getBoolean("showBones", false);
+					if (optionsChild.getBoolean("showNodes", false))
+					{
+						TitlebarItems.TOGGLE_NODES.setLabel("Hide nodes");
+						this.showNodes = true;
+					}
+					else
+					{
+						TitlebarItems.TOGGLE_NODES.setLabel("Show nodes");
+						this.showNodes = false;
+					}
+					if (optionsChild.getBoolean("showBones", false))
+					{
+						TitlebarItems.TOGGLE_BONES.setLabel("Hide bones");
+						this.showBones = true;
+					}
+					else
+					{
+						TitlebarItems.TOGGLE_BONES.setLabel("Show bones");
+						this.showBones = false;
+					}
 					break;
 				case "hotkeys":
 					for (AbstractElement hotkeysChild : optionsChild.getChildren())
@@ -194,7 +232,9 @@ public class ApplicationState
 					}
 					break;
 				case "layout":
+					if (layout != null) TitlebarItems.LAYOUT_ITEMS.get(layout).setEnabled(true);
 					layout = optionsChild.getEnum("value", EnumLayout.values(), EnumLayout.LAYOUT_A);
+					TitlebarItems.LAYOUT_ITEMS.get(layout).setEnabled(false);
 					break;
 				}
 				break;
@@ -209,7 +249,7 @@ public class ApplicationState
 				eventLogging = rootChild.getBoolean("eventLogging");
 				break;
 			}
-			Main.instance.EVENT_BUS.post(new ApplicationStateEvent.Load(root));
+			Main.instance.eventBus.post(new ApplicationStateEvent.Load(root));
 			try
 			{
 				setThemeNoStateUpdate(GuiTheme.parseTheme(theme));
@@ -267,7 +307,7 @@ public class ApplicationState
 			}
 			AbstractElement debug = root.addChild("debug");
 			debug.setBoolean("eventLogging", eventLogging);
-			Main.instance.EVENT_BUS.post(new ApplicationStateEvent.Save(root));
+			Main.instance.eventBus.post(new ApplicationStateEvent.Save(root));
 			root.saveXML(FILE);
 		}
 		catch (IOException | TransformerException e)

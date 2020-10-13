@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.events.GuiEvent;
+import firemerald.mcms.events.gui.GuiEvent;
 
 public abstract class GuiScreen extends GuiElementContainer
 {
@@ -37,7 +37,7 @@ public abstract class GuiScreen extends GuiElementContainer
 	
 	public void setSize(int w, int h)
 	{
-		Main.instance.EVENT_BUS.post(new GuiEvent.Resize(this, w, h));
+		Main.instance.eventBus.post(new GuiEvent.Resize(this, w, h));
 	}
 	
 	public void onMouseMoved(float mx, float my)

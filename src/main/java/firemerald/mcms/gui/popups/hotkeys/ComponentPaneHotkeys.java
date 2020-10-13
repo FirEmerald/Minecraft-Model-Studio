@@ -26,7 +26,7 @@ public class ComponentPaneHotkeys extends ScrollableComponentPaneVertical
 		final IntReference y = new IntReference(0);
 		Action.ACTIONS.values().forEach(action -> {
 			HotKey curKey = Main.instance.state.hotkeys.get(action);
-			ComponentLabel label = new ComponentLabel(0, y.val, mx1, y.val + 16, Main.instance.fontMsg, action.display_name);
+			ComponentLabel label = new ComponentLabel(0, y.val, mx1, y.val + 16, Main.instance.fontMsg, action.displayName);
 			StandardButton clear = new StandardButton(mx2, y.val, mx3, y.val + 16, "clear", () -> {});
 			StandardButton reset = new StandardButton(mx3, y.val, mx4, y.val + 16, "reset", () -> {});
 			reset.enabled = action.def == null ? curKey != null : !action.def.equals(curKey);
