@@ -12,32 +12,27 @@ import org.lwjgl.opengl.GL15;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.util.FileUtil;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.texture.RGB;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.TextureManager;
-import firemerald.mcms.util.mesh.Mesh;
-import firemerald.mcms.util.mesh.Mesh.DrawMode;
+import firemerald.mcms.util.mesh.DrawMode;
+import firemerald.mcms.util.mesh.GuiMesh;
 
 public class FontRenderer
 {
 	public static final Map<ResourceLocation, FontRenderer> FONTS = new HashMap<>();
-	public static final Mesh RECT = new Mesh(new float[] {
-			0, 0, 0,
-			1, 0, 0,
-			1, 1, 0,
-			0, 1, 0
+	public static final GuiMesh RECT = new GuiMesh(new float[] {
+			0, 0,
+			1, 0,
+			1, 1,
+			0, 1
 	}, new float[] {
 			1, 0,
 			1, 0,
 			1, 1,
 			0, 1
-	}, new float[] {
-			0, 0, 1,
-			0, 0, 1,
-			0, 0, 1,
-			0, 0, 1
 	}, new int[] {
 			0, 3, 1,
 			1, 3, 2
@@ -46,7 +41,7 @@ public class FontRenderer
 	public final byte[] widths = new byte[65536];
 	public final int height, start, end;
 	public final ResourceLocation name, texLoc;
-	public final Mesh charMesh, italicMesh;
+	public final GuiMesh charMesh, italicMesh;
 	public final boolean linear;
 	private final ResourceLocation[] pageTexs = new ResourceLocation[256];
 	
@@ -82,8 +77,8 @@ public class FontRenderer
 		for (int i = 0; i < start; i++) widths[i] = 0;
 		for (int i = end; i < 65536; i++) widths[i] = 0;
 		final int n = -height / 2, p = 3 * height / 2;
-		charMesh = new Mesh(n, n, p, p, 0, 0, 0, .0625f, .0625f);
-		italicMesh = new Mesh(n + height / 4, n, 0, 0, p + height / 4, n, .0625f, 0, p - height / 4, p, .0625f, .0625f,	n - height / 4, p, 0, .0625f, 0);
+		charMesh = new GuiMesh(n, n, p, p, 0, 0, .0625f, .0625f);
+		italicMesh = new GuiMesh(n + height / 4, n, 0, 0, p + height / 4, n, .0625f, 0, p - height / 4, p, .0625f, .0625f,	n - height / 4, p, 0, .0625f);
 		FONTS.put(font, this);
 		this.linear = linear;
 	}
@@ -241,7 +236,7 @@ public class FontRenderer
 			this.drawChar(c, x, y, r, g, b, a, bold, italic, shadow, false, false);
 			x += widths[Character.valueOf(c)];
 		}
-		Main.instance.shader.setTexOffset(0, 0);
+		Main.instance.guiShader.setTexOffset(0, 0);
 	}
 	
 	public void drawTextLineCentered(String s, float x, float y, float r, float g, float b, float a)
@@ -258,7 +253,7 @@ public class FontRenderer
 			drawChar(c, x, y, r, g, b, a, bold, italic, shadow, underline, strikethrough);
 			x += widths[Character.valueOf(c)];
 		}
-		Main.instance.shader.setTexOffset(0, 0);
+		Main.instance.guiShader.setTexOffset(0, 0);
 	}
 
 	public void drawTextLineCentered(String s, float x, float y, Color color)
@@ -287,7 +282,7 @@ public class FontRenderer
 		int page = (ind >> 8) & 255;
 		float oX = (ind & 15) * .0625f;
 		float oY = ((ind >> 4) & 15) * .0625f;
-		Shader s = Main.instance.shader;
+		GuiShader s = Main.instance.guiShader;
 		s.setTexOffset(oX, oY);
 		TextureManager texs = Main.instance.textureManager;
 		bindPage(texs, page);
@@ -301,24 +296,24 @@ public class FontRenderer
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		}
-		Mesh mesh = italic ? italicMesh : charMesh;
-		Shader.MODEL.push();
+		GuiMesh mesh = italic ? italicMesh : charMesh;
+		GuiShader.MODEL.push();
 		if (bold)
 		{
 			w++;
 			if (shadow)
 			{
 				s.setColor(0, 0, 0, 1);
-				Shader.MODEL.matrix().translate(x + 2, y + 1, 0); //x+2,y+1
+				GuiShader.MODEL.matrix().translate(x + 2, y + 1, 0); //x+2,y+1
 				s.updateModel();
 				mesh.render();
-				Shader.MODEL.matrix().translate(0, 1, 0);//x+2,y+2
+				GuiShader.MODEL.matrix().translate(0, 1, 0);//x+2,y+2
 				s.updateModel();
 				mesh.render();
-				Shader.MODEL.matrix().translate(-1, 0, 0);//x+1,y+2
+				GuiShader.MODEL.matrix().translate(-1, 0, 0);//x+1,y+2
 				s.updateModel();
 				mesh.render();
-				Shader.MODEL.matrix().translate(0, -1, 0);//x+1,y+1
+				GuiShader.MODEL.matrix().translate(0, -1, 0);//x+1,y+1
 				if (underline)
 				{
 					setImage(0, height, w, height + 1);
@@ -332,29 +327,29 @@ public class FontRenderer
 					RECT.render();
 				}
 				bindPage(texs, page);
-				Shader.MODEL.matrix().translate(-1, -1, 0);//x,y
+				GuiShader.MODEL.matrix().translate(-1, -1, 0);//x,y
 			}
-			else Shader.MODEL.matrix().translate(x, y, 0);//x,y
+			else GuiShader.MODEL.matrix().translate(x, y, 0);//x,y
 			s.setColor(r, g, b, a);
 			s.updateModel();
 			mesh.render();
-			Shader.MODEL.matrix().translate(1, 0, 0);//x+1,y
+			GuiShader.MODEL.matrix().translate(1, 0, 0);//x+1,y
 			s.updateModel();
 			mesh.render();
-			Shader.MODEL.matrix().translate(0, 1, 0);//x+1,y+1
+			GuiShader.MODEL.matrix().translate(0, 1, 0);//x+1,y+1
 			s.updateModel();
 			mesh.render();
-			Shader.MODEL.matrix().translate(-1, 0, 0);//x,y+1
+			GuiShader.MODEL.matrix().translate(-1, 0, 0);//x,y+1
 			s.updateModel();
 			mesh.render();
-			Shader.MODEL.matrix().translate(0, -1, 0);//x,y
+			GuiShader.MODEL.matrix().translate(0, -1, 0);//x,y
 		}
 		else
 		{
 			if (shadow)
 			{
 				s.setColor(0, 0, 0, a);
-				Shader.MODEL.matrix().translate(x + 1, y + 1, 0);//x+1,y+1
+				GuiShader.MODEL.matrix().translate(x + 1, y + 1, 0);//x+1,y+1
 				s.updateModel();
 				mesh.render();
 				if (underline)
@@ -370,9 +365,9 @@ public class FontRenderer
 					RECT.render();
 				}
 				bindPage(texs, page);
-				Shader.MODEL.matrix().translate(-1, -1, 0);//x,y
+				GuiShader.MODEL.matrix().translate(-1, -1, 0);//x,y
 			}
-			else Shader.MODEL.matrix().translate(x, y, 0);//x,y
+			else GuiShader.MODEL.matrix().translate(x, y, 0);//x,y
 			s.updateModel();
 			s.setColor(r, g, b, a);
 			mesh.render();
@@ -389,7 +384,7 @@ public class FontRenderer
 			texs.unbindTexture();
 			RECT.render();
 		}
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 		if (linear)
 		{
@@ -417,7 +412,7 @@ public class FontRenderer
 	public static void drawTextFormatted(String text, float x, float y, FontRenderer font, float r, float g, float b, float a, boolean shadow, boolean allowFontChange)
 	{
 		boolean italic = false, bold = false, strikethrough = false, underline = false;
-		Shader s = Main.instance.shader;
+		GuiShader s = Main.instance.guiShader;
 		int h = font.height;
 		char c;
 		int p = 0;
@@ -493,7 +488,7 @@ public class FontRenderer
 	
 	public static void drawTextFormatted(FormattedText formatted, float x, float y, boolean shadow, boolean allowFontChange)
 	{
-		Shader s = Main.instance.shader;
+		GuiShader s = Main.instance.guiShader;
 		float w = x;
 		while (formatted != null)
 		{

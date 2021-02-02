@@ -5,7 +5,7 @@ import java.util.NavigableMap;
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Animation;
 import firemerald.mcms.api.animation.Pose;
-import firemerald.mcms.api.animation.Transformation;
+import firemerald.mcms.api.animation.TweeningFrame;
 import firemerald.mcms.gui.main.components.elements.EditableButton;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.ResourceLocation;
@@ -37,7 +37,7 @@ public class ButtonRemoveKeyframe extends EditableButton
 		{
 			Animation anim = (Animation) Main.instance.project.getAnimation();
 			ComponentKeyFrame frame = (ComponentKeyFrame) Main.instance.getEditing();
-			NavigableMap<Float, Transformation> map = anim.animation.get(frame.name);
+			NavigableMap<Float, TweeningFrame> map = anim.animation.get(frame.name);
 			if (map != null) map.remove(frame.time);
 		}
 		else if (Main.instance.project.getAnimation() instanceof Pose)

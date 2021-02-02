@@ -9,7 +9,7 @@ import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.Animation;
 import firemerald.mcms.api.animation.IAnimation;
 import firemerald.mcms.api.animation.Pose;
-import firemerald.mcms.api.animation.Transformation;
+import firemerald.mcms.api.animation.TweeningFrame;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.ComponentToggle;
@@ -99,9 +99,9 @@ public class GuiPopupEditAnimation extends GuiPopup
 	{
 		Main main = Main.instance;
 		main.textureManager.unbindTexture();
-		main.shader.setColor(0, 0, 0, .5f);
+		main.guiShader.setColor(0, 0, 0, .5f);
 		main.screen.render();
-		main.shader.setColor(1, 1, 1, 1);
+		main.guiShader.setColor(1, 1, 1, 1);
 	}
 	
 	public void apply()
@@ -121,8 +121,8 @@ public class GuiPopupEditAnimation extends GuiPopup
 				Pose pose = new Pose(relative.state);
 				newAnimation = pose;
 				anim.animation.forEach((bone, a) -> {
-					Transformation transform = a.get(0f);
-					if (transform != null) pose.pose.put(bone, transform);
+					TweeningFrame transform = a.get(0f);
+					if (transform != null) pose.pose.put(bone, transform.transformation);
 				});
 				project.addAnimation(oldName, pose);
 			}
@@ -152,9 +152,9 @@ public class GuiPopupEditAnimation extends GuiPopup
 				Animation anim = new Animation(length.getVal(), loop.state, relative.state);
 				newAnimation = anim;
 				pose.pose.forEach((bone, transform) -> {
-					NavigableMap<Float, Transformation> map = anim.animation.get(bone);
+					NavigableMap<Float, TweeningFrame> map = anim.animation.get(bone);
 					if (map == null) anim.animation.put(bone, map = new TreeMap<>());
-					map.put(0f, transform);
+					map.put(0f, new TweeningFrame(transform));
 				});
 				project.addAnimation(oldName, anim);
 			}

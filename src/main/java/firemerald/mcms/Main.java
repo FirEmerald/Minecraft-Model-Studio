@@ -2,14 +2,15 @@ package firemerald.mcms;
 
 import static org.lwjgl.opengl.GL33.*;
 
+import java.awt.Menu;
 import java.awt.MenuItem;
-import java.awt.PopupMenu;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Map;
 import java.util.Queue;
@@ -40,7 +41,10 @@ import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.gui.popups.GuiPopupUnsavedChanges;
 import firemerald.mcms.model.EditorPanes;
 import firemerald.mcms.plugin.PluginLoader;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
+import firemerald.mcms.shader.ModelShader;
+import firemerald.mcms.shader.ModelShaderBase;
+import firemerald.mcms.shader.ShadowShader;
 import firemerald.mcms.texture.BlendMode;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.texture.ColorModel;
@@ -50,9 +54,9 @@ import firemerald.mcms.texture.RGB;
 import firemerald.mcms.texture.Texture;
 import firemerald.mcms.texture.tools.ITool;
 import firemerald.mcms.texture.tools.IToolHolder;
+import firemerald.mcms.texture.tools.ToolView;
 import firemerald.mcms.theme.GuiTheme;
 import firemerald.mcms.util.ApplicationState;
-import firemerald.mcms.util.EditorMode;
 import firemerald.mcms.util.FileWatcher;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.IEditable;
@@ -62,7 +66,9 @@ import firemerald.mcms.util.TextureManager;
 import firemerald.mcms.util.TitlebarItems;
 import firemerald.mcms.util.font.FontRenderer;
 import firemerald.mcms.util.hotkey.Action;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.DrawMode;
+import firemerald.mcms.util.mesh.GuiMesh;
+import firemerald.mcms.util.mesh.ModelMesh;
 import firemerald.mcms.window.api.Cursor;
 import firemerald.mcms.window.api.Window;
 import firemerald.mcms.window.glfw.GLFWWindow;
@@ -78,7 +84,10 @@ public class Main
 	public int sizeW, sizeH;
 	public boolean focused = false;
 	public double mX = -1, mY = -1;
-	public Shader shader;
+	public GuiShader guiShader;
+	public ModelShaderBase currentModelShader;
+	public ModelShader modelShader;
+	public ShadowShader shadowShader;
 	public TextureManager textureManager;
 	protected GuiScreen gui = new GuiScreen() {}; //blank gui to prevent null pointer exceptions
 	public FontRenderer font0, fontMsg;
@@ -86,7 +95,7 @@ public class Main
 	private IEditable editing = null;
 	private IModelEditable editingModel = null;
 	public static final Queue<Runnable> CLEANUP_ACTIONS = new ConcurrentLinkedQueue<>();
-	public Mesh screen;
+	public GuiMesh screen;
 	public FileWatcher watcher;
 	public boolean tooSmall = false;
 	public final ApplicationState state = new ApplicationState();
@@ -142,7 +151,7 @@ public class Main
 			blendMode = mode;
 		}
 	};
-	public ITool tool = null;
+	public ITool tool = ToolView.INSTANCE;
 	public final EventBus eventBus = new EventBus("mcms_event_bus");
 	
 	public boolean doAction(Action action)
@@ -189,11 +198,6 @@ public class Main
 	{
 		return gui;
 	}
-
-	public EditorMode getEditorMode()
-	{
-		return tool != null ? EditorMode.TEXTURE : EditorMode.MODEL;
-	}
 	
 	public void setEditing(IEditable editable)
 	{
@@ -214,8 +218,9 @@ public class Main
 	{
 		return this.editingModel;
 	}
-    
-    public static Mesh MODMESH;
+
+    public static GuiMesh guiTempMesh;
+    public static ModelMesh modelTempMesh;
 	
 	public static void launch(String[] args)
 	{
@@ -233,7 +238,7 @@ public class Main
 			tooSmall = false;
 			sizeW = w;
 			sizeH = h;
-			if (glActive) screen.setMesh(0, 0, w, h, 0, 0, 0, 1, 1);
+			if (glActive) screen.setMesh(0, 0, w, h, 0, 0, 1, 1);
 			if (gui != null) gui.setSize(w, h);
 		}
 	}
@@ -265,6 +270,32 @@ public class Main
 	@SuppressWarnings("deprecation")
 	public void run(String[] args)
 	{
+		/*
+		// temporary shader helper
+		List<Vector3f> vecs = new ArrayList<>();
+		float weight = 0;
+		for (float x = -5; x <= 5; x++) for (float y = -5; y <= 5; y++)
+		{
+			float r = x * x + y * y;
+			float w = (5 - (float) Math.sqrt(r));
+			if (w > 0)
+			{
+				weight += w;
+				vecs.add(new Vector3f(x, y, w));
+			}
+		}
+		for (Vector3f v : vecs) v.z /= weight;
+		StringBuilder str = new StringBuilder("const vec3 shadowWeights[");
+		str.append(vecs.size());
+		str.append("]=vec3[");
+		str.append(vecs.size());
+		str.append("](\n");
+		for (Vector3f v : vecs) str.append("\tvec3(" + v.x + ", " + v.y + ", " + v.z + "),\n");
+		str.append(");");
+		System.out.println(str);
+		*/
+		
+		
 		PluginLoader.INSTANCE.constructPlugins();
 		eventBus.post(new ApplicationEvent.PreInitialization());
 		try
@@ -524,21 +555,23 @@ public class Main
 	public void initOpenGL()
 	{
 		GL.createCapabilities();
-		glActive = true;
-		screen = new Mesh(0, 0, sizeW, sizeH, 0, 0, 0, 1, 1);
+		screen = new GuiMesh(0, 0, sizeW, sizeH, 0, 0, 1, 1);
 		font0 = new FontRenderer(new ResourceLocation(ID, "0"), 8, 32, 255, true);
 		fontMsg = new FontRenderer(new ResourceLocation(ID, "msg"), 12, true);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
-		shader = new Shader("shader", "shader");
-		glEnable(GL_LINE_SMOOTH);
+		guiShader = new GuiShader("gui", "gui");
+		currentModelShader = modelShader = new ModelShader("model", "model");
+		shadowShader = new ShadowShader("shadows", "shadows");
 		glDisable(GL_CULL_FACE);
-		
-		MODMESH = new Mesh(new float[0], new float[0], new float[0], new int[0], Mesh.DrawMode.TRIANGLES, GL_DYNAMIC_DRAW);
+
+		guiTempMesh = new GuiMesh(new float[0], new float[0], new int[0], DrawMode.TRIANGLES, GL_DYNAMIC_DRAW);
+		modelTempMesh = new ModelMesh(new float[0], new float[0], new float[0], new int[0], DrawMode.TRIANGLES, GL_DYNAMIC_DRAW);
 		textureManager = new TextureManager();
 		overlay = new Texture(1, 1);
 
 		this.openGui(new GuiMain());
+		glActive = true;
 	}
 	
 	public void tick(long thisTick)
@@ -559,26 +592,25 @@ public class Main
 	
 	public void renderOpenGL()
 	{
-		RenderUtil.stencilC = 0;
     	if (!tooSmall)
     	{
-			shader.bind();
-    		shader.setColor(1, 1, 1, 1);
+    		guiShader.reset();
+			guiShader.bind();
 			glViewport(0, 0, sizeW, sizeH);
-			Shader.MODEL.matrix().identity();
-			Shader.VIEW.matrix().identity();
-			Shader.PROJECTION.matrix().identity();
-    		Shader.VIEW.matrix().translate(0, 0, -1000);
-    		Shader.PROJECTION.matrix().setOrtho(0, sizeW, sizeH, 0, 0, 2000);
-    		shader.updateModel();
-    		shader.updateView();
-    		shader.updateProjection();
-    		RenderUtil.clearStencil();
+			GuiShader.MODEL.matrix().identity();
+			GuiShader.VIEW.matrix().identity();
+			GuiShader.PROJECTION.matrix().identity();
+    		GuiShader.VIEW.matrix().translate(0, 0, -1000);
+    		GuiShader.PROJECTION.matrix().setOrtho(0, sizeW, sizeH, 0, 0, 2000);
+    		guiShader.updateModel();
+    		guiShader.updateView();
+    		guiShader.updateProjection();
+    		RenderUtil.clearScissor();
 			getTheme().drawBackground();
             float mx = (float) mX;
             float my = (float) mY;
             if (gui != null) gui.render(mx, my, true);
-			shader.unbind();
+			guiShader.unbind();
 			listGLErrors("End render");
     	}
 	}
@@ -835,6 +867,49 @@ public class Main
 		glBindTexture(GL_TEXTURE_2D, prevTex);
 	}
 	
+
+	public static void saveFloatTexture()
+	{
+		int tex = glGetInteger(GL_TEXTURE_BINDING_2D);
+		saveFloatTexture(tex, "test" + tex);
+	}
+	
+
+	public static void saveFloatTexture(int tex)
+	{
+		saveFloatTexture(tex, "test" + tex);
+	}
+	
+
+	public static void saveFloatTexture(int tex, String fileName)
+	{
+		int prevTex = glGetInteger(GL_TEXTURE_BINDING_2D);
+		glBindTexture(GL_TEXTURE_2D, tex);
+		int w = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH);
+		int h = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT);
+		int k = w * h;
+		FloatBuffer pixelBuffer = BufferUtils.createFloatBuffer(k);
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		pixelBuffer.clear();
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, pixelBuffer);
+		BufferedImage bufferedimage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+		for (int i1 = 0; i1 < h; ++i1) for (int j1 = 0; j1 < w; ++j1)
+		{
+			int pixel = (int) (255 * (pixelBuffer.get(i1 * w + j1)));
+			if (pixel < 0) pixel = 0;
+			else if (pixel > 255) pixel = 255;
+			bufferedimage.setRGB(j1, i1, pixel | (pixel << 8) | (pixel << 16));
+		}
+		File file3 = new File(fileName + ".png");
+		try
+		{
+			ImageIO.write(bufferedimage, "png", file3);
+		}
+		catch (IOException e) {}
+		glBindTexture(GL_TEXTURE_2D, prevTex);
+	}
+	
 	
     public static String getErrorCode(int error)
     {
@@ -899,7 +974,7 @@ public class Main
 		else window.close();
 	}
 	
-	public static Map<String, PopupMenu> makeTitlebar()
+	public static Map<String, Menu> makeTitlebar()
 	{
 		TitlebarInitEvent event = new TitlebarInitEvent();
 		Function<MenuItem, MenuItem> file = event.getOrMakeCategory("File");
@@ -944,6 +1019,7 @@ public class Main
 		Function<MenuItem, MenuItem> options = event.getOrMakeCategory("Options");
 		options.apply(TitlebarItems.TOGGLE_NODES);
 		options.apply(TitlebarItems.TOGGLE_BONES);
+		options.apply(TitlebarItems.TOGGLE_SHADOWS);
 		options.apply(TitlebarItems.CHANGE_THEME);
 		options.apply(TitlebarItems.HOTKEYS);
 		options.apply(TitlebarItems.LAYOUT_MENU);

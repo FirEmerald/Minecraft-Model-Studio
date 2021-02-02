@@ -98,4 +98,42 @@ public class MathUtils
 							(-(fx * nm30 + fy * nm31 + fz * nm32) + nnm33) / det : null;
 		}
 	}
+	
+	//0=0
+	//.5=a
+	//1=0
+	
+	//2ax, x <= .5
+	//2a-2ax, x >= .5
+	//a*(.5-|x-.5|)
+	
+	public static float smoothLerp(float v, float f)
+	{
+		if (v == 0) return 0;
+		else if (v == .5f) return .5f;
+		else if (v == 1) return 1;
+		else if (f == 1) return v; //lerp
+		else if (f <= 0) return .5f; //edge case
+		else if (f == Float.POSITIVE_INFINITY) return v < .5f ? 0 : v > .5f ? 1 : .5f;
+		else if (v < .5) return (1 - (float) Math.pow(1 - Math.pow(2 * v, f), 1 / f)) / 2;
+		else return (1 + (float) Math.pow(1 - Math.pow(2 - 2 * v, f), 1 / f)) / 2;
+	}
+	
+	public static float intoCurve(float v, float f)
+	{
+		if (v == 0) return 0;
+		else if (v == 1) return 1;
+		else if (f <= 0) return 1;
+		else if (f == Float.POSITIVE_INFINITY) return 0;
+		else return 1 - (float) Math.pow(1 - Math.pow(v, f), 1 / f);
+	}
+	
+	public static float fromCurve(float v, float f)
+	{
+		if (v == 0) return 0;
+		else if (v == 1) return 1;
+		else if (f <= 0) return 0;
+		else if (f == Float.POSITIVE_INFINITY) return 1;
+		else return (float) Math.pow(1 - Math.pow(1 - v, f), 1 / f);
+	}
 }

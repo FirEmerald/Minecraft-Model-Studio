@@ -11,12 +11,12 @@ import firemerald.mcms.gui.components.ComponentPanel;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.window.api.MouseButtons;
 
 public class ComponentMenu extends ComponentPanel
 {
-	public final Mesh mesh = new Mesh();
+	public final GuiMesh mesh = new GuiMesh();
 	public ThemeElement format;
 	public ComponentMenu expanded = null;
 	public final GuiElementContainer container;
@@ -71,7 +71,7 @@ public class ComponentMenu extends ComponentPanel
 	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		super.setSize(x1, y1, x2, y2);
-		mesh.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
+		mesh.setMesh(x1, y1, x2, y2, 0, 0, 1, 1);
 		onGuiUpdate(GuiUpdate.THEME);
 	}
 	

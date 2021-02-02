@@ -16,23 +16,28 @@ import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IEditableParent;
 import firemerald.mcms.api.model.IModelEditable;
+import firemerald.mcms.api.model.IModelHolder;
 import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.api.util.TriFunction;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.text.ComponentText;
+import firemerald.mcms.gui.popups.model.GuiPopupEffectNoOptions;
+import firemerald.mcms.gui.popups.model.GuiPopupFluid;
+import firemerald.mcms.gui.popups.model.GuiPopupItem;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.ModelShaderBase;
 import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.ResourceLocation;
+import firemerald.mcms.util.Textures;
 import firemerald.mcms.util.Triple;
 
 public abstract class BoneEffect implements IModelEditable
 {
 	private static final Map<String, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect>> EFFECT_TYPES = new HashMap<>();
-	private static final List<Triple<String, ResourceLocation, Consumer<RenderBone<?>>>> MODDED_EFFECTS = new ArrayList<>(); //preserve ordering
-	public static final List<Triple<String, ResourceLocation, Consumer<RenderBone<?>>>> MODDED_EFFECTS_VIEW = Collections.unmodifiableList(MODDED_EFFECTS);
+	private static final List<Triple<String, ResourceLocation, Consumer<RenderBone<?>>>> ALL_EFFECTS = new ArrayList<>(); //preserve ordering
+	public static final List<Triple<String, ResourceLocation, Consumer<RenderBone<?>>>> EFFECTS_VIEW = Collections.unmodifiableList(ALL_EFFECTS);
 
 	/**
 	 * Register a Bone Effect type
@@ -45,17 +50,27 @@ public abstract class BoneEffect implements IModelEditable
 	 * 
 	 * @return if the bone effect was registered
 	 */
-	public static boolean registerBoneType(ResourceLocation name, String displayName, ResourceLocation icon, Consumer<RenderBone<?>> creationGui, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor)
+	public static boolean registerBoneEffect(ResourceLocation name, String displayName, ResourceLocation icon, Consumer<RenderBone<?>> creationGui, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor)
 	{
-		if (registerBoneType(name.toString().replace('/', '_'), constructor))
+		if (registerBoneEffect(name.toString().replace('/', '_'), constructor))
 		{
-			MODDED_EFFECTS.add(new Triple<>(displayName, icon, creationGui));
+			ALL_EFFECTS.add(new Triple<>(displayName, icon, creationGui));
+			return true;
+		}
+		else return false;
+	}
+
+	private static boolean registerBoneEffect(String name, String displayName, ResourceLocation icon, Consumer<RenderBone<?>> creationGui, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor)
+	{
+		if (registerBoneEffect(name, constructor))
+		{
+			ALL_EFFECTS.add(new Triple<>(displayName, icon, creationGui));
 			return true;
 		}
 		else return false;
 	}
 	
-	private static boolean registerBoneType(String name, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor)
+	private static boolean registerBoneEffect(String name, TriFunction<RenderBone<?>, AbstractElement, Float, BoneEffect> constructor)
 	{
 		if (EFFECT_TYPES.containsKey(name)) return false;
 		else
@@ -74,13 +89,18 @@ public abstract class BoneEffect implements IModelEditable
 	
 	static
 	{
-		registerBoneType("item", (parent, element, scale) -> {
+		registerBoneEffect("item", "item display", Textures.MODEL_ICON_ITEM, bone -> new GuiPopupItem<>(bone).activate(), (parent, element, scale) -> {
 			BoneEffect bone = new ItemRenderEffect(element.getString("name", "unnamed item"), parent, new Transformation(), 0);
 			bone.loadFromXML(element, scale);
 			return bone;
 		});
-		registerBoneType("fluid", (parent, element, scale) -> {
+		registerBoneEffect("fluid", "fluid object", Textures.MODEL_ICON_FLUID, bone -> new GuiPopupFluid<>(bone).activate(), (parent, element, scale) -> {
 			BoneEffect bone = new FluidRenderEffect(element.getString("name", "unnamed fluid"), parent, new Transformation(), 0);
+			bone.loadFromXML(element, scale);
+			return bone;
+		});
+		registerBoneEffect("no_lighting", "disable lighting", Textures.MODEL_ICON_NOLIGHTING, bone -> new GuiPopupEffectNoOptions<>(bone, DisableLightingEffect::new, "disable lighting").activate(), (parent, element, scale) -> {
+			BoneEffect bone = new DisableLightingEffect(element.getString("name", "disable lighting"), parent);
 			bone.loadFromXML(element, scale);
 			return bone;
 		});
@@ -234,50 +254,52 @@ public abstract class BoneEffect implements IModelEditable
 	@Override
 	public void addChildAt(IModelEditable child, int index) {}
 	
-	public void preRender(Runnable defaultTex)
+	public void tick(IModelHolder holder, Matrix4d currentTransform, float deltaTime) {}
+	
+	public void preRender(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex)
 	{
 		if (this.visible)
 		{
-			Shader.MODEL.push();
-			Shader.MODEL.matrix().mul(transform.getTransformation());
-			Main.instance.shader.updateModel();
-			doPreRender(defaultTex);
-			Shader.MODEL.pop();
-			Main.instance.shader.updateModel();
+			ModelShaderBase.MODEL.push();
+			ModelShaderBase.MODEL.matrix().mul(transform.getTransformation());
+			Main.instance.currentModelShader.updateModel();
+			doPreRender(holder, currentTransform, defaultTex);
+			ModelShaderBase.MODEL.pop();
+			Main.instance.currentModelShader.updateModel();
 		}
 	}
 	
-	public abstract void doPreRender(Runnable defaultTex);
+	public abstract void doPreRender(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex);
 
-	public void postRenderBone(Runnable defaultTex)
+	public void postRenderBone(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex)
 	{
 		if (this.visible)
 		{
-			Shader.MODEL.push();
-			Shader.MODEL.matrix().mul(transform.getTransformation());
-			Main.instance.shader.updateModel();
-			doPostRenderBone(defaultTex);
-			Shader.MODEL.pop();
-			Main.instance.shader.updateModel();
+			ModelShaderBase.MODEL.push();
+			ModelShaderBase.MODEL.matrix().mul(transform.getTransformation());
+			Main.instance.currentModelShader.updateModel();
+			doPostRenderBone(holder, currentTransform, defaultTex);
+			ModelShaderBase.MODEL.pop();
+			Main.instance.currentModelShader.updateModel();
 		}
 	}
 	
-	public abstract void doPostRenderBone(Runnable defaultTex);
+	public abstract void doPostRenderBone(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex);
 
-	public void postRenderChildren(Runnable defaultTex)
+	public void postRenderChildren(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex)
 	{
 		if (this.visible)
 		{
-			Shader.MODEL.push();
-			Shader.MODEL.matrix().mul(transform.getTransformation());
-			Main.instance.shader.updateModel();
-			doPostRenderChildren(defaultTex);
-			Shader.MODEL.pop();
-			Main.instance.shader.updateModel();
+			ModelShaderBase.MODEL.push();
+			ModelShaderBase.MODEL.matrix().mul(transform.getTransformation());
+			Main.instance.currentModelShader.updateModel();
+			doPostRenderChildren(holder, currentTransform, defaultTex);
+			ModelShaderBase.MODEL.pop();
+			Main.instance.currentModelShader.updateModel();
 		}
 	}
 
-	public abstract void doPostRenderChildren(Runnable defaultTex);
+	public abstract void doPostRenderChildren(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex);
 	
 	public abstract String getXMLName();
 

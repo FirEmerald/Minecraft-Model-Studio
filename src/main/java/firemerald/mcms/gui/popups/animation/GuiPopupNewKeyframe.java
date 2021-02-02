@@ -9,6 +9,7 @@ import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.Animation;
 import firemerald.mcms.api.animation.Transformation;
+import firemerald.mcms.api.animation.TweeningFrame;
 import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.gui.GuiPopup;
@@ -99,9 +100,9 @@ public class GuiPopupNewKeyframe extends GuiPopup
 	{
 		Main main = Main.instance;
 		main.textureManager.unbindTexture();
-		main.shader.setColor(0, 0, 0, .5f);
+		main.guiShader.setColor(0, 0, 0, .5f);
 		main.screen.render();
-		main.shader.setColor(1, 1, 1, 1);
+		main.guiShader.setColor(1, 1, 1, 1);
 	}
 	
 	public void apply()
@@ -110,9 +111,9 @@ public class GuiPopupNewKeyframe extends GuiPopup
 		Main main = Main.instance;
 		Project project = main.project;
 		Animation anim = (Animation) project.getAnimation();
-		NavigableMap<Float, Transformation> map2 = anim.animation.get(name.getText());
+		NavigableMap<Float, TweeningFrame> map2 = anim.animation.get(name.getText());
 		if (map2 == null) anim.animation.put(name.getText(), map2 = new TreeMap<>());
-		final NavigableMap<Float, Transformation> map = map2;
+		final NavigableMap<Float, TweeningFrame> map = map2;
 		Float time = this.time.getVal();
 		Transformation transform = null;
 		if (main.getEditing() instanceof ComponentKeyFrame)
@@ -122,29 +123,31 @@ public class GuiPopupNewKeyframe extends GuiPopup
 		}
 		if (transform == null)
 		{
-			Entry<Float, Transformation> lowerEntry = map.lowerEntry(time);
-			Entry<Float, Transformation> higherEntry = map.higherEntry(time);
+			Entry<Float, TweeningFrame> lowerEntry = map.lowerEntry(time);
+			Entry<Float, TweeningFrame> higherEntry = map.higherEntry(time);
 			if (lowerEntry == null)
 			{
 				Transformation lower;
 				if (anim.isRelative()) lower = new Transformation();
 				else
 				{
-					lower = map.get(time);
-					if (lower == null)
+					TweeningFrame lowerPair = map.get(time);
+					if (lowerPair == null)
 					{
 						if (project.useBackingSkeleton()) lower = project.getSkeleton().getBone(name.getText()).defaultTransform.copy();
 						else
 						{
+							lower = null;
 							IRigged<?, ?> rigged = project.getRig();
 							if (rigged != null)
 							{
 								Bone<?> bone = rigged.getBone(name.getText());
-								if (bone != null) bone.defaultTransform.copy();
+								if (bone != null) lower = bone.defaultTransform.copy();
 							}
 							if (lower == null) lower = new Transformation();
 						}
 					}
+					else lower = lowerPair.transformation;
 				}
 				if (higherEntry == null)
 				{
@@ -152,11 +155,11 @@ public class GuiPopupNewKeyframe extends GuiPopup
 				}
 				else
 				{
-					transform = Transformation.tween(lower, higherEntry.getValue(), time / higherEntry.getKey());
+					transform = Transformation.tween(lower, higherEntry.getValue().transformation, higherEntry.getValue().apply(time / higherEntry.getKey()));
 				}
 			}
-			else if (higherEntry == null) transform = lowerEntry.getValue().copy();
-			else transform = Transformation.tween(lowerEntry.getValue(), higherEntry.getValue(), (time - lowerEntry.getKey()) / (higherEntry.getKey() - lowerEntry.getKey()));
+			else if (higherEntry == null) transform = lowerEntry.getValue().transformation.copy();
+			else transform = Transformation.tween(lowerEntry.getValue().transformation, higherEntry.getValue().transformation, higherEntry.getValue().apply((time - lowerEntry.getKey()) / (higherEntry.getKey() - lowerEntry.getKey())));
 		}
 		final Transformation transformation = transform;
 		if (!map.containsKey(time)) //TODO if already has a keyframe
@@ -170,10 +173,10 @@ public class GuiPopupNewKeyframe extends GuiPopup
 				map.remove(time);
 				Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 			}, () -> {
-				map.put(time, transformation);
+				map.put(time, new TweeningFrame(transformation));
 				Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 			}));
-			map.put(time, transformation);
+			map.put(time, new TweeningFrame(transformation));
 			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 			framesBar.keyFrames.get(time).forEach(keyframe -> {
 				if (keyframe.transform == transformation) Main.instance.setEditing(keyframe);

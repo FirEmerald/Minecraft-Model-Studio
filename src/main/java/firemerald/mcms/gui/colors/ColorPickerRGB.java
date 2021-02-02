@@ -1,22 +1,22 @@
 package firemerald.mcms.gui.colors;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.RGB;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.TextureManager;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.window.api.MouseButtons;
 
 public class ColorPickerRGB extends ColorPicker
 {
-	public static final Mesh R_SLIDER = new Mesh(0, 0, 155, 15, 0);
-	public static final Mesh G_SLIDER = new Mesh(0, 20, 155, 35, 0);
-	public static final Mesh B_SLIDER = new Mesh(0, 40, 155, 55, 0);
-	public static final Mesh R_LINE = new Mesh(0, 0, 1, 15, 0);
-	public static final Mesh G_LINE = new Mesh(0, 20, 1, 35, 0);
-	public static final Mesh B_LINE = new Mesh(0, 40, 1, 55, 0);
+	public static final GuiMesh R_SLIDER = new GuiMesh(0, 0, 155, 15);
+	public static final GuiMesh G_SLIDER = new GuiMesh(0, 20, 155, 35);
+	public static final GuiMesh B_SLIDER = new GuiMesh(0, 40, 155, 55);
+	public static final GuiMesh R_LINE = new GuiMesh(0, 0, 1, 15);
+	public static final GuiMesh G_LINE = new GuiMesh(0, 20, 1, 35);
+	public static final GuiMesh B_LINE = new GuiMesh(0, 40, 1, 55);
 	
 	private RGB rgb;
 	private int selected = -1;
@@ -87,10 +87,10 @@ public class ColorPickerRGB extends ColorPicker
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
-		Main.instance.shader.updateModel();
-		Shader s = Main.instance.shader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
+		Main.instance.guiShader.updateModel();
+		GuiShader s = Main.instance.guiShader;
 		TextureManager t = Main.instance.textureManager;
 		s.setColor(1, rgb.g, rgb.b, 1);
 		t.bindTexture(TEX_R);
@@ -103,24 +103,24 @@ public class ColorPickerRGB extends ColorPicker
 		B_SLIDER.render();
 		t.unbindTexture();
 		s.setColor(0, 0, 0, .75f);
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(rgb.r * 154, 0, 0);
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(rgb.r * 154, 0, 0);
 		s.updateModel();
 		R_LINE.render();
-		Shader.MODEL.pop();
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(rgb.g * 154, 0, 0);
+		GuiShader.MODEL.pop();
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(rgb.g * 154, 0, 0);
 		s.updateModel();
 		G_LINE.render();
-		Shader.MODEL.pop();
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(rgb.b * 154, 0, 0);
+		GuiShader.MODEL.pop();
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(rgb.b * 154, 0, 0);
 		s.updateModel();
 		B_LINE.render();
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 		s.setColor(1, 1, 1, 1);
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 	}
 }

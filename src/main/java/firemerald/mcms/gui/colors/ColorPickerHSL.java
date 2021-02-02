@@ -1,36 +1,32 @@
 package firemerald.mcms.gui.colors;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.HSL;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.TextureManager;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.window.api.MouseButtons;
 
 public class ColorPickerHSL extends ColorPicker
 {
 	public static final float SQRT3 = (float) Math.sqrt(3);
 	public static final float IRR = 31.25f * SQRT3; 
-	public static final Mesh H_CIRCLE = new Mesh(0, 0, 155, 155, 0);
-	public static final Mesh SL_TRIANGLE = new Mesh(new float[] {
-			62.5f, 0, 0,
-			-31.25f, -IRR, 0,
-			-31.25f, IRR, 0
+	public static final GuiMesh H_CIRCLE = new GuiMesh(0, 0, 155, 155);
+	public static final GuiMesh SL_TRIANGLE = new GuiMesh(new float[] {
+			62.5f, 0,
+			-31.25f, -IRR,
+			-31.25f, IRR
 	}, new float[] {
 			1, .5f,
 			.25f, 0.0669872981078f,
 			.25f, 0.9330127018922f
-	}, new float[] {
-			0, 0, 1,
-			0, 0, 1,
-			0, 0, 1
 	}, new int[] {
 			0, 1, 2
 	});
-	public static final Mesh H_LINE = new Mesh(62.5f, -1, 77.5f, 1, 0);
-	public static final Mesh SL_DOT = new Mesh(-1.5f, -1.5f, 1.5f, 1.5f, 0);
+	public static final GuiMesh H_LINE = new GuiMesh(62.5f, -1, 77.5f, 1);
+	public static final GuiMesh SL_DOT = new GuiMesh(-1.5f, -1.5f, 1.5f, 1.5f);
 	
 	private HSL hsl;
 	private int selected = -1;
@@ -198,16 +194,16 @@ public class ColorPickerHSL extends ColorPicker
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
-		Main.instance.shader.updateModel();
-		Shader s = Main.instance.shader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
+		Main.instance.guiShader.updateModel();
+		GuiShader s = Main.instance.guiShader;
 		TextureManager t = Main.instance.textureManager;
 		t.bindTexture(TEX_H);
 		H_CIRCLE.render();
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(77.5f, 77.5f, 0);
-		Shader.MODEL.matrix().rotateZ(hsl.h * (float) (-2 * Math.PI));
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(77.5f, 77.5f, 0);
+		GuiShader.MODEL.matrix().rotateZ(hsl.h * (float) (-2 * Math.PI));
 		s.updateModel();
 		s.setHueSet(true);
 		s.setHue(hsl.h, 1);
@@ -220,18 +216,18 @@ public class ColorPickerHSL extends ColorPicker
 		H_LINE.render();
 		s.setColor(1, 1, 1, .75f);
 		t.bindTexture(TEX_DOT);
-		Shader.MODEL.push();
+		GuiShader.MODEL.push();
 		float l = 1 - 2 * hsl.l;
 		float sl = hsl.s * (1 - Math.abs(l));
-		Shader.MODEL.matrix().translate(sl * 93.75f - 31.25f, l * 54.1265877365274f, 0);
-		Shader.MODEL.matrix().rotateZ(hsl.h * (float) (2 * Math.PI));
+		GuiShader.MODEL.matrix().translate(sl * 93.75f - 31.25f, l * 54.1265877365274f, 0);
+		GuiShader.MODEL.matrix().rotateZ(hsl.h * (float) (2 * Math.PI));
 		s.updateModel();
 		SL_DOT.render();
-		Shader.MODEL.pop();
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 		s.setColor(1, 1, 1, 1);
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
+		GuiShader.MODEL.pop();
+		Main.instance.guiShader.updateModel();
 	}
 }

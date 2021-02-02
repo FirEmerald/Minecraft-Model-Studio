@@ -13,6 +13,8 @@ import firemerald.mcms.window.api.Modifier;
 
 public class ToolBrush extends AbstractToolBrush
 {
+	public static final ToolBrush INSTANCE = new ToolBrush();
+	
 	public float size = 1;
 	public float feather = 0;
 	public boolean square = false;

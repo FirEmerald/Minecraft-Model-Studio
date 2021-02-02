@@ -38,7 +38,6 @@ import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.FileUtils;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MiscUtil;
-import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.history.HistoryAction;
 import firemerald.mcms.window.api.Key;
 import firemerald.mcms.window.api.Modifier;
@@ -72,7 +71,7 @@ public class Action
 		new GuiPopupCopy<>(MiscUtil.ensureUnique(project.getModelName(), project.getModelNames()), project.getModel(), (name, copy) -> project.addModel(name, copy), (name) -> project.removeModel(name)).activate();
 	}, null);
 	public static final Action EXPORT_MODEL = new Action("export_model", "Export the active model to an OBJ file using it's current pose", "Export posed model", CHECK_MODEL, () -> {
-		File file = FileUtils.getSaveFile("obj", "");
+		File file = FileUtils.getSaveFile(null, "obj", "obj");
 		if (file != null)
 		{
 			Writer writer = null;
@@ -89,7 +88,7 @@ public class Action
 		}
 	}, null);
 	public static final Action EXPORT_UNPOSED_MODEL = new Action("export_unposed_model", "Export the active model to an OBJ file without any pose data", "Export unposed model", CHECK_MODEL, () -> {
-		File file = FileUtils.getSaveFile("obj", "");
+		File file = FileUtils.getSaveFile(null, "obj", "obj");
 		if (file != null)
 		{
 			Writer writer = null;
@@ -114,7 +113,7 @@ public class Action
 	}, null);
 	
 	public static final Action IMPORT_SKELETON = new Action("import_skeleton", "Import a skeleton to the active model or skeleton", "Import skeleton", CHECK_RIG, () -> {
-		File loadFile = FileUtils.getOpenFile("skel;xml;json;bin", "");
+		File loadFile = FileUtils.getOpenFile(null, "skel;xml;json;*bin");
 		if (loadFile != null)
 		{
 			try
@@ -130,8 +129,8 @@ public class Action
 			}
 		}
 	}, null);
-	public static final Action EXPORT_SKELETON = new Action("exports_skeleton", "Export the skeleton of the active model or skeleton", "Export skeleton", CHECK_RIG, () -> {
-		File saveFile = FileUtils.getSaveFile("skel;xml;json;bin", "");
+	public static final Action EXPORT_SKELETON = new Action("export_skeleton", "Export the skeleton of the active model or skeleton", "Export skeleton", CHECK_RIG, () -> {
+		File saveFile = FileUtils.getSaveFile(null, "skel;xml;json;bin", "skel");
 		if (saveFile != null)
 		{
 			FileUtil.DataType dataType = FileUtil.getAppropriateDataType(saveFile.toString());
@@ -151,7 +150,7 @@ public class Action
 	public static final Action NEW_TEXTURE = new Action("new_texture", "Add a new texture", "New texture", () -> new GuiPopupNewTexture().activate(), null);
 	public static final Action ADD_TEXTURE = new Action("add_texture", "Add a new texture from a file", "Add texture from file", () -> new GuiPopupLoadTexture().activate(), null);
 	public static final Action LOAD_TEXTURE = new Action("load_texture", "Load texture from a file", "Load texture", CHECK_TEXTURE, () -> {
-		File file = FileUtils.getOpenFile(FileUtils.getLoadImageFilter(), "");
+		File file = FileUtils.getOpenFile(null, FileUtils.getLoadImageFilter());
 		if (file != null) try
 		{
 			final String name = Main.instance.project.getTextureName();
@@ -170,7 +169,7 @@ public class Action
 		new GuiPopupCopy<>(MiscUtil.ensureUnique(project.getTextureName(), project.getTextureNames()), project.getTexture(), (name, copy) -> project.addTexture(name, copy), (name) -> project.removeTexture(name)).activate();
 	}, null);
 	public static final Action SAVE_TEXTURE = new Action("save_texture", "Save the active texture", "Save texture", CHECK_TEXTURE, () -> {
-		File file = FileUtils.getSaveFile(FileUtils.getLoadImageFilter(), "");
+		File file = FileUtils.getSaveFile(null, FileUtils.getSaveImageFilter(), "png");
 		if (file != null) Main.instance.project.getTexture().saveTexture(file);
 	}, null);
 	public static final Action EDIT_TEXTURE = new Action("edit_texture", "Edit the active texture", "Edit texture", CHECK_TEXTURE, () -> new GuiPopupEditTexture().activate(), null);
@@ -184,7 +183,7 @@ public class Action
 	public static final Action NEW_ANIMATION = new Action("new_animation", "Add a new animation", "New animation", () -> new GuiPopupNewAnimation().activate(), null);
 	public static final Action ADD_ANIMATION = new Action("add_animation", "Add a new animation from a file", "Add animation from file", () -> new GuiPopupLoadAnimation().activate(), null); //TODO scale?
 	public static final Action LOAD_ANIMATION = new Action("load_animation", "Load animation from a file", "Load animation", CHECK_ANIMATION, () -> {
-		File file = FileUtils.getOpenFile("anim;xml;json;bin", "");
+		File file = FileUtils.getOpenFile(null, "anim;xml;json;bin");
 		if (file != null) try
 		{
 			final String name = Main.instance.project.getAnimationName();
@@ -206,7 +205,7 @@ public class Action
 		new GuiPopupCopy<>(MiscUtil.ensureUnique(project.getAnimationName(), project.getAnimationNames()), project.getAnimation(), (name, copy) -> project.addAnimation(name, copy), (name) -> project.removeAnimation(name)).activate();
 	}, null);
 	public static final Action SAVE_ANIMATION = new Action("save_animation", "Save the active animation", "Save animation", CHECK_ANIMATION, () -> {
-		File file = FileUtils.getSaveFile("anim;xml;json;bin", "");
+		File file = FileUtils.getOpenFile(null, "anim;xml;json;bin");
 		if (file != null) {
 			DataType dataType = FileUtil.getAppropriateDataType(file.toString());
 			AbstractElement root = dataType.newElement("animtion");
@@ -250,8 +249,6 @@ public class Action
 		Main.instance.editorPanes.selector.updateList();
 	}, new HotKey(Key.KP_MULTIPLY, Modifier.CONTROL, Modifier.SHIFT));
 	
-	public static final Action DEBUG_STENCIL = new Action("debug_stencil", "debug the stencil buffer (EXTREME LAG!) by saving the contents at each update", "Debug stencil", () -> RenderUtil.save = !RenderUtil.save, null);
-
 	public final String id;
 	public final String displayName, menuName;
 	public final BooleanSupplier canRun;

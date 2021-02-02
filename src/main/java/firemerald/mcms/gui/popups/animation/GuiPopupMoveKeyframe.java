@@ -6,7 +6,7 @@ import java.util.TreeMap;
 import firemerald.mcms.Main;
 import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.Animation;
-import firemerald.mcms.api.animation.Transformation;
+import firemerald.mcms.api.animation.TweeningFrame;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.StandardButton;
@@ -73,9 +73,9 @@ public class GuiPopupMoveKeyframe extends GuiPopup
 	{
 		Main main = Main.instance;
 		main.textureManager.unbindTexture();
-		main.shader.setColor(0, 0, 0, .5f);
+		main.guiShader.setColor(0, 0, 0, .5f);
 		main.screen.render();
-		main.shader.setColor(1, 1, 1, 1);
+		main.guiShader.setColor(1, 1, 1, 1);
 	}
 	
 	public void apply()
@@ -86,22 +86,22 @@ public class GuiPopupMoveKeyframe extends GuiPopup
 		{
 			Project project = Main.instance.project;
 			Animation anim = (Animation) project.getAnimation();
-			project.onAction(new HistoryAction(() -> moveKeyFrame(anim, keyFrame.name, keyFrame.transform, time, initialTime), () -> moveKeyFrame(anim, keyFrame.name, keyFrame.transform, initialTime, time)));
-			moveKeyFrame(anim, keyFrame.name, keyFrame.transform, initialTime, time);
+			project.onAction(new HistoryAction(() -> moveKeyFrame(anim, keyFrame.name, keyFrame.keyFrame, time, initialTime), () -> moveKeyFrame(anim, keyFrame.name, keyFrame.keyFrame, initialTime, time)));
+			moveKeyFrame(anim, keyFrame.name, keyFrame.keyFrame, initialTime, time);
 			framesBar.keyFrames.get(time).forEach(keyframe -> {
 				if (keyframe.transform == keyFrame.transform) Main.instance.setEditing(keyframe);
 			});
 		}
 	}
 	
-	public static void moveKeyFrame(Animation anim, String name, Transformation keyFrame, float prevTime, float newTime)
+	public static void moveKeyFrame(Animation anim, String name, TweeningFrame keyFrame, float prevTime, float newTime)
 	{
-		NavigableMap<Float, Transformation> map = anim.animation.get(name);
+		NavigableMap<Float, TweeningFrame> map = anim.animation.get(name);
 		if (map == null) anim.animation.put(name, map = new TreeMap<>());
 		else map.remove(prevTime);
 		if (!map.containsKey(newTime)) //TODO if already has a keyframe
 		{
-			map.put(newTime, keyFrame);
+			map.put(newTime, new TweeningFrame(keyFrame));
 			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 		}
 	}

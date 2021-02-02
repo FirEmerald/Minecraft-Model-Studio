@@ -3,11 +3,13 @@ package firemerald.mcms.api.model.effects;
 import static org.lwjgl.opengl.GL15.*;
 
 import org.eclipse.jdt.annotation.Nullable;
+import org.joml.Matrix4d;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IEditableParent;
+import firemerald.mcms.api.model.IModelHolder;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.gui.GuiElementContainer;
@@ -19,14 +21,15 @@ import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.model.EditorPanes;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.DrawMode;
+import firemerald.mcms.util.mesh.ModelMesh;
 
 public class FluidRenderEffect extends StagedPosedBoneEffect
 {
 	protected int index = 0;
 	protected float sizeX = 1, sizeY = 1, sizeZ = 1, margin = 0.00390625f;
 	
-	private final Mesh mesh = new Mesh(new float[24 * 3], new float[24 * 2], new float[] {
+	private final ModelMesh mesh = new ModelMesh(new float[24 * 3], new float[24 * 2], new float[] {
 				1, 0, 0,
 				1, 0, 0,
 				1, 0, 0,
@@ -64,7 +67,7 @@ public class FluidRenderEffect extends StagedPosedBoneEffect
 				19, 17, 18,
 				20, 21, 23,
 				23, 21, 22,
-		}, Mesh.DrawMode.TRIANGLES, GL_DYNAMIC_DRAW);
+		}, DrawMode.TRIANGLES, GL_DYNAMIC_DRAW);
 
 	public FluidRenderEffect(String name, @Nullable RenderBone<?> parent, Transformation transform, int index)
 	{
@@ -225,7 +228,7 @@ public class FluidRenderEffect extends StagedPosedBoneEffect
 	public static final ResourceLocation TEX = new ResourceLocation(Main.ID, "water.png");
 	
 	@Override
-	public void render(Runnable defaultTexture) //TODO
+	public void render(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTexture) //TODO
 	{
 		Main.instance.textureManager.bindTexture(TEX);
 		mesh.render();

@@ -1,20 +1,20 @@
 package firemerald.mcms.gui.colors;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.HSV;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.TextureManager;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.window.api.MouseButtons;
 
 public class ColorPickerHSV extends ColorPicker
 {
-	public static final Mesh H_SLIDER = new Mesh(0, 0, 155, 15, 0);
-	public static final Mesh SV_RECT = new Mesh(0, 20, 155, 155, 0);
-	public static final Mesh H_LINE = new Mesh(0, 0, 1, 15, 0);
-	public static final Mesh SV_DOT = new Mesh(-1, 19, 2, 22, 0);
+	public static final GuiMesh H_SLIDER = new GuiMesh(0, 0, 155, 15);
+	public static final GuiMesh SV_RECT = new GuiMesh(0, 20, 155, 155);
+	public static final GuiMesh H_LINE = new GuiMesh(0, 0, 1, 15);
+	public static final GuiMesh SV_DOT = new GuiMesh(-1, 19, 2, 22);
 	
 	private HSV hsv;
 	private int selected = -1;
@@ -92,10 +92,10 @@ public class ColorPickerHSV extends ColorPicker
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
-		Main.instance.shader.updateModel();
-		Shader s = Main.instance.shader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
+		Main.instance.guiShader.updateModel();
+		GuiShader s = Main.instance.guiShader;
 		TextureManager t = Main.instance.textureManager;
 		t.bindTexture(TEX_H);
 		H_SLIDER.render();
@@ -106,21 +106,21 @@ public class ColorPickerHSV extends ColorPicker
 		s.setHueSet(false);
 		t.unbindTexture();
 		s.setColor(0, 0, 0, .75f);
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(hsv.h * 154, 0, 0);
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(hsv.h * 154, 0, 0);
 		s.updateModel();
 		H_LINE.render();
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.setColor(1, 1, 1, .75f);
 		t.bindTexture(TEX_DOT);
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(hsv.s * 154, (1 - hsv.v) * 134, 0);
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(hsv.s * 154, (1 - hsv.v) * 134, 0);
 		s.updateModel();
 		SV_DOT.render();
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 		s.setColor(1, 1, 1, 1);
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
+		GuiShader.MODEL.pop();
+		Main.instance.guiShader.updateModel();
 	}
 }

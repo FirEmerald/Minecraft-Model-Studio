@@ -3,7 +3,7 @@ package firemerald.mcms.gui.main.components.tools;
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.GuiSection;
 import firemerald.mcms.gui.components.ComponentButton;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.texture.tools.ITool;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
@@ -46,9 +46,9 @@ public class ToolButton extends ComponentButton
 	public void render(ButtonState state)
 	{
 		Main main = Main.instance;
-		Shader s = main.shader;
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
+		GuiShader s = main.guiShader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
 		s.updateModel();
 		state.applyButtonEffects();
 		rect.bind();
@@ -56,7 +56,7 @@ public class ToolButton extends ComponentButton
 		main.textureManager.bindTexture(texture);
 		Meshes.X32.render();
 		state.removeButtonEffects();
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 	}
 	
@@ -68,8 +68,8 @@ public class ToolButton extends ComponentButton
 	@Override
 	public void onRelease()
 	{
-		if (Main.instance.tool != null) Main.instance.tool.onDeselect(section);
+		Main.instance.tool.onDeselect(section);
 		Main.instance.tool = tool;
-		if (tool != null) tool.onSelect(section);
+		tool.onSelect(section);
 	}
 }

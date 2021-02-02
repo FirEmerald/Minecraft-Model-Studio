@@ -86,7 +86,7 @@ public abstract class ComponentButton extends Component
 	public void render(float mx, float my, boolean canHover)
 	{
 		render(getState(mx, my, canHover));
-		Main.instance.shader.setTexOffset(0, 0);
+		Main.instance.guiShader.setTexOffset(0, 0);
 	}
 	
 	public abstract void render(ButtonState state);
@@ -116,14 +116,14 @@ public abstract class ComponentButton extends Component
 		
 		public void applyButtonEffects()
 		{
-			Main.instance.shader.setColor2(color);
-			Main.instance.shader.setInvert(invert);
+			Main.instance.guiShader.setColor2(color);
+			Main.instance.guiShader.setInvert(invert);
 		}
 		
 		public void removeButtonEffects()
 		{
-			Main.instance.shader.setColor2(1, 1, 1, 1);
-			Main.instance.shader.setInvert(false);
+			Main.instance.guiShader.setColor2(1, 1, 1, 1);
+			Main.instance.guiShader.setInvert(false);
 		}
 		
 		public Color getColor(Color c)

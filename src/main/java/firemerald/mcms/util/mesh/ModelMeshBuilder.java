@@ -6,9 +6,9 @@ import java.util.List;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-public class MeshBuilder
+public class ModelMeshBuilder
 {
-	public static MeshBuilder INSTANCE = new MeshBuilder();
+	public static ModelMeshBuilder INSTANCE = new ModelMeshBuilder();
 
 	protected final List<Vector3f> positions = new ArrayList<>();
 	protected final List<Vector2f> textures = new ArrayList<>();
@@ -101,7 +101,7 @@ public class MeshBuilder
 		addQuad(new Vector3f(x1, y1, z), new Vector2f(u1, v1), new Vector3f(x1, y2, z), new Vector2f(u2, v1), new Vector3f(x2, y2, z), new Vector2f(u2, v2), new Vector3f(x2, y1, z), new Vector2f(u1, v2), new Vector3f(0, 0, -1));
 	}
 	
-	public void apply(Mesh mesh)
+	public void apply(ModelMesh mesh)
 	{
 		mesh.setMesh(vec3ToFloatArray(positions), vec2ToFloatArray(textures), vec3ToFloatArray(normals), intToIntArray(indicies));
 		clear();

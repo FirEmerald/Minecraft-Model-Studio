@@ -1,11 +1,13 @@
 package firemerald.mcms.api.model.effects;
 
 import org.eclipse.jdt.annotation.Nullable;
+import org.joml.Matrix4d;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IEditableParent;
+import firemerald.mcms.api.model.IModelHolder;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.gui.GuiElementContainer;
@@ -16,7 +18,7 @@ import firemerald.mcms.gui.components.text.ComponentIncrementInt;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.ModelShaderBase;
 import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
@@ -104,16 +106,16 @@ public class ItemRenderEffect extends StagedPosedBoneEffect
 	public static final ResourceLocation TEX = new ResourceLocation(Main.ID, "item.png");
 	
 	@Override
-	public void render(Runnable defaultTexture) //TODO
+	public void render(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTexture) //TODO
 	{
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().scale(scale / Main.instance.project.getScale());
-		Shader.MODEL.matrix().mul(transformType.matrix());
-		Main.instance.shader.updateModel();
+		ModelShaderBase.MODEL.push();
+		ModelShaderBase.MODEL.matrix().scale(scale / Main.instance.project.getScale());
+		ModelShaderBase.MODEL.matrix().mul(transformType.matrix());
+		Main.instance.currentModelShader.updateModel();
 		Main.instance.textureManager.bindTexture(TEX);
 		RenderUtil.ITEM_MESH.render();
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
+		ModelShaderBase.MODEL.pop();
+		Main.instance.currentModelShader.updateModel();
 		defaultTexture.run();
 	}
 	

@@ -14,6 +14,7 @@ import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.IModel;
 import firemerald.mcms.api.model.IModelEditable;
+import firemerald.mcms.api.model.IModelHolder;
 import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.api.model.ObjData;
 import firemerald.mcms.api.model.RenderBone;
@@ -59,9 +60,15 @@ public abstract class RenderObjectComponents<T extends RenderObjectComponents<T>
 	}
 
 	@Override
-	public void doRender(Runnable defaultTexture)
+	public void doRender(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTexture)
 	{
-		if (childrenVisible) for (ModelComponent component : components) component.render(defaultTexture);
+		if (childrenVisible) components.forEach(component -> component.render(holder, currentTransform, defaultTexture));
+	}
+
+	@Override
+	public void doTick(IModelHolder holder, Matrix4d currentTransform, float deltaTime)
+	{
+		if (childrenVisible) components.forEach(component -> component.tick(holder, currentTransform, deltaTime));
 	}
 	
 	public void addComponent(ModelComponent component)

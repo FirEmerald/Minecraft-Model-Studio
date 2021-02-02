@@ -14,19 +14,20 @@ import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.DrawMode;
+import firemerald.mcms.util.mesh.ModelMesh;
 
 public class ComponentBox extends ComponentMesh
 {
 	private float texScale = 1;
-	private float lengthX, lengthY, lengthZ;
+	private float lengthX, lengthY, lengthZ, marginX, marginY, marginZ;
 	private boolean mirror = false;
 	private boolean enableUp = true, enableDown = true, enableNorth = true, enableEast = true, enableSouth = true, enableWest = true, flipped = false; //x+ = east z+ = south
 	
-	private static Mesh makeMesh()
+	private static ModelMesh makeMesh()
 	{
 		/**/
-		return new Mesh(new float[24 * 3], new float[24 * 2], new float[24 * 3], new int[24], Mesh.DrawMode.TRIANGLES, GL_DYNAMIC_DRAW);
+		return new ModelMesh(new float[24 * 3], new float[24 * 2], new float[24 * 3], new int[24], DrawMode.TRIANGLES, GL_DYNAMIC_DRAW);
 	}
 	
 	public ComponentBox(String name)
@@ -48,6 +49,9 @@ public class ComponentBox extends ComponentMesh
 		this.lengthX = from.lengthX;
 		this.lengthY = from.lengthY;
 		this.lengthZ = from.lengthZ;
+		this.marginX = from.marginX;
+		this.marginY = from.marginY;
+		this.marginZ = from.marginZ;
 		this.mirror = from.mirror;
 		this.flipped = from.flipped;
 		this.enableUp = from.enableUp;
@@ -65,6 +69,7 @@ public class ComponentBox extends ComponentMesh
 	private void init()
 	{
 		lengthX = lengthY = lengthZ = 1;
+		marginX = marginY = marginZ = 0;
 		setVerts();
 		setTexs();
 		setNorms();
@@ -98,39 +103,42 @@ public class ComponentBox extends ComponentMesh
 	
 	public void setVerts()
 	{
-		float maxX = lengthX;
-		float maxY = lengthY;
-		float maxZ = lengthZ;
+		float minX = -marginX;
+		float minY = -marginY;
+		float minZ = -marginZ;
+		float maxX = lengthX + marginX;
+		float maxY = lengthY + marginY;
+		float maxZ = lengthZ + marginZ;
 		mesh().setPositions(new float[] {
-				maxX, 0   , maxZ,
-				maxX, 0   , 0   ,
-				maxX, maxY, 0   ,
+				maxX, minY, maxZ,
+				maxX, minY, minZ,
+				maxX, maxY, minZ,
 				maxX, maxY, maxZ,
 				
-				0   , maxY, maxZ,
+				minX, maxY, maxZ,
 				maxX, maxY, maxZ,
-				maxX, maxY, 0   ,
-				0   , maxY, 0   ,
+				maxX, maxY, minZ,
+				minX, maxY, minZ,
 				
-				0   , 0   , maxZ,
-				maxX, 0   , maxZ,
+				minX, minY, maxZ,
+				maxX, minY, maxZ,
 				maxX, maxY, maxZ,
-				0   , maxY, maxZ,
+				minX, maxY, maxZ,
 				
-				0   , 0   , 0   ,
-				0   , 0   , maxZ,
-				0   , maxY, maxZ,
-				0   , maxY, 0   ,
+				minX, minY, minZ,
+				minX, minY, maxZ,
+				minX, maxY, maxZ,
+				minX, maxY, minZ,
 				
-				maxX, 0   , maxZ,
-				0   , 0   , maxZ,
-				0   , 0   , 0   ,
-				maxX, 0   , 0   ,
+				maxX, minY, maxZ,
+				minX, minY, maxZ,
+				minX, minY, minZ,
+				maxX, minY, minZ,
 				
-				maxX, 0   , 0   ,
-				0   , 0   , 0   ,
-				0   , maxY, 0   ,
-				maxX, maxY, 0   
+				maxX, minY, minZ,
+				minX, minY, minZ,
+				minX, maxY, minZ,
+				maxX, maxY, minZ
 		});
 	}
 	
@@ -522,6 +530,42 @@ public class ComponentBox extends ComponentMesh
 		setVerts();
 		setTexs();
 	}
+
+	public float marginX()
+	{
+		return marginX;
+	}
+
+	public void marginX(float marginX)
+	{
+		this.marginX = marginX;
+		setVerts();
+		setTexs();
+	}
+
+	public float marginY()
+	{
+		return marginY;
+	}
+
+	public void marginY(float marginY)
+	{
+		this.marginY = marginY;
+		setVerts();
+		setTexs();
+	}
+
+	public float marginZ()
+	{
+		return marginZ;
+	}
+
+	public void marginZ(float marginZ)
+	{
+		this.marginZ = marginZ;
+		setVerts();
+		setTexs();
+	}
 	
 	public boolean isMirrored()
 	{
@@ -641,6 +685,13 @@ public class ComponentBox extends ComponentMesh
 	private ComponentIncrementFloat lengthYP, lengthYS;
 	private ComponentTextFloat lengthZT;
 	private ComponentIncrementFloat lengthZP, lengthZS;
+	private ComponentFloatingLabel labelMargin;
+	private ComponentTextFloat marginXT;
+	private ComponentIncrementFloat marginXP, marginXS;
+	private ComponentTextFloat marginYT;
+	private ComponentIncrementFloat marginYP, marginYS;
+	private ComponentTextFloat marginZT;
+	private ComponentIncrementFloat marginZP, marginZS;
 	private ComponentFloatingLabel mirrorLabel;
 	private ComponentToggle mirrorButton;
 	private ComponentFloatingLabel flippedLabel;
@@ -681,6 +732,18 @@ public class ComponentBox extends ComponentMesh
 		editor.addElement(lengthZT     = new ComponentTextFloat(     editorX + 200, editorY, editorX + 290, editorY + 20, Main.instance.fontMsg, lengthZ(), 0, Float.POSITIVE_INFINITY, value -> this.lengthZ(value)));
 		editor.addElement(lengthZP     = new ComponentIncrementFloat(editorX + 290, editorY                             , lengthZT, 1));
 		editor.addElement(lengthZS     = new ComponentIncrementFloat(editorX + 290, editorY + 10                        , lengthZT, -1));
+		editorY += 20;
+		editor.addElement(labelMargin  = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20, Main.instance.fontMsg, "Margin"));
+		editorY += 20;
+		editor.addElement(marginXT     = new ComponentTextFloat(     editorX      , editorY, editorX + 90 , editorY + 20, Main.instance.fontMsg, marginX(), 0, Float.POSITIVE_INFINITY, value -> this.marginX(value)));
+		editor.addElement(marginXP     = new ComponentIncrementFloat(editorX + 90 , editorY                             , marginXT,  1));
+		editor.addElement(marginXS     = new ComponentIncrementFloat(editorX + 90 , editorY + 10                        , marginXT, -1));
+		editor.addElement(marginYT     = new ComponentTextFloat(     editorX + 100, editorY, editorX + 190, editorY + 20, Main.instance.fontMsg, marginY(), 0, Float.POSITIVE_INFINITY, value -> this.marginY(value)));
+		editor.addElement(marginYP     = new ComponentIncrementFloat(editorX + 190, editorY                             , marginYT, 1));
+		editor.addElement(marginYS     = new ComponentIncrementFloat(editorX + 190, editorY + 10                        , marginYT, -1));
+		editor.addElement(marginZT     = new ComponentTextFloat(     editorX + 200, editorY, editorX + 290, editorY + 20, Main.instance.fontMsg, marginZ(), 0, Float.POSITIVE_INFINITY, value -> this.marginZ(value)));
+		editor.addElement(marginZP     = new ComponentIncrementFloat(editorX + 290, editorY                             , marginZT, 1));
+		editor.addElement(marginZS     = new ComponentIncrementFloat(editorX + 290, editorY + 10                        , marginZT, -1));
 		editorY += 20;
 		editor.addElement(mirrorButton = new ComponentToggle(        editorX + 5  , editorY + 5, editorX + 15 , editorY + 15, this.isMirrored(), (value) -> this.setMirrored(value)));
 		editor.addElement(mirrorLabel  = new ComponentFloatingLabel( editorX + 20 , editorY    , editorX + 150, editorY + 20, Main.instance.fontMsg, "mirror"));
@@ -725,6 +788,16 @@ public class ComponentBox extends ComponentMesh
 		editor.removeElement(lengthZT);
 		editor.removeElement(lengthZP);
 		editor.removeElement(lengthZS);
+		editor.removeElement(labelMargin);
+		editor.removeElement(marginXT);
+		editor.removeElement(marginXP);
+		editor.removeElement(marginXS);
+		editor.removeElement(marginYT);
+		editor.removeElement(marginYP);
+		editor.removeElement(marginYS);
+		editor.removeElement(marginZT);
+		editor.removeElement(marginZP);
+		editor.removeElement(marginZS);
 		editor.removeElement(mirrorButton);
 		editor.removeElement(mirrorLabel);
 		editor.removeElement(flippedButton);
@@ -755,6 +828,16 @@ public class ComponentBox extends ComponentMesh
 		lengthZT      = null;
 		lengthZP      = null;
 		lengthZS      = null;
+		labelMargin   = null;
+		marginXT      = null;
+		marginXP      = null;
+		marginXS      = null;
+		marginYT      = null;
+		marginYP      = null;
+		marginYS      = null;
+		marginZT      = null;
+		marginZP      = null;
+		marginZS      = null;
 		mirrorButton  = null;
 		mirrorLabel   = null;
 		flippedButton = null;
@@ -787,6 +870,9 @@ public class ComponentBox extends ComponentMesh
 		el.setFloat("lengthX", lengthX);
 		el.setFloat("lengthY", lengthY);
 		el.setFloat("lengthZ", lengthZ);
+		el.setFloat("marginX", marginX);
+		el.setFloat("marginY", marginY);
+		el.setFloat("marginZ", marginZ);
 		if (mirror) el.setBoolean("mirror", true);
 		if (flipped) el.setBoolean("flipped", true);
 		if (!enableUp) el.setBoolean("enableUp", false);
@@ -805,6 +891,9 @@ public class ComponentBox extends ComponentMesh
 		lengthX = el.getFloat("lengthX", 0);
 		lengthY = el.getFloat("lengthY", 0);
 		lengthZ = el.getFloat("lengthZ", 0);
+		marginX = el.getFloat("marginX", 0);
+		marginY = el.getFloat("marginY", 0);
+		marginZ = el.getFloat("marginZ", 0);
 		mirror = el.getBoolean("mirror", false);
 		flipped = el.getBoolean("flipped", false);
 		enableUp = el.getBoolean("enableUp", true);

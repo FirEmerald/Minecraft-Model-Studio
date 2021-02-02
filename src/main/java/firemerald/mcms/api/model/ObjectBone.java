@@ -8,7 +8,7 @@ import org.joml.Matrix4d;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.util.RaytraceResult;
 
-public abstract class ObjectBone<T extends ObjectBone<T>> extends Bone<T> implements IRaytraceTarget
+public abstract class ObjectBone<T extends ObjectBone<T>> extends Bone<T> implements IRaytraceBone<T>
 {	
 	public ObjectBone(String name, Transformation defaultTransform, @Nullable T parent)
 	{
@@ -17,7 +17,8 @@ public abstract class ObjectBone<T extends ObjectBone<T>> extends Bone<T> implem
 	
 	@Override
 	public abstract T makeBone(String name, Transformation transform, T parent);
-	
+
+	@Override
 	public RaytraceResult raytrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> transformations, Matrix4d transformation)
 	{
 		RaytraceResult result = raytraceLocal(fx, fy, fz, dx, dy, dz, transformations, transformation);

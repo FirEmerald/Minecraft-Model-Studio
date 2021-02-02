@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.Component;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.util.ClipboardUtil;
 import firemerald.mcms.util.RenderUtil;
@@ -13,7 +13,6 @@ import firemerald.mcms.util.TextureManager;
 import firemerald.mcms.util.font.FontRenderer;
 import firemerald.mcms.util.history.HistoryAction;
 import firemerald.mcms.util.hotkey.Action;
-import firemerald.mcms.util.mesh.Mesh;
 import firemerald.mcms.window.api.Cursor;
 import firemerald.mcms.window.api.Key;
 import firemerald.mcms.window.api.Modifier;
@@ -32,7 +31,6 @@ public class ComponentFloatingText extends Component
 	public float clickTime = 0;
 	public int clickNum = 0;
 	private final Consumer<String> onTextChange;
-	public final Mesh mesh = new Mesh();
 	public final Stack<String> undoText = new Stack<>();
 	public final Stack<String> redoText = new Stack<>();
 	public static final long SETTING_TIME = 500000000; //.5 seconds
@@ -62,7 +60,6 @@ public class ComponentFloatingText extends Component
 	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		super.setSize(x1, y1, x2, y2);
-		if (mesh != null) mesh.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
 		updatePos2();
 	}
 	
@@ -238,29 +235,25 @@ public class ComponentFloatingText extends Component
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
-		Shader s = Main.instance.shader;
+		GuiShader s = Main.instance.guiShader;
 		TextureManager texs = Main.instance.textureManager;
-		RenderUtil.pushStencil();
-		RenderUtil.startStencil(false);
-		texs.unbindTexture();
-		mesh.render();
-		RenderUtil.endStencil();
+		this.setScissor(0, 0, x2 - x1, y2 - y1);
 		font.drawTextLine(getDisplayString(), x1 + 2, y2 - (5 + font.height), getTextColor(), false, false, false);
 		texs.unbindTexture();
 		if (selStart != selEnd)
 		{
 			s.setColor(0, 0, 1, .5f);
-			Main.MODMESH.setMesh(selX1, y1 + 2, selX2, y2 - 2, 0, 0, 0, 1, 1);
-			Main.MODMESH.render();
+			Main.guiTempMesh.setMesh(selX1, y1 + 2, selX2, y2 - 2, 0, 0, 1, 1);
+			Main.guiTempMesh.render();
 		}
 		if (this.isTextFocused() && cursorTime < .5f)
 		{
 			s.setColor(getTheme().getTextColor());
-			Main.MODMESH.setMesh(cursorPos, y1 + 2, cursorPos + 1, y2 - 2, 0, 0, 0, 1, 1);
-			Main.MODMESH.render();
+			Main.guiTempMesh.setMesh(cursorPos, y1 + 2, cursorPos + 1, y2 - 2, 0, 0, 1, 1);
+			Main.guiTempMesh.render();
 		}
 		s.setColor(1, 1, 1, 1);
-		RenderUtil.popStencil();
+		RenderUtil.popScissor();
 	}
 	
 	public String getDisplayString()

@@ -11,7 +11,7 @@ public class ButtonOpenFileItem extends ItemButton16
 {
 	protected final ResourceLocation texture;
 	public String filter;
-	protected String directory = "";
+	protected String directory = null;
 	protected final Consumer<File> action;
 	
 	public ButtonOpenFileItem(int x, int y, ResourceLocation texture, String filter, Consumer<File> action)
@@ -25,7 +25,7 @@ public class ButtonOpenFileItem extends ItemButton16
 	@Override
 	public void onRelease()
 	{
-		File file = FileUtils.getOpenFile(filter, directory);
+		File file = FileUtils.getOpenFile(directory, filter);
 		if (file != null)
 		{
 			directory = file.toString();

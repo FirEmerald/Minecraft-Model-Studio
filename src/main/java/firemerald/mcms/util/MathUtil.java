@@ -8,7 +8,8 @@ import org.joml.Vector4f;
 import firemerald.mcms.api.math.MathUtils;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.texture.RGB;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.DrawMode;
+import firemerald.mcms.util.mesh.ModelMesh;
 
 public class MathUtil
 {
@@ -81,14 +82,14 @@ public class MathUtil
 		}
 	}
 	
-	public static Float rayTraceMesh(Vector3f from, Vector3f dir, Mesh mesh, Matrix4d transformation)
+	public static Float rayTraceMesh(Vector3f from, Vector3f dir, ModelMesh mesh, Matrix4d transformation)
 	{
 		return rayTraceMesh(from.x(), from.y(), from.z(), dir.x(), dir.y(), dir.z(), mesh, transformation);
 	}
 	
-	public static Float rayTraceMesh(float fx, float fy, float fz, float dx, float dy, float dz, Mesh mesh, Matrix4d transformation)
+	public static Float rayTraceMesh(float fx, float fy, float fz, float dx, float dy, float dz, ModelMesh mesh, Matrix4d transformation)
 	{
-		if (mesh.drawMode == Mesh.DrawMode.TRIANGLES)
+		if (mesh.drawMode == DrawMode.TRIANGLES)
 		{
 			Float res = null;
 			float[] vertices = mesh.getVerticies();
@@ -109,15 +110,15 @@ public class MathUtil
 		else return null;
 	}
 	
-	public static Vector3f rayTraceMeshUV(Vector3f from, Vector3f dir, Mesh mesh, Matrix4d transformation)
+	public static Vector3f rayTraceMeshUV(Vector3f from, Vector3f dir, ModelMesh mesh, Matrix4d transformation)
 	{
 		return rayTraceMeshUV(from.x(), from.y(), from.z(), dir.x(), dir.y(), dir.z(), mesh, transformation);
 	}
 	
 	/** {dis,u,v} **/
-	public static Vector3f rayTraceMeshUV(float fx, float fy, float fz, float dx, float dy, float dz, Mesh mesh, Matrix4d transformation)
+	public static Vector3f rayTraceMeshUV(float fx, float fy, float fz, float dx, float dy, float dz, ModelMesh mesh, Matrix4d transformation)
 	{
-		if (mesh.drawMode == Mesh.DrawMode.TRIANGLES)
+		if (mesh.drawMode == DrawMode.TRIANGLES)
 		{
 			Float res = null;
 			float u = 0;

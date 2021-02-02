@@ -1,16 +1,11 @@
 package firemerald.mcms.gui.popups.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import firemerald.mcms.Main;
-import firemerald.mcms.Project;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.api.model.effects.ItemRenderEffect;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
-import firemerald.mcms.gui.components.DropdownButton;
 import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
@@ -22,12 +17,11 @@ import firemerald.mcms.gui.decoration.DecoPane;
 import firemerald.mcms.util.TransformType;
 import firemerald.mcms.util.history.HistoryAction;
 
-public class GuiPopupItem<T extends RenderBone<T>> extends GuiPopup
+public class GuiPopupItem<T extends RenderBone<?>> extends GuiPopup
 {
 	public final T parent;
 	public final DecoPane pane;
 	public final ComponentText name;
-	public final DropdownButton nameOptions;
 	public final ComponentFloatingLabel slotLabel;
 	public final ComponentTextInt slot;
 	public final ComponentIncrementInt slotUp, slotDown;
@@ -42,28 +36,19 @@ public class GuiPopupItem<T extends RenderBone<T>> extends GuiPopup
 	public GuiPopupItem(T parent)
 	{
 		this.parent = parent;
-		Project project = Main.instance.project;
 		final int cw = 180;
 		final int ch = 120;
 		final int cx = 20;
 		final int cy = 20;
 		this.addElement(pane = new DecoPane(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20, 2, 16));
 		int y = cy;
-		final String[] names;
-		{
-			List<String> possible = new ArrayList<>();
-			possible.add("new item");
-			project.getDisplayBoneNames(parent, possible);
-			names = possible.toArray(new String[possible.size()]);
-		}
-		this.addElement(name = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, names[0], text -> names[0] = text) {
+		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, "new item", name -> {}) {
 			@Override
 			public boolean shouldUndo()
 			{
 				return false;
 			}
 		});
-		this.addElement(nameOptions = new DropdownButton(cx + cw - 20, y, cx + cw, y + 20, name, names, (ind, val) -> name.setText(val)));
 		y += 20;
 		this.addElement(slotLabel = new ComponentFloatingLabel(cx, y, cx + 27, y + 20, Main.instance.fontMsg, "slot"));
 		this.addElement(slot = new ComponentTextInt(cx + 27, y, cx + 54, y + 20, Main.instance.fontMsg, 0, 0, Integer.MAX_VALUE, null));
@@ -92,8 +77,7 @@ public class GuiPopupItem<T extends RenderBone<T>> extends GuiPopup
 		final int cy = (h - ch) / 2;
 		pane.setSize(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20);
 		int y = cy;
-		name.setSize(cx, y, cx + cw - 20, y + 20);
-		nameOptions.setSize(cx + cw - 20, y, cx + cw, y + 20);
+		name.setSize(cx, y, cx + cw, y + 20);
 		y += 20;
 		slotLabel.setSize(cx, y, cx + 27, y + 20);
 		slot.setSize(cx + 27, y, cx + 54, y + 20);
@@ -116,9 +100,9 @@ public class GuiPopupItem<T extends RenderBone<T>> extends GuiPopup
 	{
 		Main main = Main.instance;
 		main.textureManager.unbindTexture();
-		main.shader.setColor(0, 0, 0, .5f);
+		main.guiShader.setColor(0, 0, 0, .5f);
 		main.screen.render();
-		main.shader.setColor(1, 1, 1, 1);
+		main.guiShader.setColor(1, 1, 1, 1);
 	}
 	
 	public void apply()

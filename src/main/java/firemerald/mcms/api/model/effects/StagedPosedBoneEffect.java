@@ -1,10 +1,12 @@
 package firemerald.mcms.api.model.effects;
 
 import org.eclipse.jdt.annotation.Nullable;
+import org.joml.Matrix4d;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
+import firemerald.mcms.api.model.IModelHolder;
 import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
@@ -44,24 +46,24 @@ public abstract class StagedPosedBoneEffect extends PosedBoneEffect
 	}
 	
 	@Override
-	public void doPreRender(Runnable defaultTex)
+	public void doPreRender(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex)
 	{
-		if (stage == EffectRenderStage.PRE_BONE) render(defaultTex);
+		if (stage == EffectRenderStage.PRE_BONE) render(holder, currentTransform, defaultTex);
 	}
 
 	@Override
-	public void doPostRenderBone(Runnable defaultTex)
+	public void doPostRenderBone(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex)
 	{
-		if (stage == EffectRenderStage.POST_BONE) render(defaultTex);
+		if (stage == EffectRenderStage.POST_BONE) render(holder, currentTransform, defaultTex);
 	}
 
 	@Override
-	public void doPostRenderChildren(Runnable defaultTex)
+	public void doPostRenderChildren(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex)
 	{
-		if (stage == EffectRenderStage.POST_CHILDREN) render(defaultTex);
+		if (stage == EffectRenderStage.POST_CHILDREN) render(holder, currentTransform, defaultTex);
 	}
 	
-	public abstract void render(Runnable defaultTex);
+	public abstract void render(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex);
 
 	private ComponentFloatingLabel labelStage;
 	private SelectorButton renderStage;

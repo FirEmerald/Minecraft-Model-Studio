@@ -4,12 +4,12 @@ import firemerald.mcms.gui.components.ComponentButton;
 import firemerald.mcms.theme.EnumDirection;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 
 public abstract class ScrollButtonHorizontal extends ComponentButton
 {
 	public final IScrollableHorizontal scrollable;
-	public final Mesh outline = new Mesh();
+	public final GuiMesh outline = new GuiMesh();
 	public ThemeElement rect;
 	public final EnumDirection direction;
 	
@@ -25,7 +25,7 @@ public abstract class ScrollButtonHorizontal extends ComponentButton
 	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		super.setSize(x1, y1, x2, y2);
-		outline.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
+		outline.setMesh(x1, y1, x2, y2, 0, 0, 1, 1);
 		onGuiUpdate(GuiUpdate.THEME);
 	}
 	

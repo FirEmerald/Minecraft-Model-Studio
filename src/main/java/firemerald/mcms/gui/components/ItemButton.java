@@ -1,11 +1,11 @@
 package firemerald.mcms.gui.components;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.ResourceLocation;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 
 public abstract class ItemButton extends ComponentButton
 {
@@ -40,9 +40,9 @@ public abstract class ItemButton extends ComponentButton
 	public void render(ButtonState state)
 	{
 		Main main = Main.instance;
-		Shader s = main.shader;
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
+		GuiShader s = main.guiShader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
 		s.updateModel();
 		state.applyButtonEffects();
 		rect.bind();
@@ -50,11 +50,11 @@ public abstract class ItemButton extends ComponentButton
 		main.textureManager.bindTexture(getTexture());
 		getMesh().render();
 		state.removeButtonEffects();
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 	}
 	
-	public abstract Mesh getMesh();
+	public abstract GuiMesh getMesh();
 	
 	public abstract ResourceLocation getTexture();
 	

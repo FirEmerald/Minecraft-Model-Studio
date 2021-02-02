@@ -32,7 +32,7 @@ public class ButtonAddEffect<T extends RenderBone<T>> extends EditableButton
 	public void onRelease()
 	{
 		@SuppressWarnings("unchecked")
-		Triple<String, ResourceLocation, Consumer<RenderBone<?>>>[] values = BoneEffect.MODDED_EFFECTS_VIEW.toArray(new Triple[BoneEffect.MODDED_EFFECTS_VIEW.size()]);
+		Triple<String, ResourceLocation, Consumer<RenderBone<?>>>[] values = BoneEffect.EFFECTS_VIEW.toArray(new Triple[BoneEffect.EFFECTS_VIEW.size()]);
 		new GuiPopupSelector(this, values, (ind, val) -> val.right.accept(bone), (val, bounds, action) -> new StandardIconButton(bounds.x, bounds.y, bounds.z, bounds.w, 16, val.middle, val.left, action)).activate();
 	}
 	
@@ -68,7 +68,7 @@ public class ButtonAddEffect<T extends RenderBone<T>> extends EditableButton
 	@Override
 	public boolean isEnabled()
 	{
-		return bone != null && Main.instance.project.getModel() != null && !BoneEffect.MODDED_EFFECTS_VIEW.isEmpty();
+		return bone != null && Main.instance.project.getModel() != null && !BoneEffect.EFFECTS_VIEW.isEmpty();
 	}
 
 	@SuppressWarnings("unchecked")

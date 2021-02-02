@@ -2,7 +2,7 @@ package firemerald.mcms.gui.main.components.tools;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.ComponentButton;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.texture.RGB;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
@@ -39,9 +39,9 @@ public class ColorDefaultButton extends ComponentButton
 	public void render(ButtonState state)
 	{
 		Main main = Main.instance;
-		Shader s = main.shader;
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
+		GuiShader s = main.guiShader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
 		s.updateModel();
 		state.applyButtonEffects();
 		rect.bind();
@@ -49,7 +49,7 @@ public class ColorDefaultButton extends ComponentButton
 		state.removeButtonEffects();
 		main.textureManager.bindTexture(Textures.COLOR_DEFAULT);
 		Meshes.X12.render();
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 	}
 	

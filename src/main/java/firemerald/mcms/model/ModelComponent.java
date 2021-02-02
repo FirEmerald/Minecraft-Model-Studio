@@ -32,11 +32,11 @@ import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.ModelShaderBase;
 import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.ObjUtil;
 import firemerald.mcms.util.ResourceLocation;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.ModelMesh;
 
 /**
  * @author FirEmerald
@@ -84,7 +84,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 			return box;
 		});
 		registerComponentType("mesh", (parent, element) -> {
-			ComponentMeshTrue mesh = new ComponentMeshTrue(new Mesh(), parent, element.getString("name", "unnamed mesh"));
+			ComponentMeshTrue mesh = new ComponentMeshTrue(new ModelMesh(), parent, element.getString("name", "unnamed mesh"));
 			mesh.loadFromXML(element);
 			return mesh;
 		});
@@ -247,22 +247,34 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	
 	public abstract void setTexs();
 	
-	public void render(Runnable defaultTexture)
+	public void render(Object holder, Matrix4d parentTransformation, Runnable defaultTexture)
 	{
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().mul(transformation);
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(offset);
-		Main.instance.shader.updateModel();
-		if (visible) this.doRender(defaultTexture);
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
-		if (childrenVisible) for (ModelComponent c : children) c.render(defaultTexture);
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
+		ModelShaderBase.MODEL.push();
+		ModelShaderBase.MODEL.matrix().mul(transformation);
+		Matrix4d curTransform = parentTransformation.mul(transformation, new Matrix4d());
+		ModelShaderBase.MODEL.push();
+		ModelShaderBase.MODEL.matrix().translate(offset);
+		Matrix4d currentTransform = curTransform.translate(offset, new Matrix4d());
+		Main.instance.currentModelShader.updateModel();
+		if (visible) this.doRender(holder, currentTransform, defaultTexture);
+		ModelShaderBase.MODEL.pop();
+		Main.instance.currentModelShader.updateModel();
+		if (childrenVisible) for (ModelComponent c : children) c.render(holder, curTransform, defaultTexture);
+		ModelShaderBase.MODEL.pop();
+		Main.instance.currentModelShader.updateModel();
 	}
 	
-	public abstract void doRender(Runnable defaultTexture);
+	public abstract void doRender(Object holder, Matrix4d currentTransformation, Runnable defaultTexture);
+	
+	public void tick(Object holder, Matrix4d parentTransformation, float deltaTime)
+	{
+		Matrix4d curTransform = parentTransformation.mul(transformation, new Matrix4d());
+		Matrix4d currentTransform = curTransform.translate(offset, new Matrix4d());
+		if (visible) this.doTick(holder, currentTransform, deltaTime);
+		if (childrenVisible) for (ModelComponent c : children) c.tick(holder, curTransform, deltaTime);
+	}
+	
+	public abstract void doTick(Object holder, Matrix4d currentTransformation, float deltaTime);
 	
 	public void cleanUp()
 	{

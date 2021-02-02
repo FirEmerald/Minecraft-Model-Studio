@@ -3,6 +3,7 @@ package firemerald.mcms.gui;
 import firemerald.mcms.Main;
 import firemerald.mcms.theme.GuiTheme;
 import firemerald.mcms.util.GuiUpdate;
+import firemerald.mcms.util.RenderUtil;
 
 public interface IGuiElement
 {
@@ -80,4 +81,11 @@ public interface IGuiElement
 	public abstract void setThemeOverride(GuiTheme theme); //does not have to cause a change, will not update componentes
 	
 	default public void onGuiUpdate(GuiUpdate reason) {}
+	
+	default public void setScissor(int offX1, int offY1, int w, int h)
+	{
+		int x1 = this.getTrueX1() + offX1;
+		int y1 = this.getTrueY1() + offY1;
+		RenderUtil.pushScissor(x1, y1, x1 + w, y1 + h);
+	}
 }

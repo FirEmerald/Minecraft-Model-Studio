@@ -43,7 +43,7 @@ public class ApplicationState
 	private final GuiTheme basicTheme = new BasicTheme();
 	private GuiTheme theme;
 	public final Map<Action, HotKey> hotkeys = new HashMap<>();
-	private boolean showNodes = false, showBones = false;
+	private boolean showNodes = false, showBones = false, enableShadows = false;
 	private final List<ColorModel> colorHistory = new ArrayList<>();
 	private static final int MAX_COLOR_HISTORY = 16;
 	private boolean eventLogging = false;
@@ -136,6 +136,26 @@ public class ApplicationState
 		saveState();
 	}
 
+	public boolean enableShadows()
+	{
+		return enableShadows;
+	}
+
+	public void setEnableShadows(boolean enableShadows)
+	{
+		if (enableShadows)
+		{
+			TitlebarItems.TOGGLE_SHADOWS.setLabel("Disable shadows");
+			this.enableShadows = true;
+		}
+		else
+		{
+			TitlebarItems.TOGGLE_SHADOWS.setLabel("Enable shadows");
+			this.enableShadows = false;
+		}
+		saveState();
+	}
+
 	public EnumLayout getLayout()
 	{
 		return layout;
@@ -217,6 +237,16 @@ public class ApplicationState
 						TitlebarItems.TOGGLE_BONES.setLabel("Show bones");
 						this.showBones = false;
 					}
+					if (optionsChild.getBoolean("enableShadows", false))
+					{
+						TitlebarItems.TOGGLE_SHADOWS.setLabel("Disable shadows");
+						this.enableShadows = true;
+					}
+					else
+					{
+						TitlebarItems.TOGGLE_SHADOWS.setLabel("Enable shadows");
+						this.enableShadows = false;
+					}
 					break;
 				case "hotkeys":
 					for (AbstractElement hotkeysChild : optionsChild.getChildren())
@@ -288,6 +318,7 @@ public class ApplicationState
 			AbstractElement viewer = options.addChild("viewer");
 			viewer.setBoolean("showNodes", showNodes);
 			viewer.setBoolean("showBones", showBones);
+			viewer.setBoolean("enableShadows", enableShadows);
 			AbstractElement hotkeys = options.addChild("hotkeys");
 			this.hotkeys.forEach((action, hotkey) -> {
 				if (hotkey != null) hotkey.writeToElement(hotkeys.addChild(action.id));

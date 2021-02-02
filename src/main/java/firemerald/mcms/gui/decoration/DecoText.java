@@ -2,7 +2,7 @@ package firemerald.mcms.gui.decoration;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.Component;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.util.ClipboardUtil;
 import firemerald.mcms.util.TextureManager;
 import firemerald.mcms.util.font.FontRenderer;
@@ -217,7 +217,7 @@ public class DecoText extends Component
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
-		Shader s = Main.instance.shader;
+		GuiShader s = Main.instance.guiShader;
 		TextureManager texs = Main.instance.textureManager;
 		float y = y1 + 3;
 		FontRenderer.drawTextFormatted(splitText, x1, y1, false, false);
@@ -226,24 +226,24 @@ public class DecoText extends Component
 		{
 			s.setColor(0, 0, 1, .5f);
 			y = y1 + 3 + font.height * selStartLine;
-			Main.MODMESH.setMesh(selX1, y, x2, y + font.height, 0, 0, 0, 1, 1);
-			Main.MODMESH.render();
+			Main.guiTempMesh.setMesh(selX1, y, x2, y + font.height, 0, 0, 1, 1);
+			Main.guiTempMesh.render();
 			for (int i = selStartLine + 1; i < selEndLine; i++)
 			{
 				y += font.height;
-				Main.MODMESH.setMesh(x1, y, x2, y + font.height, 0, 0, 0, 1, 1);
-				Main.MODMESH.render();
+				Main.guiTempMesh.setMesh(x1, y, x2, y + font.height, 0, 0, 1, 1);
+				Main.guiTempMesh.render();
 			}
 			y += font.height;
-			Main.MODMESH.setMesh(x1, y, selX2, y + font.height, 0, 0, 0, 1, 1);
-			Main.MODMESH.render();
+			Main.guiTempMesh.setMesh(x1, y, selX2, y + font.height, 0, 0, 1, 1);
+			Main.guiTempMesh.render();
 		}
 		else if (selStart != selEnd)
 		{
 			s.setColor(0, 0, 1, .5f);
 			y = y1 + 3 + font.height * selStartLine;
-			Main.MODMESH.setMesh(selX1, y, selX2, y + font.height, 0, 0, 0, 1, 1);
-			Main.MODMESH.render();
+			Main.guiTempMesh.setMesh(selX1, y, selX2, y + font.height, 0, 0, 1, 1);
+			Main.guiTempMesh.render();
 		}
 		s.setColor(1, 1, 1, 1);
 	}

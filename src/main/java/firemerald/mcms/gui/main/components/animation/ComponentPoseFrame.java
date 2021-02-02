@@ -53,6 +53,13 @@ public class ComponentPoseFrame extends ElementButton implements IEditable
 	private ComponentIncrementFloat posYP, posYS;
 	private ComponentTextFloat posZT;
 	private ComponentIncrementFloat posZP, posZS;
+	private ComponentFloatingLabel labelScale;
+	private ComponentTextFloat scaleXT;
+	private ComponentIncrementFloat scaleXP, scaleXS;
+	private ComponentTextFloat scaleYT;
+	private ComponentIncrementFloat scaleYP, scaleYS;
+	private ComponentTextFloat scaleZT;
+	private ComponentIncrementFloat scaleZP, scaleZS;
 	private SelectorButton rotMode;
 
 	@Override
@@ -83,6 +90,27 @@ public class ComponentPoseFrame extends ElementButton implements IEditable
 		}));
 		editor.addElement(posZP     = new ComponentIncrementFloat(editorX + 290, editorY                              , posZT, 1));
 		editor.addElement(posZS     = new ComponentIncrementFloat(editorX + 290, editorY + 10                         , posZT, -1));
+		editorY += 20;
+		editor.addElement(labelScale  = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20 , Main.instance.fontMsg, "Scale"));
+		editorY += 20;
+		editor.addElement(scaleXT     = new ComponentTextFloat(     editorX      , editorY, editorX + 90 , editorY + 20 , Main.instance.fontMsg, transform.scaling.x, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> {
+			Main.instance.project.onAction(new HistoryActionChangeFloatValue(transform.scaling.x, () -> transform.scaling.x, val -> transform.scaling.x = val));
+			transform.scaling.x = value;
+		}));
+		editor.addElement(scaleXP     = new ComponentIncrementFloat(editorX + 90 , editorY                              , scaleXT, 1));
+		editor.addElement(scaleXS     = new ComponentIncrementFloat(editorX + 90 , editorY + 10                         , scaleXT, -1));
+		editor.addElement(scaleYT     = new ComponentTextFloat(     editorX + 100, editorY , editorX + 190, editorY + 20, Main.instance.fontMsg, transform.scaling.y, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> {
+			Main.instance.project.onAction(new HistoryActionChangeFloatValue(transform.scaling.y, () -> transform.scaling.y, val -> transform.scaling.y = val));
+			transform.scaling.y = value;
+		}));
+		editor.addElement(scaleYP     = new ComponentIncrementFloat(editorX + 190, editorY                              , scaleYT, 1));
+		editor.addElement(scaleYS     = new ComponentIncrementFloat(editorX + 190, editorY + 10                         , scaleYT, -1));
+		editor.addElement(scaleZT     = new ComponentTextFloat(     editorX + 200, editorY , editorX + 290, editorY + 20, Main.instance.fontMsg, transform.scaling.z, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, value -> {
+			Main.instance.project.onAction(new HistoryActionChangeFloatValue(transform.scaling.z, () -> transform.scaling.z, val -> transform.scaling.z = val));
+			transform.scaling.z = value;
+		}));
+		editor.addElement(scaleZP     = new ComponentIncrementFloat(editorX + 290, editorY                              , scaleZT, 1));
+		editor.addElement(scaleZS     = new ComponentIncrementFloat(editorX + 290, editorY + 10                         , scaleZT, -1));
 		editorY += 20;
 
 		String[] names = new String[] {
@@ -119,11 +147,6 @@ public class ComponentPoseFrame extends ElementButton implements IEditable
 		editorY += 20;
 		return this.transform.rotation.onSelect(editorPanes, editorY, () -> {});
 	}
-	
-	public int addExtra(EditorPanes editorPanes, int editorY)
-	{
-		return editorY;
-	}
 
 	@Override
 	public void onDeselect(EditorPanes editorPanes)
@@ -140,19 +163,39 @@ public class ComponentPoseFrame extends ElementButton implements IEditable
 		editor.removeElement(posZT);
 		editor.removeElement(posZP);
 		editor.removeElement(posZS);
+		editor.removeElement(labelScale);
+		editor.removeElement(scaleXT);
+		editor.removeElement(scaleXP);
+		editor.removeElement(scaleXS);
+		editor.removeElement(scaleYT);
+		editor.removeElement(scaleYP);
+		editor.removeElement(scaleYS);
+		editor.removeElement(scaleZT);
+		editor.removeElement(scaleZP);
+		editor.removeElement(scaleZS);
 		editor.removeElement(rotMode);
-		labelName = null;
-		labelPos  = null;
-		posXT     = null;
-		posXP     = null;
-		posXS     = null;
-		posYT     = null;
-		posYP     = null;
-		posYS     = null;
-		posZT     = null;
-		posZP     = null;
-		posZS     = null;
-		rotMode   = null;
+		labelName  = null;
+		labelPos   = null;
+		posXT      = null;
+		posXP      = null;
+		posXS      = null;
+		posYT      = null;
+		posYP      = null;
+		posYS      = null;
+		posZT      = null;
+		posZP      = null;
+		posZS      = null;
+		labelScale = null;
+		scaleXT    = null;
+		scaleXP    = null;
+		scaleXS    = null;
+		scaleYT    = null;
+		scaleYP    = null;
+		scaleYS    = null;
+		scaleZT    = null;
+		scaleZP    = null;
+		scaleZS    = null;
+		rotMode    = null;
 		transform.rotation.onDeselect(editorPanes);
 	}
 

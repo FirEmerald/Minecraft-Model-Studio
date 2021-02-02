@@ -60,9 +60,17 @@ public abstract class Model<M extends Model<M, T>, T extends Bone<T>> implements
 	}
 	
 	@Override
-	public void render(Map<String, Matrix4d> map, Runnable defaultTexture)
+	public void render(IModelHolder holder, Map<String, Matrix4d> map, Runnable defaultTexture)
 	{
-		if (base instanceof RenderBone) ((RenderBone<?>) base).render(map, defaultTexture);
+		Matrix4d root = new Matrix4d();
+		if (base instanceof IRenderBone) ((IRenderBone<?>) base).render(holder, map, root, defaultTexture);
+	}
+
+	@Override
+	public void tick(IModelHolder holder, Map<String, Matrix4d> pos, float deltaTime)
+	{
+		Matrix4d root = new Matrix4d();
+		if (base instanceof ITickableBone) ((ITickableBone<?>) base).tick(holder, pos, root, deltaTime);
 	}
 
 	@Override

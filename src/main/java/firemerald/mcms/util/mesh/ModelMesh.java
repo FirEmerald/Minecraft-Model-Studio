@@ -1,8 +1,5 @@
 package firemerald.mcms.util.mesh;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
 
 import java.nio.FloatBuffer;
@@ -14,7 +11,7 @@ import firemerald.mcms.Main;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.util.MiscUtil;
 
-public class Mesh
+public class ModelMesh
 {
     protected final int vaoId, vboPos, vboTex, vboNorm, vboInd;
     public DrawMode drawMode;
@@ -24,68 +21,17 @@ public class Mesh
 
     protected int vertexCount;
     
-    public Mesh()
+    public ModelMesh()
     {
     	this(new float[0], new float[0], new float[0], new int[0]);
     }
     
-    public Mesh(DrawMode mode)
+    public ModelMesh(DrawMode mode)
     {
     	this(new float[0], new float[0], new float[0], new int[0], mode);
     }
     
-    public Mesh(float x1, float y1, float x2, float y2, float z)
-    {
-    	this(x1, y1, x2, y2, z, 0, 0, 1, 1);
-    }
-    
-    public Mesh(float x1, float y1, float x2, float y2, float z, float u1, float v1, float u2, float v2)
-    {
-    	this(new float[] {
-    			x1, y1, z,
-    			x2, y1, z,
-    			x2, y2, z,
-    			x1, y2, z
-    	}, new float[] {
-    			u1, v1,
-    			u2, v1,
-    			u2, v2,
-    			u1, v2
-    	}, new float[] {
-    			0, 0, 1,
-    			0, 0, 1,
-    			0, 0, 1,
-    			0, 0, 1
-    	}, new int[] {
-    			0, 3, 1,
-    			1, 3, 2
-    	}, DrawMode.TRIANGLES);
-    }
-    
-    public Mesh(float x1, float y1, float u1, float v1, float x2, float y2, float u2, float v2, float x3, float y3, float u3, float v3, float x4, float y4, float u4, float v4, float z)
-    {
-    	this(new float[] {
-    			x1, y1, z,
-    			x2, y2, z,
-    			x3, y3, z,
-    			x4, y4, z
-    	}, new float[] {
-    			u1, v1,
-    			u2, v2,
-    			u3, v3,
-    			u4, v4
-    	}, new float[] {
-    			0, 0, 1,
-    			0, 0, 1,
-    			0, 0, 1,
-    			0, 0, 1
-    	}, new int[] {
-    			0, 3, 1,
-    			1, 3, 2
-    	}, DrawMode.TRIANGLES);
-    }
-    
-    public Mesh(float x1, float y1, float z1, float x2, float y2, float z2)
+    public ModelMesh(float x1, float y1, float z1, float x2, float y2, float z2)
     {
 		this(new float[] {
 				x2, y1, z2,
@@ -155,20 +101,20 @@ public class Mesh
 				19, 17, 18,
 				20, 21, 23,
 				23, 21, 22
-		}, Mesh.DrawMode.TRIANGLES);
+		}, DrawMode.TRIANGLES);
     }
 
-    public Mesh(float[] positions, float[] textCoords, float[] normals, int[] indices)
+    public ModelMesh(float[] positions, float[] textCoords, float[] normals, int[] indices)
     {
     	this(positions, textCoords, normals, indices, DrawMode.TRIANGLES);
     }
 
-    public Mesh(float[] positions, float[] textCoords, float[] normals, int[] indices, DrawMode mode)
+    public ModelMesh(float[] positions, float[] textCoords, float[] normals, int[] indices, DrawMode mode)
     {
     	this(positions, textCoords, normals, indices, mode, GL_STATIC_DRAW);
     }
 
-    public Mesh(float[] positions, float[] textCoords, float[] normals, int[] indices, DrawMode mode, int usage)
+    public ModelMesh(float[] positions, float[] textCoords, float[] normals, int[] indices, DrawMode mode, int usage)
     {
     	this.drawMode = mode;
     	this.usage = usage;
@@ -419,29 +365,6 @@ public class Mesh
 		this.cleanUp();
 	}
 	
-	public void setMesh(float x1, float y1, float x2, float y2, float z, float u1, float v1, float u2, float v2)
-	{
-		setMesh(new float[] {
-    			x1, y1, z,
-    			x2, y1, z,
-    			x2, y2, z,
-    			x1, y2, z
-    	}, new float[] {
-    			u1, v1,
-    			u2, v1,
-    			u2, v2,
-    			u1, v2
-    	}, new float[] {
-    			0, 0, 1,
-    			0, 0, 1,
-    			0, 0, 1,
-    			0, 0, 1
-    	}, new int[] {
-    			0, 3, 1,
-    			1, 3, 2
-    	});
-	}
-	
 	public void saveAsChild(AbstractElement el, String name)
 	{
 		AbstractElement saveTo = el.addChild(name);
@@ -567,37 +490,8 @@ public class Mesh
 		this.drawMode = drawMode;
 	}
     
-    public static enum DrawMode
+    public ModelMesh copy()
     {
-    	POINTS(GL_POINTS, 0, 1),
-    	LINES(GL_LINES, 0, 2),
-    	LINE_LOOP(GL_LINE_LOOP, 2, 1),
-    	LINE_STRIP(GL_LINE_STRIP, 2, 1),
-    	TRIANGLES(GL_TRIANGLES, 0, 3); //only valid draw modes!
-    	
-    	public final int mode;
-    	public final int min_verts;
-    	public final int stride;
-    	
-    	DrawMode(int mode, int min_verts, int stride)
-    	{
-    		this.mode = mode;
-    		this.min_verts = min_verts;
-    		this.stride = stride;
-    	}
-    	
-    	public boolean isValid(int numIndices)
-    	{
-    		if (numIndices == 0) return true;
-    		else if (numIndices < min_verts) return false;
-    		else if (stride <= 1) return true;
-    		else if ((numIndices % stride) != 0) return false;
-    		else return true;
-    	}
-    }
-    
-    public Mesh copy()
-    {
-    	return new Mesh(MiscUtil.copy(this.verts), MiscUtil.copy(this.texs), MiscUtil.copy(this.norms), MiscUtil.copy(this.inds), this.drawMode, this.usage);
+    	return new ModelMesh(MiscUtil.copy(this.verts), MiscUtil.copy(this.texs), MiscUtil.copy(this.norms), MiscUtil.copy(this.inds), this.drawMode, this.usage);
     }
 }

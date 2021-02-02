@@ -1,7 +1,6 @@
 package firemerald.mcms.gui.main.components;
 
 import java.awt.Menu;
-import java.awt.PopupMenu;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -34,7 +33,7 @@ public class ComponentTitleBar extends ComponentPanelMain
 		super(x1, y1, x2, y2, gui);
 		final int w = 68;
 		int x = 0;
-		for (Map.Entry<String, PopupMenu> entry : Main.makeTitlebar().entrySet())
+		for (Map.Entry<String, Menu> entry : Main.makeTitlebar().entrySet())
 		{
 			TitleButton button = new TitleButton(x, 0, x += w, 16, 1, 0, entry.getKey(), entry.getValue());
 			buttons.put(entry.getKey(), button);

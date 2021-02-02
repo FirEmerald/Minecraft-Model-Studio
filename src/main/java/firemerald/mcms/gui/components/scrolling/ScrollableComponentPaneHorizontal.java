@@ -4,11 +4,11 @@ import firemerald.mcms.Main;
 import firemerald.mcms.gui.IGuiElement;
 import firemerald.mcms.gui.components.ComponentPane;
 import firemerald.mcms.gui.components.IComponent;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MathUtil;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.window.api.Cursor;
 
 public class ScrollableComponentPaneHorizontal extends ComponentPane implements IScrollableHorizontal
@@ -16,7 +16,7 @@ public class ScrollableComponentPaneHorizontal extends ComponentPane implements 
 	public int width = 0;
 	protected float scrollH = 0;
 	protected float scrollSizeH = 0;
-	public final Mesh border = new Mesh();
+	public final GuiMesh border = new GuiMesh();
 	public ThemeElement rect;
 	public float w = 0;
 	public ScrollBarH scrollBarH = null;
@@ -39,7 +39,7 @@ public class ScrollableComponentPaneHorizontal extends ComponentPane implements 
 		super.setSize(x1, y1, x2, y2);
 		w = x2 - x1;
 		updateScrollSize();
-		border.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
+		border.setMesh(x1, y1, x2, y2, 0, 0, 1, 1);
 		onGuiUpdate(GuiUpdate.THEME);
 	}
 	
@@ -131,19 +131,12 @@ public class ScrollableComponentPaneHorizontal extends ComponentPane implements 
 		Main main = Main.instance;
 		rect.bind();
 		border.render();
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(-scrollH, 0, 0);
+		Main.instance.guiShader.updateModel();
 		super.render(mx + scrollH, my, canHover);
-		Shader.MODEL.pop();
-		main.shader.updateModel();
-	}
-	
-	@Override
-	public void renderStencilArea()
-	{
-		Main.instance.textureManager.unbindTexture();
-		inside.render();
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(-scrollH, 0, 0);
-		Main.instance.shader.updateModel();
+		GuiShader.MODEL.pop();
+		main.guiShader.updateModel();
 	}
 	
 	@Override

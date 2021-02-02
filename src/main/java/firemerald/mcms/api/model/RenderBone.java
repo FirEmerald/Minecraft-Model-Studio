@@ -14,10 +14,10 @@ import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
 import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.model.effects.BoneEffect;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.ModelShaderBase;
 import firemerald.mcms.util.GuiUpdate;
 
-public abstract class RenderBone<T extends RenderBone<T>> extends ObjectBone<T>
+public abstract class RenderBone<T extends RenderBone<T>> extends ObjectBone<T> implements IRenderBone<T>, ITickableBone<T>
 {
 	@Override
 	public Collection<? extends IModelEditable> getChildren()
@@ -129,20 +129,44 @@ public abstract class RenderBone<T extends RenderBone<T>> extends ObjectBone<T>
 		this.effects.forEach(effect -> effect.onGuiUpdate(reason));
 	}
 	
-	public void render(Map<String, Matrix4d> transformations, Runnable defaultTexture)
+	public void render(IModelHolder holder, Map<String, Matrix4d> transformations, Matrix4d parentTransform, Runnable defaultTexture)
 	{
 		if (visible || childrenVisible)
 		{
-			Shader.MODEL.push();
-			Shader.MODEL.matrix().mul(transformations.get(this.name));
-			Main.instance.shader.updateModel();
-			effects.forEach(effect -> effect.preRender(defaultTexture));
-			if (visible) doRender(defaultTexture);
-			effects.forEach(effect -> effect.postRenderBone(defaultTexture));
-			if (childrenVisible) for (T child : children) child.render(transformations, defaultTexture);
-			effects.forEach(effect -> effect.postRenderChildren(defaultTexture));
-			Shader.MODEL.pop();
-			Main.instance.shader.updateModel();
+			ModelShaderBase.MODEL.push();
+			Matrix4d transform = transformations.get(this.name);
+			if (transform != null)
+			{
+				ModelShaderBase.MODEL.matrix().mul(transform);
+				Main.instance.currentModelShader.updateModel();
+				transform = parentTransform.mul(transform, transform);
+			}
+			else transform = parentTransform;
+			final Matrix4d currentTransform = transform;
+			effects.forEach(effect -> effect.preRender(holder, currentTransform, defaultTexture));
+			if (visible) doRender(holder, currentTransform, defaultTexture);
+			effects.forEach(effect -> effect.postRenderBone(holder, currentTransform, defaultTexture));
+			if (childrenVisible) children.forEach(child -> child.render(holder, transformations, currentTransform, defaultTexture));
+			effects.forEach(effect -> effect.postRenderChildren(holder, currentTransform, defaultTexture));
+			ModelShaderBase.MODEL.pop();
+			Main.instance.currentModelShader.updateModel();
+		}
+	}
+	
+	public void tick(IModelHolder holder, Map<String, Matrix4d> transformations, Matrix4d parentTransform, float deltaTime)
+	{
+		if (visible || childrenVisible)
+		{
+			Matrix4d transform = transformations.get(this.name);
+			if (transform != null)
+			{
+				transform = parentTransform.mul(transform, transform);
+			}
+			else transform = parentTransform;
+			final Matrix4d currentTransform = transform;
+			effects.forEach(effect -> effect.tick(holder, currentTransform, deltaTime));
+			if (visible) doTick(holder, currentTransform, deltaTime);
+			if (childrenVisible) children.forEach(child -> child.tick(holder, transformations, currentTransform, deltaTime));
 		}
 	}
 
@@ -153,7 +177,9 @@ public abstract class RenderBone<T extends RenderBone<T>> extends ObjectBone<T>
 		effects.forEach(BoneEffect::doCleanUp);
 	}
 	
-	public abstract void doRender(Runnable defaultTexture);
+	public abstract void doRender(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTexture);
+	
+	public abstract void doTick(IModelHolder holder, Matrix4d currentTransform, float deltaTime);
 	// TODO effects raytrace
 	/*
 	public RaytraceResult raytraceLocal(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> transformations, Matrix4d transformation)

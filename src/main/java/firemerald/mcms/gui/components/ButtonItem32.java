@@ -1,7 +1,7 @@
 package firemerald.mcms.gui.components;
 
 import firemerald.mcms.util.ResourceLocation;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.util.mesh.Meshes;
 
 public class ButtonItem32 extends ButtonItem
@@ -12,7 +12,7 @@ public class ButtonItem32 extends ButtonItem
 	}
 
 	@Override
-	public Mesh getMesh()
+	public GuiMesh getMesh()
 	{
 		return Meshes.X32;
 	}

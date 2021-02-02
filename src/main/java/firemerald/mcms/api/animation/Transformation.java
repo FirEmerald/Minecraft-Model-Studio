@@ -19,6 +19,7 @@ public class Transformation
 {
 	public IRotation rotation = IRotation.NONE;
 	public final Vector3f translation = new Vector3f();
+	public final Vector3f scaling = new Vector3f(1);
 	
 	public static Transformation getFromChild(AbstractElement el, String name, float scale)
 	{
@@ -35,6 +36,7 @@ public class Transformation
 	{
 		this.translation.set(trans.translation);
 		this.rotation = trans.rotation.copy();
+		this.scaling.set(trans.scaling);
 	}
 	/*
 	public void loadFromChild(AbstractElement el, String name)
@@ -50,6 +52,7 @@ public class Transformation
 	public void load(AbstractElement el, float scale)
 	{
 		translation.set(el.getFloat("tX", 0) * scale, el.getFloat("tY", 0) * scale, el.getFloat("tZ", 0) * scale);
+		scaling.set(el.getFloat("sX", 1), el.getFloat("sY", 1), el.getFloat("sZ", 1));
 		String rotationType = el.getString("rotation", null);
 		if (rotationType != null) switch (rotationType)
 		{
@@ -82,6 +85,9 @@ public class Transformation
 		if (translation.x() != 0) el.setFloat("tX", translation.x() * scale);
 		if (translation.y() != 0) el.setFloat("tY", translation.y() * scale);
 		if (translation.z() != 0) el.setFloat("tZ", translation.z() * scale);
+		if (scaling.x() != 1) el.setFloat("sX", scaling.x());
+		if (scaling.y() != 1) el.setFloat("sY", scaling.y());
+		if (scaling.z() != 1) el.setFloat("sZ", scaling.z());
 		IRotation saveRot = rotation;
 		if (!(rotation == IRotation.NONE || rotation.getQuaternion().normalize().w() == 1.0))
 		{
@@ -102,6 +108,7 @@ public class Transformation
 	{
 		translation.set(t.translation);
 		rotation = t.rotation.copy();
+		scaling.set(t.scaling);
 	}
 	
 	public Transformation(Quaterniond rotation, Vector3f translation)
@@ -120,30 +127,46 @@ public class Transformation
 		this.translation.set(translation);
 	}
 	
+	public Transformation(Quaterniond rotation, Vector3f translation, Vector3f scaling)
+	{
+		this.translation.set(translation);
+		this.rotation = new QuaternionRotation(rotation);
+		this.scaling.set(scaling);
+	}
+	
+	public Transformation(Vector3f translation, Vector3f scaling)
+	{
+		this.translation.set(translation);
+		this.scaling.set(scaling);
+	}
+	
 	public Transformation() {}
 	
 	public void setQuaternion(Quaterniond q)
 	{
-		if (q.x == 0 && q.y == 0 && q.z == 0) this.rotation = IRotation.NONE; //set to null
+		if (q.x == 0 && q.y == 0 && q.z == 0 && q.w == 1) this.rotation = IRotation.NONE; //set to null
 		else if (this.rotation == IRotation.NONE) this.rotation = new QuaternionRotation(q); //set to quaternion
 		else this.rotation.setFromQuaternion(q); //set current rotation values
 	}
 	
 	public Matrix4d getTransformation()
 	{
-		return new Matrix4d().translate(translation).rotate(rotation.getQuaternion());
+		Quaterniond rotation = this.rotation.getQuaternion();
+		return new Matrix4d().translationRotateScale(translation.x, translation.y, translation.z, rotation.x, rotation.y, rotation.z, rotation.w, scaling.x, scaling.y, scaling.z);
 	}
 	
-	public void setFromMatrix(Matrix4d matrix)
+	public Transformation setFromMatrix(Matrix4d matrix)
 	{
 		setQuaternion(new Quaterniond().setFromUnnormalized(matrix));
 		this.translation.set(matrix.getTranslation(new Vector3d()));
+		this.scaling.set(matrix.getScale(new Vector3d()));
+		return this;
 	}
 	
 	@Override
 	public String toString()
 	{
-		return "translation: " + translation.toString() + ", rotation: " + rotation.toString();
+		return "translation: " + translation.toString() + ", rotation: " + rotation.toString() + ", scale: " + scaling.toString();
 	}
 	
 	public Transformation copy()
@@ -151,11 +174,24 @@ public class Transformation
 		return new Transformation(this);
 	}
 	
+	public Transformation mul(Transformation t)
+	{
+		Quaterniond q = rotation.getQuaternion();
+		return new Transformation(q.mul(t.rotation.getQuaternion()), q.transform(t.translation, new Vector3f()).add(translation), scaling.mul(t.scaling, new Vector3f()));
+	}
+	
+	public Transformation invert()
+	{
+		//return new Transformation(rotation.getQuaternion().conjugate(), translation.negate(new Vector3f()), new Vector3f(1).div(scaling)); TODO best method
+		return new Transformation().setFromMatrix(getTransformation().invert());
+	}
+	
 	public static Transformation tween(Transformation a, Transformation b, float mix)
 	{
 		Quaterniond q = a.rotation.getQuaternion().slerp(b.rotation.getQuaternion(), mix);
-		Vector3f vec = new Vector3f(a.translation.x() + (b.translation.x() - a.translation.x()) * mix, a.translation.y() + (b.translation.y() - a.translation.y()) * mix, a.translation.z() + (b.translation.z() - a.translation.z()) * mix);
-		return new Transformation(q, vec);
+		Vector3f vec = a.translation.lerp(b.translation, mix, new Vector3f());
+		Vector3f scale = a.scaling.lerp(b.scaling, mix, new Vector3f());
+		return new Transformation(q, vec, scale);
 	}
 	
 	@Override
@@ -164,7 +200,7 @@ public class Transformation
 		if (o instanceof Transformation)
 		{
 			Transformation t = (Transformation) o;
-			return t.translation.equals(translation) && t.rotation.getQuaternion().equals(rotation.getQuaternion());
+			return t.translation.equals(translation) && t.rotation.getQuaternion().equals(rotation.getQuaternion()) && t.scaling.equals(scaling);
 		}
 		else return false;
 	}

@@ -7,12 +7,34 @@ import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.GuiSection;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.SelectorButton;
+import firemerald.mcms.gui.main.components.model.ComponentModelViewer;
 import firemerald.mcms.texture.BlendMode;
 import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.Texture;
+import firemerald.mcms.window.api.MouseButtons;
 
 public class ToolDropper implements ITool
 {
+	public static final ToolDropper INSTANCE = new ToolDropper();
+	
+	@Override
+	public boolean onModelViewClick(ComponentModelViewer viewer, float mx, float my, int button, int mods)
+	{
+		return button == MouseButtons.MIDDLE && viewer.processModelViewClick(mx, my, button, mods);
+	}
+
+	@Override
+	public boolean onModelViewDrag(ComponentModelViewer viewer, float mx, float my, int button)
+	{
+		return false;
+	}
+
+	@Override
+	public boolean onModelViewRelease(ComponentModelViewer viewer, float mx, float my, int button)
+	{
+		return false;
+	}
+	
 	@Override
 	public void onMouseClick(Texture tex, double u, double v, int button)
 	{

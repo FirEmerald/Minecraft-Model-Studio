@@ -1,7 +1,6 @@
 #version 330
 
 in vec2 outTexCoord;
-in vec3 outNormal;
 out vec4 fragColor;
 
 uniform sampler2D texture_sampler;
@@ -30,7 +29,7 @@ void main()
 	{
 		fragColor *= color;
 	}
-	fragColor *= color2 * vec4(vec3((normalize(outNormal).z + 1.0) * 0.5), 1.0);
+	fragColor *= color2;
 	if (use_overlay)
 	{
 		vec4 overlay = texture(overlay_sampler, outTexCoord);

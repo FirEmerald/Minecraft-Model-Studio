@@ -12,7 +12,7 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import firemerald.mcms.api.model.ObjData;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.ModelMesh;
 
 public class ObjUtil
 {
@@ -37,18 +37,18 @@ public class ObjUtil
 		return ind;
 	}
 	
-	public static Mesh makeMesh(ObjData obj)
+	public static ModelMesh makeMesh(ObjData obj)
 	{
 		return makeMesh(obj, vert -> vert, norm -> norm);
 	}
 	
-	public static Mesh makeMesh(ObjData obj, Matrix4f transformation)
+	public static ModelMesh makeMesh(ObjData obj, Matrix4f transformation)
 	{
 		Matrix3f normalMat = transformation.get3x3(new Matrix3f()).invert().transpose();
 		return makeMesh(obj, transformation::transform, normalMat::transform);
 	}
 	
-	public static Mesh makeMesh(ObjData obj, Function<Vector4f, Vector4f> transformVerts, Function<Vector3f, Vector3f> transformNorms)
+	public static ModelMesh makeMesh(ObjData obj, Function<Vector4f, Vector4f> transformVerts, Function<Vector3f, Vector3f> transformNorms)
 	{
 		List<Float> verts = new ArrayList<>();
 		List<Float> texs = new ArrayList<>();
@@ -100,7 +100,7 @@ public class ObjUtil
 				}
 			}
 		}
-		return new Mesh(toFloats(verts), toFloats(texs), toFloats(norms), toInts(indicies));
+		return new ModelMesh(toFloats(verts), toFloats(texs), toFloats(norms), toInts(indicies));
 	}
 	
 	private static float[] toFloats(List<Float> list)

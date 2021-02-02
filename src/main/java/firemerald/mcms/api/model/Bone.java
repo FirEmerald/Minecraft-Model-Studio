@@ -23,6 +23,7 @@ import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.model.EditorPanes;
+import firemerald.mcms.shader.ModelShaderBase;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.ResourceLocation;
@@ -91,6 +92,13 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 	private ComponentIncrementFloat posYP, posYS;
 	private ComponentTextFloat posZT;
 	private ComponentIncrementFloat posZP, posZS;
+	private ComponentFloatingLabel labelScale;
+	private ComponentTextFloat scaleXT;
+	private ComponentIncrementFloat scaleXP, scaleXS;
+	private ComponentTextFloat scaleYT;
+	private ComponentIncrementFloat scaleYP, scaleYS;
+	private ComponentTextFloat scaleZT;
+	private ComponentIncrementFloat scaleZP, scaleZS;
 	private SelectorButton rotMode;
 	
 	@Override
@@ -121,6 +129,18 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 		editor.addElement(posZT     = new ComponentTextFloat(     editorX + 200, editorY , editorX + 290, editorY + 20, Main.instance.fontMsg, tZ(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, this::tZ));
 		editor.addElement(posZP     = new ComponentIncrementFloat(editorX + 290, editorY                              , posZT, 1));
 		editor.addElement(posZS     = new ComponentIncrementFloat(editorX + 290, editorY + 10                         , posZT, -1));
+		editorY += 20;
+		editor.addElement(labelScale  = new ComponentFloatingLabel( editorX      , editorY, editorX + 300, editorY + 20 , Main.instance.fontMsg, "Scaling"));
+		editorY += 20;
+		editor.addElement(scaleXT     = new ComponentTextFloat(     editorX      , editorY, editorX + 90 , editorY + 20 , Main.instance.fontMsg, sX(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, this::sX));
+		editor.addElement(scaleXP     = new ComponentIncrementFloat(editorX + 90 , editorY                              , scaleXT, 1));
+		editor.addElement(scaleXS     = new ComponentIncrementFloat(editorX + 90 , editorY + 10                         , scaleXT, -1));
+		editor.addElement(scaleYT     = new ComponentTextFloat(     editorX + 100, editorY , editorX + 190, editorY + 20, Main.instance.fontMsg, sY(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, this::sY));
+		editor.addElement(scaleYP     = new ComponentIncrementFloat(editorX + 190, editorY                              , scaleYT, 1));
+		editor.addElement(scaleYS     = new ComponentIncrementFloat(editorX + 190, editorY + 10                         , scaleYT, -1));
+		editor.addElement(scaleZT     = new ComponentTextFloat(     editorX + 200, editorY , editorX + 290, editorY + 20, Main.instance.fontMsg, sZ(), Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, this::sZ));
+		editor.addElement(scaleZP     = new ComponentIncrementFloat(editorX + 290, editorY                              , scaleZT, 1));
+		editor.addElement(scaleZS     = new ComponentIncrementFloat(editorX + 290, editorY + 10                         , scaleZT, -1));
 		editorY += 20;
 
 		String[] names = new String[] {
@@ -179,19 +199,39 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 		editor.removeElement(posZT);
 		editor.removeElement(posZP);
 		editor.removeElement(posZS);
+		editor.removeElement(labelScale);
+		editor.removeElement(scaleXT);
+		editor.removeElement(scaleXP);
+		editor.removeElement(scaleXS);
+		editor.removeElement(scaleYT);
+		editor.removeElement(scaleYP);
+		editor.removeElement(scaleYS);
+		editor.removeElement(scaleZT);
+		editor.removeElement(scaleZP);
+		editor.removeElement(scaleZS);
 		editor.removeElement(rotMode);
-		labelName = null;
-		labelPos  = null;
-		posXT     = null;
-		posXP     = null;
-		posXS     = null;
-		posYT     = null;
-		posYP     = null;
-		posYS     = null;
-		posZT     = null;
-		posZP     = null;
-		posZS     = null;
-		rotMode   = null;
+		labelName  = null;
+		labelPos   = null;
+		posXT      = null;
+		posXP      = null;
+		posXS      = null;
+		posYT      = null;
+		posYP      = null;
+		posYS      = null;
+		posZT      = null;
+		posZP      = null;
+		posZS      = null;
+		labelScale = null;
+		scaleXT    = null;
+		scaleXP    = null;
+		scaleXS    = null;
+		scaleYT    = null;
+		scaleYP    = null;
+		scaleYS    = null;
+		scaleZT    = null;
+		scaleZP    = null;
+		scaleZS    = null;
+		rotMode    = null;
 		this.defaultTransform.rotation.onDeselect(editorPanes);
 	}
 
@@ -377,6 +417,36 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 	{
 		defaultTransform.translation.z = z;
 	}
+	
+	public float sX()
+	{
+		return defaultTransform.scaling.x();
+	}
+	
+	public void sX(float x)
+	{
+		defaultTransform.scaling.x = x;
+	}
+	
+	public float sY()
+	{
+		return defaultTransform.scaling.y();
+	}
+	
+	public void sY(float y)
+	{
+		defaultTransform.scaling.y = y;
+	}
+	
+	public float sZ()
+	{
+		return defaultTransform.scaling.z();
+	}
+	
+	public void sZ(float z)
+	{
+		defaultTransform.scaling.z = z;
+	}
 
 	@Override
 	public String getName()
@@ -540,5 +610,25 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 	public Actual cloneToSkeleton(Actual parent)
 	{
 		return new Bone.Actual(name, defaultTransform.copy(), parent);
+	}
+	
+	public void render(Object holder, Map<String, Matrix4d> transformations, Matrix4d parentTransform, Runnable defaultTexture)
+	{
+		if (visible || childrenVisible)
+		{
+			ModelShaderBase.MODEL.push();
+			Matrix4d transform = transformations.get(this.name);
+			if (transform != null)
+			{
+				ModelShaderBase.MODEL.matrix().mul(transform);
+				Main.instance.currentModelShader.updateModel();
+				transform = parentTransform.mul(transform, transform);
+			}
+			else transform = parentTransform;
+			final Matrix4d currentTransform = transform;
+			if (childrenVisible) children.forEach(child -> child.render(holder, transformations, currentTransform, defaultTexture));
+			ModelShaderBase.MODEL.pop();
+			Main.instance.currentModelShader.updateModel();
+		}
 	}
 }

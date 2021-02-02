@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.ComponentPane;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.RGB;
 import firemerald.mcms.theme.EnumDirection;
@@ -14,29 +14,29 @@ import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.TextureManager;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.window.api.MouseButtons;
 
 public class ComponentColorPicker extends ComponentPane
 {
-	public static final Mesh PANEL = new Mesh(0, 48, 240, 283, 0, 0, 0, 1, 1);
+	public static final GuiMesh PANEL = new GuiMesh(0, 48, 240, 283, 0, 0, 1, 1);
 	public ThemeElement panel = null;
-	public static final Mesh TAB_RGB = new Mesh(-12, -12, 60, 60, 0, 0, 0, 1, 1);
-	public static final Mesh ICON_RGB = new Mesh(8, 8, 40, 40, 0, 0, 0, 1, 1);
-	public static final Mesh TAB_HSV = new Mesh(36, -12, 108, 60, 0, 0, 0, 1, 1);
-	public static final Mesh ICON_HSV = new Mesh(56, 8, 88, 40, 0, 0, 0, 1, 1);
-	public static final Mesh TAB_HSL = new Mesh(84, -12, 156, 60, 0, 0, 0, 1, 1);
-	public static final Mesh ICON_HSL = new Mesh(104, 8, 136, 40, 0, 0, 0, 1, 1);
+	public static final GuiMesh TAB_RGB = new GuiMesh(-12, -12, 60, 60, 0, 0, 1, 1);
+	public static final GuiMesh ICON_RGB = new GuiMesh(8, 8, 40, 40, 0, 0, 1, 1);
+	public static final GuiMesh TAB_HSV = new GuiMesh(36, -12, 108, 60, 0, 0, 1, 1);
+	public static final GuiMesh ICON_HSV = new GuiMesh(56, 8, 88, 40, 0, 0, 1, 1);
+	public static final GuiMesh TAB_HSL = new GuiMesh(84, -12, 156, 60, 0, 0, 1, 1);
+	public static final GuiMesh ICON_HSL = new GuiMesh(104, 8, 136, 40, 0, 0, 1, 1);
 	
 	private static final class ColorModeTab
 	{
 		final ComponentPaneColorPicker picker;
-		final Mesh tabMesh, iconMesh;
+		final GuiMesh tabMesh, iconMesh;
 		final ResourceLocation iconTex;
 		ThemeElement element;
 		final boolean connectLeft, connectRight;
 		
-		ColorModeTab(ComponentPaneColorPicker picker, ResourceLocation iconTex, Mesh iconMesh, Mesh tabMesh, boolean connectLeft, boolean connectRight)
+		ColorModeTab(ComponentPaneColorPicker picker, ResourceLocation iconTex, GuiMesh iconMesh, GuiMesh tabMesh, boolean connectLeft, boolean connectRight)
 		{
 			this.picker = picker;
 			this.iconTex = iconTex;
@@ -176,9 +176,9 @@ public class ComponentColorPicker extends ComponentPane
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
-		Shader s = Main.instance.shader;
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
+		GuiShader s = Main.instance.guiShader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
 		s.updateModel();
 		TextureManager texs = Main.instance.textureManager;
 		for (int i = orderedTabs.size() - 1; i > 0; i--) orderedTabs.get(i).render(texs);
@@ -186,7 +186,7 @@ public class ComponentColorPicker extends ComponentPane
 		//Main.instance.textureManager.unbindTexture();
 		PANEL.render();
 		orderedTabs.get(0).render(texs);
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 		super.render(mx, my, canHover);
 	}

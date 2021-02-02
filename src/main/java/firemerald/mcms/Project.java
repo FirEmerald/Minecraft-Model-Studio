@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Level;
@@ -29,11 +30,8 @@ import firemerald.mcms.api.model.Skeleton;
 import firemerald.mcms.api.model.effects.EffectsData;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.api.util.FileUtil.DataType;
-import firemerald.mcms.gui.popups.GuiPopupCopy;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.gui.popups.GuiPopupUnsavedChanges;
-import firemerald.mcms.gui.popups.model.GuiPopupLoadModel;
-import firemerald.mcms.gui.popups.model.GuiPopupModel;
 import firemerald.mcms.model.ProjectModel;
 import firemerald.mcms.model.RenderObjectComponents;
 import firemerald.mcms.texture.Texture;
@@ -46,9 +44,7 @@ import firemerald.mcms.util.Pair;
 import firemerald.mcms.util.Reference;
 import firemerald.mcms.util.TitlebarItems;
 import firemerald.mcms.util.history.ActionHistory;
-import firemerald.mcms.util.history.HistoryAction;
 import firemerald.mcms.util.history.IHistoryAction;
-import firemerald.mcms.util.hotkey.Action;
 
 public class Project
 {
@@ -897,6 +893,11 @@ public class Project
 		return animations.keySet();
 	}
 	
+	public void forAllAnimations(BiConsumer<String, IAnimation> action)
+	{
+		animations.forEach((name, p) -> action.accept(name, p.left));
+	}
+	
 	public IAnimation getAnimation()
 	{
 		return animation;
@@ -1133,7 +1134,7 @@ public class Project
 	
 	public boolean saveAs()
 	{
-		File out = FileUtils.getSaveFile("mcms;xml;json;bin", getSource() == null ? "" : getSource().toString());
+		File out = FileUtils.getSaveFile(getSource() == null ? null : getSource().toString(), "mcms;xml;json;bin", "mcms");
 		if (out != null) return save(out);
 		else return false;
 	}
@@ -1300,13 +1301,13 @@ public class Project
 		if (this.needsSave())
 		{
 			new GuiPopupUnsavedChanges(() -> {
-				File in = FileUtils.getOpenFile("mcms;xml;json;bin", getSource() == null ? "" : getSource().toString());
+				File in = FileUtils.getOpenFile(getSource() == null ? null : getSource().toString(), "mcms;xml;json;bin");
 				if (in != null) load(in);
 			}).activate();
 		}
 		else
 		{
-			File in = FileUtils.getOpenFile("mcms;xml;json;bin", getSource() == null ? "" : getSource().toString());
+			File in = FileUtils.getOpenFile(getSource() == null ? null : getSource().toString(), "mcms;xml;json;bin");
 			if (in != null) load(in);
 		}
 	}

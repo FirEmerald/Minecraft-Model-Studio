@@ -9,7 +9,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.StringJoiner;
 
@@ -102,83 +104,119 @@ public class FileUtils
 			String name = file.getName();
 			int ind = name.lastIndexOf('.');
 			if (ind > 0) name = name.substring(0, ind);
-			return dir + "/" + name;
+			return dir == null ? name : dir + "/" + name;
 		}
 	}
 	
-	public static File getOpenFile(CharSequence filter, CharSequence directory)
+	public static ByteBuffer getBuffer(CharSequence string)
+	{
+		ByteBuffer buf1 = StandardCharsets.US_ASCII.encode(string.toString());
+		ByteBuffer buf2 = ByteBuffer.allocateDirect(buf1.capacity() + 2);
+		buf2.put(buf1).put(new byte[] {0, 0}).flip();
+		return buf2;
+	}
+	
+	public static File getOpenFile(String directory, String filter)
 	{
 		long n = System.nanoTime();
-		File file;
-		PointerBuffer output = PointerBuffer.allocateDirect(1);
-		int status = NativeFileDialog.NFD_OpenDialog(filter, directory, output);
-		switch (status)
-		{
-		case NativeFileDialog.NFD_OKAY:
-			String fileName = output.getStringUTF8(0);
-			NativeFileDialog.nNFD_Free(output.get(0));
-			file = new File(fileName);
-			break;
-		case NativeFileDialog.NFD_ERROR:
-			GuiPopupException.onException("Error in open file dialog:\n" + NativeFileDialog.NFD_GetError());
-		case NativeFileDialog.NFD_CANCEL:
-		default:
-			file = null;
-			break;
-		}
+		if (directory == null) directory = "";
+        PointerBuffer output = PointerBuffer.allocateDirect(1);
+        int status = NativeFileDialog.NFD_OpenDialog(filter, directory, output);
+        File file;
+        switch (status)
+        {
+        case NativeFileDialog.NFD_OKAY:
+        	String fileName = output.getStringUTF8(0);
+            NativeFileDialog.nNFD_Free(output.get(0));
+            file = new File(fileName);
+            break;
+        case NativeFileDialog.NFD_ERROR:
+            GuiPopupException.onException("Error in open file dialog:\n" + NativeFileDialog.NFD_GetError());
+        case NativeFileDialog.NFD_CANCEL:
+        default:
+        	file = null;
+            break;
+        }
 		Main.instance.lastNanos += (System.nanoTime() - n);
 		return file;
 	}
 	
-	public static File[] getOpenFiles(CharSequence filter, CharSequence directory)
+	public static File[] getOpenFiles(String directory, String filter)
 	{
 		long n = System.nanoTime();
-		File[] files;
-		NFDPathSet pathSet = NFDPathSet.calloc();
-		int status = NativeFileDialog.NFD_OpenDialogMultiple(filter, directory, pathSet);
-		switch (status)
-		{
-		case NativeFileDialog.NFD_OKAY:
-            int count = (int) NativeFileDialog.NFD_PathSet_GetCount(pathSet);
+		if (directory == null) directory = "";
+        final NFDPathSet pathSet = NFDPathSet.calloc();
+        final int status = NativeFileDialog.NFD_OpenDialogMultiple(filter, directory, pathSet);
+        File[] files;
+        switch (status)
+        {
+        case NativeFileDialog.NFD_OKAY:
+            final int count = (int) NativeFileDialog.NFD_PathSet_GetCount(pathSet);
             files = new File[count];
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count; ++i)
             {
-                String path = NativeFileDialog.NFD_PathSet_GetPath(pathSet, i);
+                final String path = NativeFileDialog.NFD_PathSet_GetPath(pathSet, i);
                 files[i] = new File(path);
             }
-    		NativeFileDialog.NFD_PathSet_Free(pathSet);
-    		break;
-		case NativeFileDialog.NFD_ERROR:
-			GuiPopupException.onException("Error in open files dialog:\n" + NativeFileDialog.NFD_GetError());
-		case NativeFileDialog.NFD_CANCEL:
-		default:
-			files = new File[0];
-			break;
-		}
+            break;
+        case NativeFileDialog.NFD_ERROR:
+            GuiPopupException.onException("Error in open files dialog:\n" + NativeFileDialog.NFD_GetError());
+        case NativeFileDialog.NFD_CANCEL:
+        default:
+        	files = new File[0];
+            break;
+        }
 		Main.instance.lastNanos += (System.nanoTime() - n);
 		return files;
 	}
 	
-	public static File getSaveFile(CharSequence filter, CharSequence directory)
+	public static File getSaveFile(String directory, String filter, String defExt)
 	{
 		long n = System.nanoTime();
-		File file;
-		PointerBuffer output = PointerBuffer.allocateDirect(1);
-		int status = NativeFileDialog.NFD_SaveDialog(filter, directory, output);
-		switch (status)
-		{
-		case NativeFileDialog.NFD_OKAY:
-			String fileName = output.getStringUTF8(0);
-			NativeFileDialog.nNFD_Free(output.get(0));
-			file = new File(ensureHasExtension(fileName, getDefaultExtension(filter)));
-			break;
-		case NativeFileDialog.NFD_ERROR:
-			GuiPopupException.onException("Error in save file dialog:\n" + NativeFileDialog.NFD_GetError());
-		case NativeFileDialog.NFD_CANCEL:
-		default:
-			file = null;
-			break;
-		}
+		if (directory == null) directory = "";
+        final PointerBuffer output = PointerBuffer.allocateDirect(1);
+        final int status = NativeFileDialog.NFD_SaveDialog(filter, directory, output);
+        File file;
+        switch (status)
+        {
+        case NativeFileDialog.NFD_OKAY:
+        	String fileName = output.getStringUTF8(0);
+            NativeFileDialog.nNFD_Free(output.get(0));
+            if (defExt != null) fileName = ensureHasExtension(fileName, defExt);
+            file = new File(fileName);
+            break;
+        case NativeFileDialog.NFD_ERROR:
+            GuiPopupException.onException("Error in save file dialog:\n" + NativeFileDialog.NFD_GetError());
+        case NativeFileDialog.NFD_CANCEL:
+        default:
+        	file = null;
+            break;
+        }
+		Main.instance.lastNanos += (System.nanoTime() - n);
+		return file;
+	}
+	
+	public static File getFolder(String directory)
+	{
+		long n = System.nanoTime();
+		if (directory == null) directory = "";
+        final PointerBuffer output = PointerBuffer.allocateDirect(1);
+        final int status = NativeFileDialog.NFD_PickFolder(directory, output);
+        File file;
+        switch (status)
+        {
+        case NativeFileDialog.NFD_OKAY:
+            final String path = output.getStringUTF8(0);
+            NativeFileDialog.nNFD_Free(output.get(0));
+            file = new File(path);
+            break;
+        case NativeFileDialog.NFD_ERROR:
+            GuiPopupException.onException("Error in select folder dialog:\n" + NativeFileDialog.NFD_GetError());
+        case NativeFileDialog.NFD_CANCEL:
+        default:
+        	file = null;
+            break;
+        }
 		Main.instance.lastNanos += (System.nanoTime() - n);
 		return file;
 	}
@@ -196,30 +234,6 @@ public class FileUtils
 		String ext = FileUtil.getExtension(file);
 		if (ext == null || ext.length() == 0) return file + "." + defaultExtension;
 		else return file;
-	}
-	
-	public static File getFolder(CharSequence directory)
-	{
-		long n = System.nanoTime();
-		File file;
-		PointerBuffer output = PointerBuffer.allocateDirect(1);
-		int status = NativeFileDialog.NFD_PickFolder(directory, output);
-		switch (status)
-		{
-		case NativeFileDialog.NFD_OKAY:
-			String path = output.getStringUTF8(0);
-			NativeFileDialog.nNFD_Free(output.get(0));
-			file = new File(path);
-			break;
-		case NativeFileDialog.NFD_ERROR:
-			GuiPopupException.onException("Error in folder dialog:\n" + NativeFileDialog.NFD_GetError());
-		case NativeFileDialog.NFD_CANCEL:
-		default:
-			file = null;
-			break;
-		}
-		Main.instance.lastNanos += (System.nanoTime() - n);
-		return file;
 	}
 	
 	public static String encode64(InputStream in) throws IOException

@@ -68,6 +68,7 @@ public class TitlebarItems
 	//options
 	TOGGLE_NODES = setAction(new MenuItem("Toggle nodes"), action -> Main.instance.state.setShowNodes(!Main.instance.state.showNodes())),
 	TOGGLE_BONES = setAction(new MenuItem("Toggle bones"), action -> Main.instance.state.setShowBones(!Main.instance.state.showBones())),
+	TOGGLE_SHADOWS = setAction(new MenuItem("Toggle shadows"), action -> Main.instance.state.setEnableShadows(!Main.instance.state.enableShadows())),
 	CHANGE_THEME = setAction(new MenuItem("Change theme"), action -> new GuiThemes().activate()),
 	HOTKEYS = setAction(new MenuItem("Hotkeys"), action -> new GuiPopupHotkeys().activate()),
 	LAYOUT_MENU = makeMenu("Layout", LAYOUT_ITEMS.values().stream()),

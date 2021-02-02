@@ -20,7 +20,7 @@ import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.gui.decoration.DecoPane;
 import firemerald.mcms.util.history.HistoryAction;
 
-public class GuiPopupFluid<T extends RenderBone<T>> extends GuiPopup
+public class GuiPopupFluid<T extends RenderBone<?>> extends GuiPopup
 {
 	public final T parent;
 	public final DecoPane pane;
@@ -137,9 +137,9 @@ public class GuiPopupFluid<T extends RenderBone<T>> extends GuiPopup
 	{
 		Main main = Main.instance;
 		main.textureManager.unbindTexture();
-		main.shader.setColor(0, 0, 0, .5f);
+		main.guiShader.setColor(0, 0, 0, .5f);
 		main.screen.render();
-		main.shader.setColor(1, 1, 1, 1);
+		main.guiShader.setColor(1, 1, 1, 1);
 	}
 	
 	public void apply()

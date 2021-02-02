@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -353,22 +351,18 @@ public class Texture implements IClonableObject<Texture>
 	
 	public byte[] getBytes()
 	{
-		List<Byte> bytes = new ArrayList<>();
-		OutputStream out = new OutputStream() {
-			@Override
-			public void write(int arg0) throws IOException
-			{
-				bytes.add(Byte.valueOf((byte) arg0));
-			}
-		};
+		return getBytes("png");
+	}
+	
+	public byte[] getBytes(String format)
+	{
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
-			saveTexture(out, "png");
+			saveTexture(out, format);
 		} catch (IOException e) {
 			GuiPopupException.onException("Could not get bytes for texture", e);
 		}
-		byte[] array = new byte[bytes.size()];
-		for (int i = 0; i < array.length; i++) array[i] = bytes.get(i);
-		return array;
+		return out.toByteArray();
 	}
 	
 	public void save(AbstractElement el)

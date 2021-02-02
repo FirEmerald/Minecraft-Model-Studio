@@ -2,7 +2,7 @@ package firemerald.mcms.gui.main.components.animation;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.ComponentButton;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.ResourceLocation;
@@ -44,18 +44,18 @@ public abstract class PlaybackButton extends ComponentButton
 	@Override
 	public void render(ButtonState state)
 	{
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
-		Main.instance.shader.updateModel();
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
+		Main.instance.guiShader.updateModel();
 		state.applyButtonEffects();
 		rect.bind();
 		Meshes.X32.render();
-		Main.instance.shader.setColor(getTheme().getOutlineColor());
+		Main.instance.guiShader.setColor(getTheme().getOutlineColor());
 		Main.instance.textureManager.bindTexture(getIcon());
 		Meshes.X32.render();
-		Main.instance.shader.setColor(1, 1, 1, 1);
+		Main.instance.guiShader.setColor(1, 1, 1, 1);
 		state.removeButtonEffects();
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
+		GuiShader.MODEL.pop();
+		Main.instance.guiShader.updateModel();
 	}
 }

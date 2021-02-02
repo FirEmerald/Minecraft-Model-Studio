@@ -2,6 +2,7 @@ package firemerald.mcms.api.animation;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -22,7 +23,7 @@ import java.util.Map.Entry;
 
 public class Animation implements IAnimation
 {
-	public final Map<String, NavigableMap<Float, Transformation>> animation;
+	public final Map<String, NavigableMap<Float, TweeningFrame>> animation;
 	protected float length;
 	public boolean loop;
 	protected boolean relative;
@@ -32,7 +33,7 @@ public class Animation implements IAnimation
 		this(new HashMap<>(), length, loop, relative);
 	}
 	
-	public Animation(Map<String, NavigableMap<Float, Transformation>> animation, float length, boolean loop, boolean relative)
+	public Animation(Map<String, NavigableMap<Float, TweeningFrame>> animation, float length, boolean loop, boolean relative)
 	{
 		this.animation = animation;
 		this.length = length;
@@ -40,7 +41,7 @@ public class Animation implements IAnimation
 		this.relative = relative;
 	}
 	
-	public Animation(Map<String, NavigableMap<Float, Transformation>> animation, float length)
+	public Animation(Map<String, NavigableMap<Float, TweeningFrame>> animation, float length)
 	{
 		this(animation, length, true, false);
 	}
@@ -76,16 +77,16 @@ public class Animation implements IAnimation
 				}
 				def = bone == null ? new Transformation() : bone.defaultTransform;
 			}
-			Transformation tran = anim.get(length);
-			Transformation res;
+			TweeningFrame tran = anim.get(length);
+			TweeningFrame res;
 			if (tran != null) //exact keyframe
 			{
-				res = tran.copy();
+				res = new TweeningFrame(tran);
 			}
 			else
 			{
-				Entry<Float, Transformation> lower = anim.lowerEntry(length);
-				Entry<Float, Transformation> higher = anim.higherEntry(length);
+				Entry<Float, TweeningFrame> lower = anim.lowerEntry(length);
+				Entry<Float, TweeningFrame> higher = anim.higherEntry(length);
 				if (lower == null)
 				{
 					if (higher == null) //no animation at all
@@ -96,44 +97,25 @@ public class Animation implements IAnimation
 					{
 						Transformation lowerTrans = def;
 						float higherFrame = higher.getKey();
-						Transformation higherTrans = higher.getValue();
+						TweeningFrame higherTrans = higher.getValue();
 						float part = length / higherFrame;
-						res = Transformation.tween(lowerTrans, higherTrans, part);
+						res = new TweeningFrame(Transformation.tween(lowerTrans, higherTrans.transformation, higherTrans.apply(part)), higherTrans.tweening, higherTrans.factor);
 					}
 				}
 				else
 				{
 					if (higher == null)
 					{
-						res = lower.getValue().copy();
-						/*
-						if (!loop) //end of animation
-						{
-							Transformation trans = lower.getValue();
-							q = trans.rotation.getQuaternion();
-							vec = trans.translation;
-						}
-						else
-						{
-							Transformation higherTrans = anim.get(0f); //interpolate between lower and start
-							if (higherTrans == null) higherTrans = def;
-							float lowerFrame = lower.getKey();
-							Transformation lowerTrans = lower.getValue();
-							float part = (length - lowerFrame) / (length - lowerFrame);
-							q = lowerTrans.rotation.getQuaternion().slerp(higherTrans.rotation.getQuaternion(), part);
-							Vector3f last = lowerTrans.translation, next = higherTrans.translation;
-							vec = new Vector3f(last.x() + (next.x() - last.x()) * part, last.y() + (next.y() - last.y()) * part, last.z() + (next.z() - last.z()) * part);
-						}
-						*/
+						res = new TweeningFrame(lower.getValue());
 					}
 					else //interpolate between frames
 					{
 						float lowerFrame = lower.getKey();
-						Transformation lowerTrans = lower.getValue();
+						Transformation lowerTrans = lower.getValue().transformation;
 						float higherFrame = higher.getKey();
-						Transformation higherTrans = higher.getValue();
+						TweeningFrame higherTrans = higher.getValue();
 						float part = (length - lowerFrame) / (higherFrame - lowerFrame);
-						res = Transformation.tween(lowerTrans, higherTrans, part);
+						res = new TweeningFrame(Transformation.tween(lowerTrans, higherTrans.transformation, higherTrans.apply(part)), higherTrans.tweening, higherTrans.factor);
 					}
 				}
 			}
@@ -148,7 +130,7 @@ public class Animation implements IAnimation
 		float mul = length / this.length;
 		this.length = length;
 		this.animation.forEach((bone, anim) -> {
-			NavigableMap<Float, Transformation> newMap = new TreeMap<>();
+			NavigableMap<Float, TweeningFrame> newMap = new TreeMap<>();
 			animation.put(bone, newMap);
 			anim.forEach((time, transform) -> newMap.put(time * mul, transform));
 		});
@@ -160,20 +142,20 @@ public class Animation implements IAnimation
 		if (frame > length && loop) frame %= length;
 		for (Bone<?> bone : bones)
 		{
-			NavigableMap<Float, Transformation> anim = animation.get(bone.getName());
+			NavigableMap<Float, TweeningFrame> anim = animation.get(bone.getName());
 			if (anim != null)
 			{
-				Transformation tran = anim.get(frame);
+				TweeningFrame tran = anim.get(frame);
 				Transformation res;
 				if (tran != null)
 				{
-					res = tran.copy();
+					res = tran.transformation.copy();
 				}
 				else
 				{
 					Transformation def = relative ? new Transformation() : bone.defaultTransform;
-					Entry<Float, Transformation> lower = anim.lowerEntry(frame);
-					Entry<Float, Transformation> higher = anim.higherEntry(frame);
+					Entry<Float, TweeningFrame> lower = anim.lowerEntry(frame);
+					Entry<Float, TweeningFrame> higher = anim.higherEntry(frame);
 					if (lower == null)
 					{
 						if (higher == null) //no animation at all
@@ -184,8 +166,8 @@ public class Animation implements IAnimation
 						{
 							Transformation lowerTrans = def;
 							float higherFrame = higher.getKey();
-							Transformation higherTrans = higher.getValue();
-							float part = frame / higherFrame;
+							Transformation higherTrans = higher.getValue().transformation;
+							float part = higher.getValue().apply(frame / higherFrame);
 							res = Transformation.tween(lowerTrans, higherTrans, part);
 						}
 					}
@@ -193,34 +175,15 @@ public class Animation implements IAnimation
 					{
 						if (higher == null)
 						{
-							res = lower.getValue().copy();
-							/*
-							if (!loop) //end of animation
-							{
-								Transformation trans = lower.getValue();
-								q = trans.rotation.getQuaternion();
-								vec = trans.translation;
-							}
-							else
-							{
-								Transformation higherTrans = anim.get(0f); //interpolate between lower and start
-								if (higherTrans == null) higherTrans = bone.defaultTransform;
-								float lowerFrame = lower.getKey();
-								Transformation lowerTrans = lower.getValue();
-								float part = (frame - lowerFrame) / (length - lowerFrame);
-								q = lowerTrans.rotation.getQuaternion().slerp(higherTrans.rotation.getQuaternion(), part);
-								Vector3f last = lowerTrans.translation, next = higherTrans.translation;
-								vec = new Vector3f(last.x() + (next.x() - last.x()) * part, last.y() + (next.y() - last.y()) * part, last.z() + (next.z() - last.z()) * part);
-							}
-							*/
+							res = lower.getValue().transformation;
 						}
 						else //interpolate between frames
 						{
 							float lowerFrame = lower.getKey();
-							Transformation lowerTrans = lower.getValue();
+							Transformation lowerTrans = lower.getValue().transformation;
 							float higherFrame = higher.getKey();
-							Transformation higherTrans = higher.getValue();
-							float part = (frame - lowerFrame) / (higherFrame - lowerFrame);
+							Transformation higherTrans = higher.getValue().transformation;
+							float part = higher.getValue().apply((frame - lowerFrame) / (higherFrame - lowerFrame));
 							res = Transformation.tween(lowerTrans, higherTrans, part);
 						}
 					}
@@ -251,9 +214,9 @@ public class Animation implements IAnimation
 					try
 					{
 						String boneName = el.getString("boneName");
-						NavigableMap<Float, Transformation> boneMap = animation.get(boneName);
+						NavigableMap<Float, TweeningFrame> boneMap = animation.get(boneName);
 						if (boneMap == null) animation.put(boneName, boneMap = new TreeMap<>());
-						Transformation t = new Transformation(el, scale);
+						TweeningFrame t = new TweeningFrame(el, scale);
 						boneMap.put(time, t);
 					}
 					catch (Exception e)
@@ -272,15 +235,15 @@ public class Animation implements IAnimation
 	@Override
 	public void save(AbstractElement root, float scale)
 	{
-		NavigableMap<Float, Map<String, Transformation>> map = new TreeMap<>();
-		for (Entry<String, NavigableMap<Float, Transformation>> entry : this.animation.entrySet())
+		NavigableMap<Float, Map<String, TweeningFrame>> map = new TreeMap<>();
+		for (Entry<String, NavigableMap<Float, TweeningFrame>> entry : this.animation.entrySet())
 		{
 			String bone = entry.getKey();
-			for (Entry<Float, Transformation> entry2 : entry.getValue().entrySet())
+			for (Entry<Float, TweeningFrame> entry2 : entry.getValue().entrySet())
 			{
 				Float time = entry2.getKey();
-				Transformation trans = entry2.getValue();
-				Map<String, Transformation> map2 = map.get(time);
+				TweeningFrame trans = entry2.getValue();
+				Map<String, TweeningFrame> map2 = map.get(time);
 				if (map2 == null) map.put(time, map2 = new HashMap<>());
 				map2.put(bone, trans);
 			}
@@ -288,15 +251,15 @@ public class Animation implements IAnimation
 		root.setDouble("length", length);
 		root.setBoolean("loop", loop);
 		root.setBoolean("relative", relative);
-		for (Entry<Float, Map<String, Transformation>> entry : map.entrySet())
+		for (Entry<Float, Map<String, TweeningFrame>> entry : map.entrySet())
 		{
 			AbstractElement frameEl = root.addChild("frame");
 			frameEl.setFloat("frameTime", entry.getKey());
-			for (Entry<String, Transformation> entry2 : entry.getValue().entrySet())
+			for (Entry<String, TweeningFrame> entry2 : entry.getValue().entrySet())
 			{
 				AbstractElement el = frameEl.addChild("bone");
 				el.setString("boneName", entry2.getKey());
-				Transformation t = entry2.getValue().copy();
+				TweeningFrame t = entry2.getValue();
 				t.save(el, scale);
 			}
 		}
@@ -334,9 +297,9 @@ public class Animation implements IAnimation
 				final Matrix4d mul = orig.getTransformation();
 				if (relative) mul.invert();
 				map.values().forEach(transform -> {
-					Matrix4d cur = transform.getTransformation();
+					Matrix4d cur = transform.transformation.getTransformation();
 					cur = mul.mul(cur, cur);
-					transform.setFromMatrix(cur);
+					transform.transformation.setFromMatrix(cur);
 				});
 			});
 			main.onGuiUpdate(GuiUpdate.ANIMATION);
@@ -347,12 +310,12 @@ public class Animation implements IAnimation
 	@Override
 	public Animation cloneObject()
 	{
-		Map<String, NavigableMap<Float, Transformation>> newAnimation = new HashMap<>();
+		Map<String, NavigableMap<Float, TweeningFrame>> newAnimation = new HashMap<>();
 		this.animation.forEach((bone, anim) -> {
-			NavigableMap<Float, Transformation> newAnim = new TreeMap<>();
+			NavigableMap<Float, TweeningFrame> newAnim = new TreeMap<>();
 			newAnimation.put(bone, newAnim);
 			anim.forEach((time, transform) -> {
-				newAnim.put(time, transform.copy());
+				newAnim.put(time, new TweeningFrame(transform));
 			});
 		});
 		return new Animation(newAnimation, this.length, this.loop, this.relative);
@@ -364,10 +327,23 @@ public class Animation implements IAnimation
 		this.animation.forEach((name, anim) -> {
 			if (!anim.isEmpty())
 			{
-				NavigableMap<Float, Transformation> newAnim = new TreeMap<>();
-				anim.forEach((time, transform) -> {
-					newAnim.put(length - time, transform.copy());
-				});
+				NavigableMap<Float, TweeningFrame> newAnim = new TreeMap<>();
+				Iterator<Entry<Float, TweeningFrame>> it = anim.entrySet().iterator();
+				Entry<Float, TweeningFrame> cur, next = it.next();
+				do
+				{
+					cur = next;
+					TweeningFrame frame = new TweeningFrame(cur.getValue());
+					if (it.hasNext())
+					{
+						next = it.next();
+						frame.tweening = next.getValue().tweening.inverse();
+						frame.factor = next.getValue().factor;
+					}
+					else break;
+					newAnim.put(length - cur.getKey(), frame);
+				}
+				while (true);
 				if (rig != null)
 				{
 					Bone<?> bone = rig.getBone(name);
@@ -376,34 +352,34 @@ public class Animation implements IAnimation
 						Transformation def = this.relative ? new Transformation() : bone.defaultTransform;
 						if (anim.get(length) == null) //lacks final keyframe
 						{
-							Transformation current = anim.lowerEntry(length).getValue();
+							Transformation current = anim.lowerEntry(length).getValue().transformation;
 							if (!current.equals(def)) //needs initial set
 							{
-								newAnim.put(0f, current.copy());
+								newAnim.put(0f, new TweeningFrame(current.copy()));
 							}
 						}
 						if (anim.get(0f) == null) //lacks initial keyframe
 						{
-							Transformation current = anim.higherEntry(0f).getValue();
-							if (!current.equals(def)) //needs final set
+							TweeningFrame current = anim.higherEntry(0f).getValue();
+							if (!current.transformation.equals(def)) //needs final set
 							{
-								newAnim.put(length, def.copy());
+								newAnim.put(length, new TweeningFrame(def.copy(), current.tweening, current.factor));
 							}
 						}
-						Float cur = -1f;
-						Entry<Float, Transformation> entry;
-						while ((entry = newAnim.higherEntry(cur)) != null && entry.getValue().equals(def)) newAnim.remove(cur = entry.getKey()); //remove redundant starting frames
+						Float curF = -1f;
+						Entry<Float, TweeningFrame> entry;
+						while ((entry = newAnim.higherEntry(curF)) != null && entry.getValue().transformation.equals(def)) newAnim.remove(curF = entry.getKey()); //remove redundant starting frames
 					}
 				}
 				if (!newAnim.isEmpty())
 				{
-					Entry<Float, Transformation> lastEntry = newAnim.lastEntry();
-					Float cur = lastEntry.getKey();
-					Entry<Float, Transformation> entry;
-					while ((entry = newAnim.lowerEntry(cur)) != null && entry.getValue().equals(lastEntry.getValue())) //remove redundant ending frames
+					Entry<Float, TweeningFrame> lastEntry = newAnim.lastEntry();
+					Float curF = lastEntry.getKey();
+					Entry<Float, TweeningFrame> entry;
+					while ((entry = newAnim.lowerEntry(curF)) != null && entry.getValue().transformation.equals(lastEntry.getValue().transformation)) //remove redundant ending frames
 					{
-						newAnim.remove(cur);
-						cur = (lastEntry = entry).getKey();
+						newAnim.remove(curF);
+						curF = (lastEntry = entry).getKey();
 					}
 				}
 				anim.clear();

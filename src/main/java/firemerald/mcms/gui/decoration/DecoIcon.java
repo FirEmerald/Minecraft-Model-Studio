@@ -5,12 +5,12 @@ import firemerald.mcms.gui.IGuiElement;
 import firemerald.mcms.gui.IGuiHolder;
 import firemerald.mcms.theme.GuiTheme;
 import firemerald.mcms.util.ResourceLocation;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 
 public class DecoIcon implements IGuiElement
 {
 	public int x1, y1, x2, y2;
-	public final Mesh mesh = new Mesh();
+	public final GuiMesh mesh = new GuiMesh();
 	public IGuiHolder holder = null;
 	public ResourceLocation icon;
 
@@ -38,7 +38,7 @@ public class DecoIcon implements IGuiElement
 		this.y1 = y1;
 		this.x2 = x2;
 		this.y2 = y2;
-		mesh.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
+		mesh.setMesh(x1, y1, x2, y2, 0, 0, 1, 1);
 	}
 	
 	@Override

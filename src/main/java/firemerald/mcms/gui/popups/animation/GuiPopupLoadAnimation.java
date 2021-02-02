@@ -40,7 +40,7 @@ public class GuiPopupLoadAnimation extends GuiPopup
 		y += 20;
 		this.addElement(file = new ComponentText(cx, y, cx + cw - 20, y + 20, Main.instance.fontMsg, "", null));
 		this.addElement(browse = new ButtonItem20(cx + cw - 20, y, Textures.ITEM_BROWSE, () -> {
-			File file = FileUtils.getOpenFile("anim;xml;json;bin", "");
+			File file = FileUtils.getOpenFile(null, "anim;xml;json;bin");
 			if (file != null) this.file.setText(file.toString());
 		}));
 		browse.enabled = true;
@@ -73,9 +73,9 @@ public class GuiPopupLoadAnimation extends GuiPopup
 	{
 		Main main = Main.instance;
 		main.textureManager.unbindTexture();
-		main.shader.setColor(0, 0, 0, .5f);
+		main.guiShader.setColor(0, 0, 0, .5f);
 		main.screen.render();
-		main.shader.setColor(1, 1, 1, 1);
+		main.guiShader.setColor(1, 1, 1, 1);
 	}
 	
 	public void apply()

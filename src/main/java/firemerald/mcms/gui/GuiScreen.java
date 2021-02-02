@@ -9,19 +9,6 @@ import firemerald.mcms.events.gui.GuiEvent;
 public abstract class GuiScreen extends GuiElementContainer
 {
 	protected final Map<Integer, Boolean> pressed = new HashMap<>();
-	public IGuiHolder holder = null;
-
-	@Override
-	public void setHolder(IGuiHolder holder)
-	{
-		this.holder = holder;
-	}
-	
-	@Override
-	public IGuiHolder getHolder()
-	{
-		return this.holder;
-	}
 
 	@Override
 	public int getComponentOffsetX()

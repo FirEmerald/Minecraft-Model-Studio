@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.logging.log4j.Level;
-import org.joml.Matrix3d;
 import org.joml.Matrix4d;
 import org.lwjgl.system.MemoryStack;
 
@@ -17,22 +16,23 @@ import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.FileUtils;
 import firemerald.mcms.util.ResourceLocation;
 
-public class Shader
+public class GuiShader
 {
 	public static final MatrixStack4 MODEL = new MatrixStack4();
 	public static final MatrixStack4 VIEW = new MatrixStack4();
 	public static final MatrixStack4 PROJECTION = new MatrixStack4();
 	public static final MatrixStack4 TEXTURE = new MatrixStack4();
-	protected static float r, g, b, a;
-	protected int model, viewProjection, normal, texture, texture_sampler, overlay_sampler, color, color2, hueSet, invert, use_overlay, clip_outside;
+	protected int model, viewProjection, texture, texture_sampler, overlay_sampler, color, color2, hueSet, invert, use_overlay, clip_outside;
 	public int prog;
 	
-	public Shader(String vert, String frag)
+	private static float r1, g1, b1, a1, r2, g2, b2, a2;
+	private static boolean hueSetVal, invertVal, use_overlayVal, clip_outsideVal;
+	
+	public GuiShader(String vert, String frag)
 	{
 		prog = createShaderProgram(vert, frag);
 		model = glGetUniformLocation(prog, "modelMatrix");
 		viewProjection = glGetUniformLocation(prog, "viewProjectionMatrix");
-		normal = glGetUniformLocation(prog, "normalMatrix");
 		texture = glGetUniformLocation(prog, "textureMatrix");
 		texture_sampler = glGetUniformLocation(prog, "texture_sampler");
 		overlay_sampler = glGetUniformLocation(prog, "overlay_sampler");
@@ -44,6 +44,12 @@ public class Shader
 		clip_outside = glGetUniformLocation(prog, "clip_outside");
 	}
 	
+	public void reset()
+	{
+		r1 = g1 = b1 = a1 = r2 = g2 = b2 = 1;
+		hueSetVal = invertVal = use_overlayVal = clip_outsideVal = false;
+	}
+	
 	public void bind()
 	{
 		glUseProgram(prog);
@@ -51,12 +57,12 @@ public class Shader
 		updateViewProjection();
 		glUniform1i(texture_sampler, 0);
 		glUniform1i(overlay_sampler, 1);
-		glUniform4f(color, r, g, b, a);
-		glUniform4f(color2, 1, 1, 1, 1);
-		glUniform1i(hueSet, 0);
-		glUniform1i(invert, 0);
-		glUniform1i(use_overlay, 0);
-		glUniform1i(clip_outside, 0);
+		glUniform4f(color, r1, g1, b1, a1);
+		glUniform4f(color2, r2, g2, b2, a2);
+		glUniform1i(hueSet, hueSetVal ? 1 : 0);
+		glUniform1i(invert, invertVal ? 1 : 0);
+		glUniform1i(use_overlay, use_overlayVal ? 1 : 0);
+		glUniform1i(clip_outside, clip_outsideVal ? 1 : 0);
 	}
 	
 	public void setColor(Color c)
@@ -117,22 +123,45 @@ public class Shader
 	
 	public void setColor(float r, float g, float b, float a)
 	{
-		glUniform4f(color, Shader.r = r, Shader.g = g, Shader.b = b, Shader.a = a);
+		glUniform4f(color, r1 = r, g1 = g, b1 = b, a1 = a);
 	}
-	
+
 	public void setColor2(float r, float g, float b, float a)
 	{
-		glUniform4f(color2, r, g, b, a);
+		glUniform4f(color2, r2 = r, g2 = g, b2 = b, a2 = a);
 	}
-	
+
 	public void setHueSet(boolean hueSet)
 	{
-		glUniform1i(this.hueSet, hueSet ? 1 : 0);
+		glUniform1i(this.hueSet, (hueSetVal = hueSet) ? 1 : 0);
 	}
-	
+
 	public void setInvert(boolean invert)
 	{
-		glUniform1i(this.invert, invert ? 1 : 0);
+		glUniform1i(this.invert, (invertVal = invert) ? 1 : 0);
+	}
+
+    public void setOverlayTexture(Texture tex)
+    {
+        glActiveTexture(GL_TEXTURE1);
+        if (tex != null)
+        {
+            tex.bind();
+            glUniform1i(this.use_overlay, 1);
+            use_overlayVal = true;
+        }
+        else
+        {
+            Main.instance.textureManager.unbindTexture();
+            glUniform1i(this.use_overlay, 0);
+            use_overlayVal = false;
+        }
+        glActiveTexture(GL_TEXTURE0);
+    }
+
+	public void setClipOutside(boolean clip)
+	{
+		glUniform1i(clip_outside, (clip_outsideVal = clip) ? 1 : 0);
 	}
 	
 	public void setTexOffset(float uOff, float vOff)
@@ -158,27 +187,6 @@ public class Shader
 		TEXTURE.matrix().identity();
 		updateTexture();
 	}
-
-    public void setOverlayTexture(Texture tex)
-    {
-        glActiveTexture(GL_TEXTURE1);
-        if (tex != null)
-        {
-            tex.bind();
-            glUniform1i(this.use_overlay, 1);
-        }
-        else
-        {
-            Main.instance.textureManager.unbindTexture();
-            glUniform1i(this.use_overlay, 0);
-        }
-        glActiveTexture(GL_TEXTURE0);
-    }
-	
-	public void setClipOutside(boolean clip)
-	{
-		glUniform1i(clip_outside, clip ? 1 : 0);
-	}
 	
 	public void unbind()
 	{
@@ -192,13 +200,11 @@ public class Shader
 			ByteBuffer buf = stack.malloc(16 * Float.BYTES);
 			glUniformMatrix4fv(model, false, MODEL.matrix().getFloats(buf).asFloatBuffer());
 		}
-		updateNormal();
 	}
 	
 	public void updateView()
 	{
 		updateViewProjection();
-		updateNormal();
 	}
 	
 	public void updateProjection()
@@ -214,7 +220,6 @@ public class Shader
 			glUniformMatrix4fv(model, false, MODEL.matrix().getFloats(buf).asFloatBuffer());
 		}
 		updateViewProjection();
-		updateNormal();
 	}
 	
 	private void updateViewProjection()
@@ -225,16 +230,7 @@ public class Shader
 			glUniformMatrix4fv(viewProjection, false, new Matrix4d(PROJECTION.matrix()).mul(VIEW.matrix()).getFloats(buf).asFloatBuffer());
 		}
 	}
-	
-	private void updateNormal()
-	{
-		try (MemoryStack stack = MemoryStack.stackPush())
-		{
-			ByteBuffer buf = stack.malloc(9 * Float.BYTES);
-			glUniformMatrix3fv(normal, false, new Matrix4d(MODEL.matrix()).mul(VIEW.matrix()).transpose3x3(new Matrix3d()).invert().getFloats(buf).asFloatBuffer());
-		}
-	}
-	
+
 	public void updateTexture()
 	{
 		try (MemoryStack stack = MemoryStack.stackPush())
@@ -248,7 +244,7 @@ public class Shader
 	{
 		int vert = glCreateShader(GL_VERTEX_SHADER);
 		if (vert <= 0) throw new IllegalStateException("Unable to create a vertex shader!");
-		String vertShader = FileUtils.readTextFile(new ResourceLocation(Main.ID, vertFile + ".vsh"), StandardCharsets.UTF_8);
+		String vertShader = FileUtils.readTextFile(new ResourceLocation(Main.ID, "shaders/" + vertFile + ".vsh"), StandardCharsets.UTF_8);
 		Main.LOGGER.log(Level.DEBUG, "Loaded vertex shader:\n" + vertShader);
 		glShaderSource(vert, vertShader);
 		glCompileShader(vert);
@@ -264,7 +260,7 @@ public class Shader
 			glDeleteShader(vert);
 			throw new IllegalStateException("Unable to create a fragment shader!");
 		}
-		String fragShader = FileUtils.readTextFile(new ResourceLocation(Main.ID, fragFile + ".fsh"), StandardCharsets.UTF_8);
+		String fragShader = FileUtils.readTextFile(new ResourceLocation(Main.ID, "shaders/" + fragFile + ".fsh"), StandardCharsets.UTF_8);
 		Main.LOGGER.log(Level.DEBUG, "Loaded fragment shader:\n" + fragShader);
 		glShaderSource(frag, fragShader);
 		glCompileShader(frag);
@@ -297,8 +293,28 @@ public class Shader
 		return prog;
 	}
 	
-	private static void printErr(String s)
+	protected static void printErr(String s)
 	{
 		if (s != null && s.length() > 0) Main.LOGGER.warn(s);
+	}
+	
+	public static String getStateString()
+	{
+		return "Model:\n" + 
+				MODEL.matrix().toString() + 
+				"\nView:\n" + 
+				VIEW.matrix().toString() + 
+				"\nProjection:\n" + 
+				PROJECTION.matrix().toString() + 
+				"\nTexture:\n" + 
+				TEXTURE.matrix().toString() + 
+				"\nColor 1: " + r1 + ", " + g1 + ", " + b1 + 
+				"\nAlpha 1: " + a1 + 
+				"\nColor 2: " + r2 + ", " + g2 + ", " + b2 + 
+				"\nAlpha 2: " + a2 + 
+				"\nuse hue set: " + hueSetVal + 
+				"\ninvert colors: " + invertVal + 
+				"\nuse overlay: " + use_overlayVal + 
+				"\nclip outside of texture: " + clip_outsideVal;
 	}
 }

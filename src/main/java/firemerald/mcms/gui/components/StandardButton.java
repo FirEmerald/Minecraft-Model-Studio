@@ -2,12 +2,12 @@ package firemerald.mcms.gui.components;
 
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 
 public class StandardButton extends StandardFloatingButton
 {
 	public ThemeElement rect;
-	public final Mesh mesh = new Mesh();
+	public final GuiMesh mesh = new GuiMesh();
 	public int radius = 0;
 	
 	public StandardButton(int x1, int y1, int x2, int y2, String text, Runnable onRelease)
@@ -27,7 +27,7 @@ public class StandardButton extends StandardFloatingButton
 	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		super.setSize(x1, y1, x2, y2);
-		if (mesh != null) mesh.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
+		if (mesh != null) mesh.setMesh(x1, y1, x2, y2, 0, 0, 1, 1);
 		onGuiUpdate(GuiUpdate.THEME);
 	}
 	

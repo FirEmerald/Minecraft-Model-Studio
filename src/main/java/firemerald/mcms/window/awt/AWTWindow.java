@@ -3,7 +3,10 @@ package firemerald.mcms.window.awt;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.Menu;
+import java.awt.MenuBar;
 import java.awt.Toolkit;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -37,6 +40,11 @@ public class AWTWindow extends Window //TODO is borked, don't know why
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.addWindowListener(new WindowListener(this));
 		frame.setLayout(new BorderLayout());
+		MenuBar menubar = new MenuBar();
+		Map<String, Menu> menus = Main.makeTitlebar();
+		menus.values().forEach(menubar::add);
+		frame.setMenuBar(menubar);
+		
 		GLData data = new GLData();
 		data.samples = 4;
 		data.majorVersion = 3;
@@ -176,8 +184,11 @@ public class AWTWindow extends Window //TODO is borked, don't know why
 	@Override
 	public void tick(long thisTick)
 	{
-		while (!actions.isEmpty()) actions.remove().run();
-		main.tick(thisTick);
+		if (Main.glActive)
+		{
+			while (!actions.isEmpty()) actions.remove().run();
+			main.tick(thisTick);
+		}
 	}
 
 	@Override

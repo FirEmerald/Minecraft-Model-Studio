@@ -3,15 +3,15 @@ package firemerald.mcms.gui.components.scrolling;
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.Component;
 import firemerald.mcms.gui.components.ComponentButton.ButtonState;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.window.api.MouseButtons;
 
 public class ScrollBarH extends Component
 {
-	public final Mesh outline = new Mesh(), bar = new Mesh();
+	public final GuiMesh outline = new GuiMesh(), bar = new GuiMesh();
 	private float scrollSize, scrollWidth, scrollBarSize;
 	public boolean enabled = false;
 	public final IScrollableHorizontal scrollable;
@@ -31,7 +31,7 @@ public class ScrollBarH extends Component
 	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		super.setSize(x1, y1, x2, y2);
-		outline.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
+		outline.setMesh(x1, y1, x2, y2, 0, 0, 1, 1);
 		scrollSize = x2 - x1 - 2;
 		setMaxScroll();
 	}
@@ -48,7 +48,7 @@ public class ScrollBarH extends Component
 			enabled = true;
 			scrollBarSize = (scrollSize == -size) ? 0 : scrollSize * scrollSize / (scrollSize + size);
 			if (scrollBarSize < 10) scrollBarSize = 10;
-			bar.setMesh(x1 + 1, y1 + 1, x1 + 1 + scrollBarSize, y2 - 1, 0, 0, 0, 1, 1);
+			bar.setMesh(x1 + 1, y1 + 1, x1 + 1 + scrollBarSize, y2 - 1, 0, 0, 1, 1);
 			scrollWidth = scrollSize - scrollBarSize;
 		}
 		onGuiUpdate(GuiUpdate.THEME);
@@ -102,13 +102,13 @@ public class ScrollBarH extends Component
 				else state = ButtonState.NONE;
 			}
 			state.applyButtonEffects();
-			Shader.MODEL.push();
-			Shader.MODEL.matrix().translate(scrollWidth * scroll / max, 0, 0);
-			main.shader.updateModel();
+			GuiShader.MODEL.push();
+			GuiShader.MODEL.matrix().translate(scrollWidth * scroll / max, 0, 0);
+			main.guiShader.updateModel();
 			scrollBarRectangle.bind();
 			bar.render();
-			Shader.MODEL.pop();
-			main.shader.updateModel();
+			GuiShader.MODEL.pop();
+			main.guiShader.updateModel();
 			state.removeButtonEffects();
 		}
 		else
@@ -117,7 +117,7 @@ public class ScrollBarH extends Component
 			outline.render();
 			ButtonState.DISABLED.removeButtonEffects();
 		}
-		main.shader.setColor(1, 1, 1, 1);
+		main.guiShader.setColor(1, 1, 1, 1);
 	}
 
 	@Override

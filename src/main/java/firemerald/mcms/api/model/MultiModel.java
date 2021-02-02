@@ -84,9 +84,17 @@ public abstract class MultiModel<M extends MultiModel<M, T>, T extends Bone<T>> 
 	}
 	
 	@Override
-	public void render(Map<String, Matrix4d> map, Runnable defaultTexture)
+	public void render(IModelHolder holder, Map<String, Matrix4d> map, Runnable defaultTexture)
 	{
-		for (T base : this.base) if (base instanceof RenderBone<?>) ((RenderBone<?>) base).render(map, defaultTexture);
+		Matrix4d root = new Matrix4d();
+		base.stream().filter(base -> base instanceof IRenderBone).forEach(base -> ((IRenderBone<?>) base).render(holder, map, root, defaultTexture));
+	}
+
+	@Override
+	public void tick(IModelHolder holder, Map<String, Matrix4d> pos, float deltaTime)
+	{
+		Matrix4d root = new Matrix4d();
+		base.stream().filter(base -> base instanceof ITickableBone).forEach(base -> ((ITickableBone<?>) base).tick(holder, pos, root, deltaTime));
 	}
 
 	@Override
@@ -99,12 +107,12 @@ public abstract class MultiModel<M extends MultiModel<M, T>, T extends Bone<T>> 
 	public RaytraceResult rayTrace(float fx, float fy, float fz, float dx, float dy, float dz, Map<String, Matrix4d> transformations, Matrix4d root)
 	{
 		RaytraceResult result = null;
-		for (T bone : base) if (bone instanceof RenderBone)
+		for (T bone : base) if (bone instanceof IRaytraceBone)
 		{
 			Matrix4d transformation = transformations.get(bone.name);
 			if (transformation == null) transformation = new Matrix4d();
 			transformation = root.mul(transformation, new Matrix4d());
-			RaytraceResult res = ((RenderBone<?>) bone).raytrace(fx, fy, fz, dx, dy, dz, transformations, transformation);
+			RaytraceResult res = ((IRaytraceBone<?>) bone).raytrace(fx, fy, fz, dx, dy, dz, transformations, transformation);
 			if (res != null && (result == null || res.m < result.m)) result = res;
 		}
 		return result;

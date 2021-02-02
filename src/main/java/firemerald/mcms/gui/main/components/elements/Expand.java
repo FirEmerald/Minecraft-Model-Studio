@@ -2,7 +2,7 @@ package firemerald.mcms.gui.main.components.elements;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.ComponentButton;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.util.Textures;
 import firemerald.mcms.util.mesh.Meshes;
 
@@ -35,9 +35,9 @@ public class Expand extends ComponentButton
 	public void render(ButtonState state)
 	{
 		Main main = Main.instance;
-		Shader s = main.shader;
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
+		GuiShader s = main.guiShader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
 		s.updateModel();
 		main.textureManager.bindTexture(entry.expanded ? Textures.MODEL_RETRACT : Textures.MODEL_EXPAND);
 		Meshes.X16.render();
@@ -45,21 +45,21 @@ public class Expand extends ComponentButton
 		switch (state)
 		{
 		case DISABLED:
-			main.shader.setColor(.5f, .5f, .5f, .5f);
+			main.guiShader.setColor(.5f, .5f, .5f, .5f);
 			break;
 		case HOVER:
-			main.shader.setColor(0, 0, 1, .25f);
+			main.guiShader.setColor(0, 0, 1, .25f);
 			break;
 		case PUSH:
-			main.shader.setColor(0, 0, 1, .5f);
+			main.guiShader.setColor(0, 0, 1, .5f);
 			break;
 		default:
-			main.shader.setColor(0, 0, 0, 0);
+			main.guiShader.setColor(0, 0, 0, 0);
 			break;
 		}
 		Meshes.X16.render();
-		main.shader.setColor(1, 1, 1, 1);
-		Shader.MODEL.pop();
+		main.guiShader.setColor(1, 1, 1, 1);
+		GuiShader.MODEL.pop();
 		s.updateModel();
 	}
 }

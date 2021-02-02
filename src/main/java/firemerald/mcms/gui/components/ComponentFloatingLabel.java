@@ -1,12 +1,11 @@
 package firemerald.mcms.gui.components;
 
 import firemerald.mcms.Main;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.util.ClipboardUtil;
 import firemerald.mcms.util.EnumTextAlignment;
 import firemerald.mcms.util.RenderUtil;
 import firemerald.mcms.util.font.FontRenderer;
-import firemerald.mcms.util.mesh.Mesh;
 import firemerald.mcms.window.api.Cursor;
 import firemerald.mcms.window.api.Key;
 import firemerald.mcms.window.api.Modifier;
@@ -21,7 +20,6 @@ public class ComponentFloatingLabel extends Component
 	protected float selX1, selX2;
 	public float clickTime = 0;
 	public int clickNum = 0;
-	protected final Mesh mesh;
 	private EnumTextAlignment alignment = EnumTextAlignment.LEFT;
 	private int offset = 0;
 	
@@ -40,7 +38,6 @@ public class ComponentFloatingLabel extends Component
 	public ComponentFloatingLabel(int x1, int y1, int x2, int y2, FontRenderer font)
 	{
 		super(x1, y1, x2, y2);
-		mesh = new Mesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
 		this.font = font;
 	}
 	
@@ -48,7 +45,6 @@ public class ComponentFloatingLabel extends Component
 	public void setSize(int x1, int y1, int x2, int y2)
 	{
 		super.setSize(x1, y1, x2, y2);
-		mesh.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
 		updateOffset();
 		updatePos();
 	}
@@ -188,22 +184,18 @@ public class ComponentFloatingLabel extends Component
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
-		RenderUtil.pushStencil();
-		RenderUtil.startStencil(false);
-		Main.instance.textureManager.unbindTexture();
-		mesh.render();
-		RenderUtil.endStencil();
-		Shader s = Main.instance.shader;
+		this.setScissor(0, 0, x2 - x1, y2 - y1);
+		GuiShader s = Main.instance.guiShader;
 		font.drawTextLine(text, x1 + offset, y2 - (5 + font.height), getTheme().getTextColor(), false, false, false);
 		Main.instance.textureManager.unbindTexture();
 		if (selStart != selEnd)
 		{
 			s.setColor(0, 0, 1, .5f);
-			Main.MODMESH.setMesh(selX1 + offset, y1 + 2, selX2 + offset, y2 - 2, 0, 0, 0, 1, 1);
-			Main.MODMESH.render();
+			Main.guiTempMesh.setMesh(selX1 + offset, y1 + 2, selX2 + offset, y2 - 2, 0, 0, 1, 1);
+			Main.guiTempMesh.render();
 		}
 		s.setColor(1, 1, 1, 1);
-		RenderUtil.popStencil();
+		RenderUtil.popScissor();
 	}
 
 	@Override

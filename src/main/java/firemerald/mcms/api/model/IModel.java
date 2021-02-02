@@ -10,7 +10,9 @@ import firemerald.mcms.util.GuiUpdate;
 
 public interface IModel<M extends IModel<M, T>, T extends Bone<T>> extends IRaytraceTarget, IRigged<IModel<M, T>, T>, IClonableObject<IModel<M, T>>
 {
-	public void render(Map<String, Matrix4d> pos, Runnable defaultTexture);
+	public void tick(IModelHolder holder, Map<String, Matrix4d> pos, float deltaTime);
+	
+	public void render(IModelHolder holder, Map<String, Matrix4d> pos, Runnable defaultTexture);
 	
 	public void cleanUp();
 	

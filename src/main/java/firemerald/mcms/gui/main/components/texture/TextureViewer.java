@@ -7,10 +7,9 @@ import firemerald.mcms.gui.components.Component;
 import firemerald.mcms.gui.components.scrolling.*;
 import firemerald.mcms.texture.Texture;
 import firemerald.mcms.theme.ThemeElement;
-import firemerald.mcms.util.EditorMode;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.RenderUtil;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.window.api.Cursor;
 import firemerald.mcms.window.api.Modifier;
 
@@ -22,7 +21,7 @@ public class TextureViewer extends Component implements IScrollable, IScrollable
 	public int width = 0;
 	protected float scrollH = 0;
 	protected float scrollSizeH = 0;
-	public final Mesh border = new Mesh(), inside = new Mesh();
+	public final GuiMesh border = new GuiMesh(), inside = new GuiMesh();
 	public ThemeElement rect;
 	public float h = 0, w = 0;
 	public ScrollBar scrollBar = null;
@@ -55,8 +54,8 @@ public class TextureViewer extends Component implements IScrollable, IScrollable
 		h = y2 - y1;
 		w = x2 - x1;
 		updateScrollSize();
-		border.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
-		inside.setMesh(x1 + 1, y1 + 1, x2 - 1, y2 - 1, 0, 0, 0, 1, 1);
+		border.setMesh(x1, y1, x2, y2, 0, 0, 1, 1);
+		inside.setMesh(x1 + 1, y1 + 1, x2 - 1, y2 - 1, 0, 0, 1, 1);
 		onGuiUpdate(GuiUpdate.THEME);
 	}
 	
@@ -159,7 +158,7 @@ public class TextureViewer extends Component implements IScrollable, IScrollable
 	@Override
 	public void tick(float mx, float my, float deltaTime)
 	{
-		if (Main.instance.project.getTexture() != null && Main.instance.getEditorMode() == EditorMode.TEXTURE) Main.instance.tool.drawOnOverlay(Main.instance.getOverlay(), getTexU(mx), getTexV(my));
+		if (Main.instance.project.getTexture() != null) Main.instance.tool.drawOnOverlay(Main.instance.getOverlay(), getTexU(mx), getTexV(my));
 	}
 
 	@Override
@@ -171,26 +170,22 @@ public class TextureViewer extends Component implements IScrollable, IScrollable
 		Texture tex = project.getTexture();
 		rect.bind();
 		border.render();
-		main.textureManager.unbindTexture();
-		main.shader.setColor(1, 1, 1, 1);
-		RenderUtil.pushStencil();
-		RenderUtil.startStencil(false);
-		inside.render();
-		RenderUtil.endStencil();
-		main.shader.setTexSection(scrollH / tw, scroll / th, (scrollH + w - 2) / tw, (scroll + h - 2) / th);
+		this.setScissor(1, 1, x2 - x1 - 2, y2 - y1 - 2);
+		main.guiShader.setColor(1, 1, 1, 1);
+		main.guiShader.setTexSection(scrollH / tw, scroll / th, (scrollH + w - 2) / tw, (scroll + h - 2) / th);
 		project.bindTex();
 		//System.out.println(main.project.getTexture());
-		if (tex != null && main.getEditorMode() == EditorMode.TEXTURE) main.shader.setOverlayTexture(main.getOverlay());
-		main.shader.setClipOutside(true);
+		if (tex != null) main.guiShader.setOverlayTexture(main.getOverlay());
+		main.guiShader.setClipOutside(true);
 		inside.render();
-		main.shader.setClipOutside(false);
-    	main.shader.setTexIdentity();
+		main.guiShader.setClipOutside(false);
+    	main.guiShader.setTexIdentity();
     	project.unbindTex();
-		if (tex != null && main.getEditorMode() == EditorMode.TEXTURE) main.shader.setOverlayTexture(null);
+		if (tex != null) main.guiShader.setOverlayTexture(null);
     	if (main.trace != null && main.trace.hit instanceof IModelEditable)((IModelEditable) main.trace.hit).drawOnTexture(x1 - scrollH, y1 - scroll, tw, th);
     	else if (main.getEditingModel() != null) main.getEditingModel().drawOnTexture(x1 - scrollH, y1 - scroll, tw, th);
+    	RenderUtil.popScissor();
 		//TODO rendering
-		RenderUtil.popStencil();
 	}
 	
 	@Override
@@ -240,18 +235,18 @@ public class TextureViewer extends Component implements IScrollable, IScrollable
 	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
-		if (Main.instance.project.getTexture() != null && Main.instance.getEditorMode() == EditorMode.TEXTURE) Main.instance.tool.onMouseClick(Main.instance.project.getTexture(), prevU = getTexU(mx), prevV = getTexV(my), button);
+		if (Main.instance.project.getTexture() != null) Main.instance.tool.onMouseClick(Main.instance.project.getTexture(), prevU = getTexU(mx), prevV = getTexV(my), button);
 	}
 
 	@Override
 	public void onMouseReleased(float mx, float my, int button, int mods)
 	{
-		if (Main.instance.project.getTexture() != null && Main.instance.getEditorMode() == EditorMode.TEXTURE) Main.instance.tool.onMouseRelease(Main.instance.project.getTexture(), prevU = getTexU(mx), prevV = getTexV(my), button);
+		if (Main.instance.project.getTexture() != null) Main.instance.tool.onMouseRelease(Main.instance.project.getTexture(), prevU = getTexU(mx), prevV = getTexV(my), button);
 	}
 
 	@Override
 	public void onDrag(float mx, float my, int button)
 	{
-		if (Main.instance.project.getTexture() != null && Main.instance.getEditorMode() == EditorMode.TEXTURE) Main.instance.tool.onMouseDrag(Main.instance.project.getTexture(), prevU, prevV, prevU = getTexU(mx), prevV = getTexV(my), button, false);
+		if (Main.instance.project.getTexture() != null) Main.instance.tool.onMouseDrag(Main.instance.project.getTexture(), prevU, prevV, prevU = getTexU(mx), prevV = getTexV(my), button, false);
 	}
 }

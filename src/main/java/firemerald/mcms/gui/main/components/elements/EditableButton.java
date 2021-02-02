@@ -2,7 +2,7 @@ package firemerald.mcms.gui.main.components.elements;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.ComponentButton;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.ResourceLocation;
@@ -32,9 +32,9 @@ public abstract class EditableButton extends ComponentButton
 	public void render(ButtonState state)
 	{
 		Main main = Main.instance;
-		Shader s = main.shader;
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
+		GuiShader s = main.guiShader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
 		s.updateModel();
 		state.applyButtonEffects();
 		rect.bind();
@@ -42,7 +42,7 @@ public abstract class EditableButton extends ComponentButton
 		main.textureManager.bindTexture(getTexture());
 		Meshes.X32.render();
 		state.removeButtonEffects();
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 	}
 	

@@ -5,8 +5,8 @@ import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.gui.components.ComponentButton;
 import firemerald.mcms.gui.components.IComponent;
 import firemerald.mcms.model.EditorPanes;
-import firemerald.mcms.shader.Shader;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.shader.GuiShader;
+import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.util.mesh.Meshes;
 import firemerald.mcms.window.api.MouseButtons;
 
@@ -14,7 +14,7 @@ public class Selection extends ComponentButton
 {
 	public final ComponentEditSelector selector;
 	public final SelectorEntry entry;
-	public final Mesh selection = new Mesh();
+	public final GuiMesh selection = new GuiMesh();
 	private String name = "";
 	private boolean dragging = false;
 	private float pMX, pMY;
@@ -33,7 +33,7 @@ public class Selection extends ComponentButton
 	{
 		int w = 16 + Main.instance.fontMsg.getStringWidth(name = entry.editable.getName());
 		x2 = entry.x + 48 + w;
-		selection.setMesh(0, 0, w, 16, 0, 0, 0, 1, 1);
+		selection.setMesh(0, 0, w, 16, 0, 0, 1, 1);
 	}
 	
 	@Override
@@ -144,21 +144,21 @@ public class Selection extends ComponentButton
 				{
 					Main main = Main.instance;
 					main.textureManager.unbindTexture();
-					main.shader.setColor(0, 0, 0, 1);
+					main.guiShader.setColor(0, 0, 0, 1);
 					if (above)
 					{
-						Main.MODMESH.setMesh(over.x1, over.y1, over.x2, over.y1 + 1, 0, 0, 0, 1, 1);
+						Main.guiTempMesh.setMesh(over.x1, over.y1, over.x2, over.y1 + 1, 0, 0, 1, 1);
 					}
 					else if (below)
 					{
-						Main.MODMESH.setMesh(over.x1, over.y2 - 1, over.x2, over.y2, 0, 0, 0, 1, 1);
+						Main.guiTempMesh.setMesh(over.x1, over.y2 - 1, over.x2, over.y2, 0, 0, 1, 1);
 					}
 					else
 					{
-						Main.MODMESH.setMesh(over.x1, over.y1 + 8, over.x2, over.y1 + 9, 0, 0, 0, 1, 1);
+						Main.guiTempMesh.setMesh(over.x1, over.y1 + 8, over.x2, over.y1 + 9, 0, 0, 1, 1);
 					}
-					Main.MODMESH.render();
-					main.shader.setColor(1, 1, 1, 1);
+					Main.guiTempMesh.render();
+					main.guiShader.setColor(1, 1, 1, 1);
 				}
 			}
 		}
@@ -168,9 +168,9 @@ public class Selection extends ComponentButton
 	public void render(ButtonState state)
 	{
 		Main main = Main.instance;
-		Shader s = main.shader;
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
+		GuiShader s = main.guiShader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
 		s.updateModel();
 		main.textureManager.bindTexture(entry.editable.getDisplayIcon());
 		Meshes.X16.render();
@@ -178,31 +178,31 @@ public class Selection extends ComponentButton
 		main.textureManager.unbindTexture();
 		if (main.getEditingModel() == entry.editable)
 		{
-			main.shader.setColor(1, 1, 1, .5f);
+			main.guiShader.setColor(1, 1, 1, .5f);
 			selection.render();
 		}
 		if (dragging)
 		{
-			main.shader.setColor(0, 1, 1, .5f);
+			main.guiShader.setColor(0, 1, 1, .5f);
 		}
 		else switch (state)
 		{
 		case DISABLED:
-			main.shader.setColor(.5f, .5f, .5f, .5f);
+			main.guiShader.setColor(.5f, .5f, .5f, .5f);
 			break;
 		case HOVER:
-			main.shader.setColor(0, 0, 1, .25f);
+			main.guiShader.setColor(0, 0, 1, .25f);
 			break;
 		case PUSH:
-			main.shader.setColor(0, 0, 1, .5f);
+			main.guiShader.setColor(0, 0, 1, .5f);
 			break;
 		default:
-			main.shader.setColor(0, 0, 0, 0);
+			main.guiShader.setColor(0, 0, 0, 0);
 			break;
 		}
 		selection.render();
-		main.shader.setColor(1, 1, 1, 1);
-		Shader.MODEL.pop();
+		main.guiShader.setColor(1, 1, 1, 1);
+		GuiShader.MODEL.pop();
 		s.updateModel();
 	}
 }

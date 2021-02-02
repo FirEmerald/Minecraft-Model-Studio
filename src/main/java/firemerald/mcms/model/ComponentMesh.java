@@ -10,25 +10,26 @@ import org.lwjgl.opengl.GL11;
 import firemerald.mcms.Main;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.gui.popups.GuiPopupException;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.MathUtil;
 import firemerald.mcms.util.TextureRaytraceResult;
-import firemerald.mcms.util.mesh.Mesh;
-import firemerald.mcms.util.mesh.Mesh.DrawMode;
+import firemerald.mcms.util.mesh.DrawMode;
+import firemerald.mcms.util.mesh.GuiMesh;
+import firemerald.mcms.util.mesh.ModelMesh;
 
 public abstract class ComponentMesh extends ModelComponent
 {
-	protected final Mesh mesh;
-	protected final Mesh texMesh = new Mesh(DrawMode.LINES);
+	protected final ModelMesh mesh;
+	protected final GuiMesh texMesh = new GuiMesh(DrawMode.LINES);
 	
-	public ComponentMesh(Mesh mesh, String name)
+	public ComponentMesh(ModelMesh mesh, String name)
 	{
 		super(name);
 		this.mesh = mesh;
 	}
 	
-	public ComponentMesh(Mesh mesh, IComponentParent parent, String name)
+	public ComponentMesh(ModelMesh mesh, IComponentParent parent, String name)
 	{
 		super(parent, name);
 		this.mesh = mesh;
@@ -41,13 +42,16 @@ public abstract class ComponentMesh extends ModelComponent
 	}
 
 	@Override
-	public void doRender(Runnable defaultTexture)
+	public void doRender(Object holder, Matrix4d currentTransform, Runnable defaultTexture)
 	{
 		boolean traced = (Main.instance.trace != null) && (Main.instance.trace.hit == this);
-		if (traced) Main.instance.shader.setColor(.5f, .5f, 1, 1);
+		if (traced) Main.instance.guiShader.setColor(.5f, .5f, 1, 1);
 		mesh.render();
-		if (traced) Main.instance.shader.setColor(1, 1, 1, 1);
+		if (traced) Main.instance.guiShader.setColor(1, 1, 1, 1);
 	}
+
+	@Override
+	public void doTick(Object holder, Matrix4d currentTransform, float deltaTime) {}
 	
 	public void setTexMesh()
 	{
@@ -93,17 +97,10 @@ public abstract class ComponentMesh extends ModelComponent
 		}
 		int[] indsArray = new int[inds.size()];
 		for (int i = 0; i < indsArray.length; i++) indsArray[i] = inds.get(i);
-		float[] vertsArray = new float[verts.size() * 3 / 2];
+		float[] vertsArray = new float[verts.size()];
 		float[] texsArray = new float[verts.size()];
-		int j = 0;
-		for (int i = 0; i < vertsArray.length; i += 3)
-		{
-			vertsArray[i] = texsArray[j] = verts.get(j);
-			vertsArray[i + 1] = texsArray[j + 1] = verts.get(j + 1);
-			vertsArray[i + 2] = 0;
-			j += 2;
-		}
-		texMesh.setMesh(vertsArray, texsArray, new float[vertsArray.length], indsArray);
+		for (int i = 0; i < vertsArray.length; i ++) vertsArray[i] = texsArray[i] = verts.get(i);
+		texMesh.setMesh(vertsArray, texsArray, indsArray);
 	}
 
 	@Override
@@ -150,7 +147,7 @@ public abstract class ComponentMesh extends ModelComponent
 		}
 	}
 
-	public Mesh mesh()
+	public ModelMesh mesh()
 	{
 		return mesh;
 	}
@@ -182,17 +179,17 @@ public abstract class ComponentMesh extends ModelComponent
 		GL11.glEnable(GL11.GL_BLEND);
 		//GL14.glBlendFuncSeparate(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR, GL11.GL_ONE, GL11.GL_ZERO);
 		//GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ZERO);
-		if (texMesh.drawMode.stride < 3) Main.instance.shader.setColor(0, 0, 0, 1);
-		else Main.instance.shader.setColor(0, 0, 0, 0.5f);
+		if (texMesh.drawMode.stride < 3) Main.instance.guiShader.setColor(0, 0, 0, 1);
+		else Main.instance.guiShader.setColor(0, 0, 0, 0.5f);
 		Main.instance.textureManager.unbindTexture();
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x, y, 0);
-		Shader.MODEL.matrix().scale(sizeX, sizeY, 1);
-		Main.instance.shader.updateModel();
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x, y, 0);
+		GuiShader.MODEL.matrix().scale(sizeX, sizeY, 1);
+		Main.instance.guiShader.updateModel();
 		texMesh.render();
-		Main.instance.shader.setColor(1, 1, 1, 1);
-		Shader.MODEL.pop();
-		Main.instance.shader.updateModel();
+		Main.instance.guiShader.setColor(1, 1, 1, 1);
+		GuiShader.MODEL.pop();
+		Main.instance.guiShader.updateModel();
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 	}
 }

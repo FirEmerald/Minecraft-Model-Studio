@@ -2,9 +2,8 @@ package firemerald.mcms.gui.components;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.GuiElementContainer;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.util.RenderUtil;
-import firemerald.mcms.util.mesh.Mesh;
 import firemerald.mcms.window.api.Cursor;
 
 public class ComponentPane extends GuiElementContainer implements IComponent
@@ -13,7 +12,6 @@ public class ComponentPane extends GuiElementContainer implements IComponent
 	public boolean isFocused = false;
 	protected int margin;
 	protected int ex1, ey1;
-	public final Mesh inside = new Mesh();
 	
 	public ComponentPane(int x1, int y1, int x2, int y2)
 	{
@@ -38,7 +36,6 @@ public class ComponentPane extends GuiElementContainer implements IComponent
 		this.y2 = y2;
 		ex1 = x1 + margin;
 		ey1 = y1 + margin;
-		inside.setMesh(ex1, ey1, x2 - margin, y2 - margin, 0, 0, 0, 1, 1);
 	}
 	
 	public void setMargin(int margin)
@@ -46,7 +43,6 @@ public class ComponentPane extends GuiElementContainer implements IComponent
 		this.margin = margin;
 		ex1 = x1 + margin;
 		ey1 = y1 + margin;
-		inside.setMesh(ex1, ey1, x2 - margin, y2 - margin, 0, 0, 0, 1, 1);
 	}
 	
 	@Override
@@ -75,24 +71,15 @@ public class ComponentPane extends GuiElementContainer implements IComponent
 	@Override
 	public void render(float mx, float my, boolean canHover)
 	{
-		Shader s = Main.instance.shader;
-		RenderUtil.pushStencil();
-		RenderUtil.startStencil(false);
-		this.renderStencilArea();
-		RenderUtil.endStencil();
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(ex1, ey1, 0);
+		GuiShader s = Main.instance.guiShader;
+		this.setScissor(margin, margin, x2 - x1 - (margin << 1), y2 - y1 - (margin << 1));
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(ex1, ey1, 0);
 		s.updateModel();
 		super.render(mx - ex1, my - ey1, canHover);
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
-		RenderUtil.popStencil();
-	}
-	
-	public void renderStencilArea()
-	{
-		Main.instance.textureManager.unbindTexture();
-		inside.render();
+		RenderUtil.popScissor();
 	}
 
 	@Override

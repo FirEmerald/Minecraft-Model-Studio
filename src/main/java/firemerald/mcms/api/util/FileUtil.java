@@ -421,7 +421,7 @@ public class FileUtil
 	
 	public static void writeFloat(OutputStream out, float val) throws IOException
 	{
-		writeInt(out, Float.floatToIntBits(val));
+		writeInt(out, Float.floatToRawIntBits(val));
 	}
 	
 	public static float readFloat(InputStream in) throws IOException
@@ -431,7 +431,7 @@ public class FileUtil
 	
 	public static void writeDouble(OutputStream out, double val) throws IOException
 	{
-		writeLong(out, Double.doubleToLongBits(val));
+		writeLong(out, Double.doubleToRawLongBits(val));
 	}
 	
 	public static double readDouble(InputStream in) throws IOException

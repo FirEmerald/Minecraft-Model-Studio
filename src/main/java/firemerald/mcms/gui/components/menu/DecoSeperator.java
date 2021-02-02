@@ -5,14 +5,14 @@ import firemerald.mcms.gui.IGuiHolder;
 import firemerald.mcms.theme.GuiTheme;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 
 public class DecoSeperator implements IGuiElement
 {
 	public int thickness, offset;
 	public int x1, y1, x2, y2;
 	public ThemeElement rect = null;
-	public final Mesh mesh = new Mesh();
+	public final GuiMesh mesh = new GuiMesh();
 	public IGuiHolder holder = null;
 
 	@Override
@@ -51,7 +51,7 @@ public class DecoSeperator implements IGuiElement
 		this.x2 = x2;
 		this.y2 = y2;
 		onGuiUpdate(GuiUpdate.THEME);
-		mesh.setMesh(x1, y1, x2, y2, 0, 0, 0, 1, 1);
+		mesh.setMesh(x1, y1, x2, y2, 0, 0, 1, 1);
 	}
 	
 	@Override

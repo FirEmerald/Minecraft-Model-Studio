@@ -13,7 +13,7 @@ import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.ModelMesh;
 
 public class ComponentMeshTrue extends ComponentMesh
 {
@@ -26,7 +26,7 @@ public class ComponentMeshTrue extends ComponentMesh
 	 */
 	protected float texSizeU = 0, texSizeV = 0;
 	
-	public ComponentMeshTrue(Mesh mesh, String name)
+	public ComponentMeshTrue(ModelMesh mesh, String name)
 	{
 		super(mesh, name);
 		origUV = mesh.getTexs();
@@ -34,7 +34,7 @@ public class ComponentMeshTrue extends ComponentMesh
 		setTexs();
 	}
 	
-	public ComponentMeshTrue(Mesh mesh, IComponentParent parent, String name)
+	public ComponentMeshTrue(ModelMesh mesh, IComponentParent parent, String name)
 	{
 		super(mesh, parent, name);
 		origUV = mesh.getTexs();

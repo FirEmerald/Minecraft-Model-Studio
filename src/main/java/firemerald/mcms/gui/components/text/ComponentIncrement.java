@@ -2,17 +2,17 @@ package firemerald.mcms.gui.components.text;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.gui.components.ComponentButton;
-import firemerald.mcms.shader.Shader;
+import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.theme.EnumDirection;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.GuiUpdate;
-import firemerald.mcms.util.mesh.Mesh;
+import firemerald.mcms.util.mesh.GuiMesh;
 
 public abstract class ComponentIncrement extends ComponentButton
 {
 	public static final int ARROW_W = 10;
 	public static final int ARROW_H = 10;
-	public static final Mesh ARROW = new Mesh(0, 0, ARROW_W, ARROW_H, 0, 0, 0, 1, 1);
+	public static final GuiMesh ARROW = new GuiMesh(0, 0, ARROW_W, ARROW_H, 0, 0, 1, 1);
 	
 	public ThemeElement id;
 	public boolean isNegative;
@@ -69,15 +69,15 @@ public abstract class ComponentIncrement extends ComponentButton
 	@Override
 	public void render(ButtonState state)
 	{
-		Shader s = Main.instance.shader;
-		Shader.MODEL.push();
-		Shader.MODEL.matrix().translate(x1, y1, 0);
+		GuiShader s = Main.instance.guiShader;
+		GuiShader.MODEL.push();
+		GuiShader.MODEL.matrix().translate(x1, y1, 0);
 		s.updateModel();
 		state.applyButtonEffects();
 		id.bind();
 		ARROW.render();
 		state.removeButtonEffects();
-		Shader.MODEL.pop();
+		GuiShader.MODEL.pop();
 		s.updateModel();
 	}
 }
