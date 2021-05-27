@@ -151,6 +151,7 @@ public class ComponentPoseFrame extends ElementButton implements IEditable
 	@Override
 	public void onDeselect(EditorPanes editorPanes)
 	{
+		transform.rotation.onDeselect(editorPanes);
 		GuiElementContainer editor = editorPanes.editor.container;
 		editor.removeElement(labelName);
 		editor.removeElement(labelPos);
@@ -196,7 +197,6 @@ public class ComponentPoseFrame extends ElementButton implements IEditable
 		scaleZP    = null;
 		scaleZS    = null;
 		rotMode    = null;
-		transform.rotation.onDeselect(editorPanes);
 	}
 
 	@Override

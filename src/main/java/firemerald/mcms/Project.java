@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.function.BiConsumer;
@@ -35,6 +36,8 @@ import firemerald.mcms.gui.popups.GuiPopupUnsavedChanges;
 import firemerald.mcms.model.ProjectModel;
 import firemerald.mcms.model.RenderObjectComponents;
 import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.EnumTextureSpace;
+import firemerald.mcms.texture.space.Material;
 import firemerald.mcms.util.EnumPlaybackMode;
 import firemerald.mcms.util.FileUtils;
 import firemerald.mcms.util.GuiUpdate;
@@ -72,14 +75,14 @@ public class Project
 	protected IModel<?, ? extends RenderObjectComponents<?>> model;
 	protected final Map<String, Integer> overrideTextureWidth = new HashMap<>();
 	protected final Map<String, Integer> overrideTextureHeight = new HashMap<>();
-	protected final Map<String, Texture> textures = new LinkedHashMap<>();
+	protected final Map<String, Material> textures = new LinkedHashMap<>();
 	protected String textureName;
-	protected Texture texture;
+	protected Material texture;
 	protected final Map<String, Pair<IAnimation, ExtendedAnimationState>> animations = new LinkedHashMap<>();
 	protected String animationName;
 	protected IAnimation animation;
 	protected ExtendedAnimationState animationState;
-	public final Map<IModel<?, ? extends RenderObjectComponents<?>>, Texture> lockedModels = new HashMap<>();
+	public final Map<IModel<?, ? extends RenderObjectComponents<?>>, Material> lockedModels = new LinkedHashMap<>();
 	
 	public static class ExtendedAnimationState extends AnimationState
 	{
@@ -729,14 +732,25 @@ public class Project
 		return textures.keySet();
 	}
 	
-	public Texture getTexture()
+	public Material getTexture()
 	{
-		return texture;
+		return texture == null ? null : texture;
 	}
 	
-	public Texture getTexture(String name)
+	public Texture getTexture(EnumTextureSpace texSpace)
+	{
+		return texture == null ? null : texture.getTexture(texSpace);
+	}
+	
+	public Material getTexture(String name)
 	{
 		return textures.get(name);
+	}
+	
+	public Texture getTexture(String name, EnumTextureSpace texSpace)
+	{
+		Material mat = textures.get(name);
+		return mat == null ? null : mat.getTexture(texSpace);
 	}
 	
 	public String getTextureName()
@@ -749,7 +763,7 @@ public class Project
 		if (this.textureName != null && !this.textureName.equals(textureName))
 		{
 			this.setNeedsSave();
-			Map<String, Texture> copy = new LinkedHashMap<>(this.textures);
+			Map<String, Material> copy = new LinkedHashMap<>(this.textures);
 			this.textures.clear();
 			copy.forEach((name, texture) -> this.textures.put(name.equals(this.textureName) ? textureName : name, texture));
 			this.textureName = textureName;
@@ -765,7 +779,7 @@ public class Project
 			else
 			{
 				this.setNeedsSave();
-				Map<String, Texture> copy = new LinkedHashMap<>(this.textures);
+				Map<String, Material> copy = new LinkedHashMap<>(this.textures);
 				this.textures.clear();
 				copy.forEach((name, texture) -> this.textures.put(name.equals(oldTextureName) ? textureName : name, texture));
 				Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
@@ -788,12 +802,12 @@ public class Project
 			}
 			else
 			{
-				Texture texture = textures.get(textureName);
-				if (texture != null)
+				Material textures = this.textures.get(textureName);
+				if (textures != null)
 				{
 					this.textureName = textureName;
-					this.texture = texture;
-					if (lockedModels.containsKey(model)) lockedModels.put(model, texture);
+					this.texture = textures;
+					if (lockedModels.containsKey(model)) lockedModels.put(model, textures);
 					Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 				}
 			}
@@ -801,12 +815,12 @@ public class Project
 		}
 	}
 
-	public String getTextureName(Texture texture)
+	public String getTextureName(Material texture)
 	{
 		if (texture == null) return null;
 		else try
 		{
-			return textures.entrySet().stream().filter(entry -> entry.getValue() == texture).map(entry -> entry.getKey()).findFirst().get();
+			return textures.entrySet().stream().filter(entry -> Objects.equals(entry.getValue(), texture)).map(entry -> entry.getKey()).findFirst().get();
 		}
 		catch (NoSuchElementException e)
 		{
@@ -814,7 +828,7 @@ public class Project
 		}
 	}
 	
-	public void setTexture(Texture texture)
+	public void setTexture(Material texture)
 	{
 		if (texture != this.texture)
 		{
@@ -843,7 +857,7 @@ public class Project
 		}
 	}
 	
-	public void addTexture(String textureName, Texture texture)
+	public void addTexture(String textureName, Material texture)
 	{
 		if (textureName == null) textureName = MiscUtil.ensureUnique("untitled", textures.keySet());
 		if (!textureName.equals(this.textureName) || texture != this.texture)
@@ -870,7 +884,7 @@ public class Project
 				if (name.equals(textureName)) break;
 				prevTextureName = name;
 			}
-			Texture tex = textures.remove(textureName);
+			Material tex = textures.remove(textureName);
 			if (lockedModels.get(model) == tex) lockedModels.put(model, null);
 			this.setTexture(prevTextureName);
 		}
@@ -882,7 +896,7 @@ public class Project
 		else if (textureName != null)
 		{
 			this.setNeedsSave();
-			Texture tex = textures.remove(textureName);
+			Material tex = textures.remove(textureName);
 			if (lockedModels.get(model) == tex) lockedModels.put(model, null);
 			Main.instance.onGuiUpdate(GuiUpdate.TEXTURE);
 		}
@@ -1036,18 +1050,7 @@ public class Project
 			Main.instance.onGuiUpdate(GuiUpdate.ANIMATION);
 		}
 	}
-	
-	public void bindTex()
-	{
-		if (texture != null) texture.bind();
-		else Main.instance.textureManager.unbindTexture();
-	}
-	
-	public void unbindTex()
-	{
-		Main.instance.textureManager.unbindTexture();
-	}
-	
+
 	public void export()
 	{
 		File dir = FileUtils.getFolder(name);
@@ -1057,8 +1060,13 @@ public class Project
 			if (dir.exists()) {} //TODO check for existing files
 			else dir.mkdirs();
 			DataType type = DataType.XML; //default is XML format
-			this.textures.forEach((name, texture) -> {
-				 texture.saveTexture(new File(dir, name + ".png"));
+			this.textures.forEach((name, texture) -> { //TODO select oldPBR or labPBR
+				texture.getDiffuse().saveTexture(new File(dir, name + ".png"));
+				for (EnumTextureSpace space : Main.instance.state.getRenderMode().textureSpaces)
+				{
+					Texture tex = texture.getTexture(space);
+					if (tex != null) tex.saveTexture(new File(dir, name + space.suffix + ".png"));
+				}
 			});
 			if (this.useBackingSkeleton) //save backing skeleton
 			{
@@ -1413,7 +1421,7 @@ public class Project
 			case "texture":
 			{
 				String texName = MiscUtil.ensureUnique(child.getString("name", "untitled"), textures.keySet());
-				Texture texture = Texture.load(child);
+				Material texture = Material.load(child);
 				if (texture != null) textures.put(texName, texture);
 				break;
 			}
@@ -1477,7 +1485,7 @@ public class Project
 				IModel<?, ? extends RenderObjectComponents<?>> model = models.get(modName);
 				if (model != null)
 				{
-					Texture tex;
+					Material tex;
 					if (texName == null) tex = null;
 					else
 					{
@@ -1509,6 +1517,12 @@ public class Project
 				else Main.LOGGER.warn("Could not restore locked animation " + animName + " as it did not exist in the project file");
 			}
 		});
+		this.models.values().forEach(model -> {
+			String name = this.getModelName(model);
+			viewTextureWidth = overrideTextureWidth.containsKey(name) ? overrideTextureWidth.get(name) : textureWidth;
+			viewTextureHeight = overrideTextureHeight.containsKey(name) ? overrideTextureHeight.get(name) : textureHeight;
+			model.updateTex();
+		});
 		this.modelName = modelName;
 		this.textureName = textureName;
 		this.animationName = animationName;
@@ -1531,8 +1545,17 @@ public class Project
 			viewTextureWidth = overrideTextureWidth.containsKey(modelName) ? overrideTextureWidth.get(modelName) : textureWidth;
 			viewTextureHeight = overrideTextureHeight.containsKey(modelName) ? overrideTextureHeight.get(modelName) : textureHeight;
 		}
-		if (textureName == null) texture = null;
-		else if ((texture = textures.get(textureName)) == null) textureName = null;
+		if (textureName == null) this.texture = null;
+		else
+		{
+			Material texs = textures.get(textureName);
+			if (texs == null)
+			{
+				this.texture = null;
+				textureName = null;
+			}
+			else this.texture = texs;
+		}
 		if (animationName == null) animation = null;
 		else
 		{
@@ -1544,7 +1567,6 @@ public class Project
 			}
 			else animationState = pair.right;
 		}
-		this.models.values().forEach(IModel::updateTex);
 		updateModelTitlebarElements();
 		updateTextureTitlebarElements();
 		updateAnimationTitlebarElements();

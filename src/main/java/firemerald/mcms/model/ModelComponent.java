@@ -13,6 +13,7 @@ import org.joml.Matrix4d;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4d;
+import org.joml.Vector4f;
 
 import firemerald.mcms.Main;
 import firemerald.mcms.api.animation.Transformation;
@@ -33,8 +34,9 @@ import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.shader.ModelShaderBase;
-import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.Material;
 import firemerald.mcms.util.ObjUtil;
+import firemerald.mcms.util.Pair;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.mesh.ModelMesh;
 
@@ -297,7 +299,8 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 			for (int i = 0; i < fData.length; i++)
 			{
 				float[] vData = fData[i];
-				vInd[i][0] = ObjUtil.getSetIndex(obj.vertices, to3(trans.transform(new Vector4d(vData[0], vData[1], vData[2], 1))).mul(scale));
+				if (vData.length == 12) vInd[i][0] = ObjUtil.getSetIndex(obj.vertices, new Pair<>(to3(trans.transform(new Vector4d(vData[0], vData[1], vData[2], 1))).mul(scale), new Vector4f(vData[8], vData[9], vData[10], vData[11]))); //has color
+				else vInd[i][0] = ObjUtil.getSetIndex(obj.vertices, new Pair<>(to3(trans.transform(new Vector4d(vData[0], vData[1], vData[2], 1))).mul(scale), new Vector4f(1))); //does not have color
 				vInd[i][1] = ObjUtil.getSetIndex(obj.textureCoordinates, new Vector2f(vData[3], 1 - vData[4]));
 				vInd[i][2] = ObjUtil.getSetIndex(obj.vertexNormals, norm.transform(new Vector3f(vData[5], vData[6], vData[7])));
 			}
@@ -311,7 +314,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		return new Vector3f((float) vec.x, (float) vec.y, (float) vec.z);
 	}
 	
-	/** float[face][vertex][{x,y,z,u,v,nx,ny,nz}] **/
+	/** float[face][vertex][{x,y,z,u,v,nx,ny,nz}|{x,y,z,u,v,nx,ny,nz,r,g,b,a}] **/
 	public abstract float[][][] generateMesh();
 	
 	public RaytraceResult raytrace(float fx, float fy, float fz, float dx, float dy, float dz, Matrix4d transformation)
@@ -718,7 +721,7 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	public abstract ModelComponent cloneSelf(IComponentParent clonedParent);
 
 	@Override
-	public @Nullable Texture getTexture()
+	public @Nullable Material getTexture()
 	{
 		return parent == null ? null : parent.getTexture();
 	}

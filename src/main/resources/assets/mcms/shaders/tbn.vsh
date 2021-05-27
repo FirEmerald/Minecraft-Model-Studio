@@ -5,10 +5,11 @@ layout (location=1) in vec2 texCoord;
 layout (location=2) in vec3 normal;
 layout (location=3) in vec4 color;
 
-out vec4 outLightPos;
-out vec2 outTexCoord;
-out vec3 outNormal;
-out vec4 outColor;
+out vec3 outVPos;
+out vec4 outVLightPos;
+out vec2 outVTexCoord;
+out vec3 outVNormal;
+out vec4 outVColor;
 
 uniform mat4 modelMatrix;
 uniform mat4 viewProjectionMatrix;
@@ -21,8 +22,9 @@ void main()
 {
 	vec4 fragPos4 = modelMatrix * vec4(vertex, 1.0);
     gl_Position = viewProjectionMatrix * fragPos4;
-	outLightPos = lightSpaceMatrix * fragPos4;
-	outNormal = normalMatrix * normal;
-    outTexCoord = (textureMatrix * vec4(texCoord, 0.0, 1.0)).xy;
-	outColor = hasColor ? color : vec4(1.0);
+	outVPos = vertex;
+	outVLightPos = lightSpaceMatrix * fragPos4;
+	outVNormal = normalMatrix * normal;
+    outVTexCoord = (textureMatrix * vec4(texCoord, 0.0, 1.0)).xy;
+	outVColor = hasColor ? color : vec4(1.0);
 }

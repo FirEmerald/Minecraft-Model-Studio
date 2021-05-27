@@ -11,7 +11,7 @@ import firemerald.mcms.gui.decoration.DecoPane;
 import firemerald.mcms.util.history.HistoryAction;
 
 public class GuiPopupCopy<T> extends GuiPopup
-{
+{	
 	public final DecoPane pane;
 	public final ComponentText name;
 	public final StandardButton ok, cancel;

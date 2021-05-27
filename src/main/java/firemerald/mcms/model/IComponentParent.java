@@ -6,7 +6,7 @@ import org.eclipse.jdt.annotation.Nullable;
 
 import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.api.model.ITransformed;
-import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.Material;
 
 public interface IComponentParent extends IModelEditable, ITransformed
 {
@@ -14,5 +14,5 @@ public interface IComponentParent extends IModelEditable, ITransformed
 	
 	public List<ModelComponent> getChildrenComponents();
 	
-	public @Nullable Texture getTexture();
+	public @Nullable Material getTexture();
 }

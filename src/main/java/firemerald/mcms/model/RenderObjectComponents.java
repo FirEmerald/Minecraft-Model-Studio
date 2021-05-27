@@ -20,7 +20,7 @@ import firemerald.mcms.api.model.ObjData;
 import firemerald.mcms.api.model.RenderBone;
 import firemerald.mcms.api.model.effects.BoneEffect;
 import firemerald.mcms.api.util.RaytraceResult;
-import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.Material;
 
 public abstract class RenderObjectComponents<T extends RenderObjectComponents<T>> extends RenderBone<T> implements IComponentParent
 {
@@ -52,9 +52,9 @@ public abstract class RenderObjectComponents<T extends RenderObjectComponents<T>
 	}
 	
 	@Override
-	public Texture getTexture()
+	public Material getTexture()
 	{
-		Texture tex = Main.instance.project.getTexture();
+		Material tex = Main.instance.project.getTexture();
 		for (BoneEffect effect : effects) tex = effect.getTexture(tex);
 		return tex;
 	}

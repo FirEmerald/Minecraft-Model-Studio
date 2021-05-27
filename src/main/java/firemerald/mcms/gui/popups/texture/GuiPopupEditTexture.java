@@ -9,9 +9,9 @@ import firemerald.mcms.gui.components.text.ComponentIncrementInt;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.gui.decoration.DecoPane;
-import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.Material;
 import firemerald.mcms.util.MiscUtil;
-import firemerald.mcms.util.history.HistoryActionTextureEdit;
+import firemerald.mcms.util.history.HistoryActionMaterialEdit;
 
 public class GuiPopupEditTexture extends GuiPopup
 {
@@ -33,18 +33,18 @@ public class GuiPopupEditTexture extends GuiPopup
 		final int cx = 20;
 		final int cy = 20;
 		final int lSize = 44;
-		Texture tex = project.getTexture();
+		Material tex = project.getTexture();
 		this.addElement(pane = new DecoPane(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20, 2, 16));
 		int y = cy;
 		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, project.getTextureName(), null));
 		y += 20;
 		this.addElement(labelWidth = new ComponentFloatingLabel(cx, y, cx + lSize, y + 20, Main.instance.fontMsg, "width"));
-		this.addElement(width = new ComponentTextInt(cx + lSize, y, cx + cw - 10, y + 20, Main.instance.fontMsg, tex.w, 1, Integer.MAX_VALUE, null, "default"));
+		this.addElement(width = new ComponentTextInt(cx + lSize, y, cx + cw - 10, y + 20, Main.instance.fontMsg, tex.getDiffuse().w, 1, Integer.MAX_VALUE, null, "default"));
 		this.addElement(widthUp = new ComponentIncrementInt(cx + cw - 10, y, width, 1));
 		this.addElement(widthDown = new ComponentIncrementInt(cx + cw - 10, y + 10, width, -1));
 		y += 20;
 		this.addElement(labelHeight = new ComponentFloatingLabel(cx, y, cx + lSize, y + 20, Main.instance.fontMsg, "height"));
-		this.addElement(height = new ComponentTextInt(cx + lSize, y, cx + cw - 10, y + 20, Main.instance.fontMsg, tex.h, 1, Integer.MAX_VALUE, null, "default"));
+		this.addElement(height = new ComponentTextInt(cx + lSize, y, cx + cw - 10, y + 20, Main.instance.fontMsg, tex.getDiffuse().h, 1, Integer.MAX_VALUE, null, "default"));
 		this.addElement(heightUp = new ComponentIncrementInt(cx + cw - 10, y, height, 1));
 		this.addElement(heightDown = new ComponentIncrementInt(cx + cw - 10, y + 10, height, -1));
 		y += 20;
@@ -98,13 +98,13 @@ public class GuiPopupEditTexture extends GuiPopup
 		String name = this.name.getText();
 		if (!name.equals(oldName)) newName = MiscUtil.ensureUnique(name, project.getTextureNames());
 		else newName = name;
-		final Texture tex = project.getTexture();
-		final int oldWidth = tex.w;
-		final int oldHeight = tex.h;
+		final Material tex = project.getTexture();
+		final int oldWidth = tex.getDiffuse().w;
+		final int oldHeight = tex.getDiffuse().h;
 		final int w = width.getText().length() == 0 ? project.getTextureWidth() : width.getVal();
 		final int h = height.getText().length() == 0 ? project.getTextureHeight() : height.getVal();
-		project.onAction(new HistoryActionTextureEdit(tex, oldName, newName, oldWidth, oldHeight));
-		if (tex.w != w || tex.h != h) tex.resize(w, h);
+		project.onAction(new HistoryActionMaterialEdit(tex, oldName, newName, oldWidth, oldHeight));
+		if (tex.getDiffuse().w != w || tex.getDiffuse().h != h) tex.resize(w, h);
 		if (!newName.equals(oldName)) project.setTextureName(newName);
 	}
 }

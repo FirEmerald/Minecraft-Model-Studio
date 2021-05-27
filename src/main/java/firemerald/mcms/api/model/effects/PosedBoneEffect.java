@@ -152,6 +152,7 @@ public abstract class PosedBoneEffect extends BoneEffect
 	@Override
 	public void onDeselect(EditorPanes editorPanes)
 	{
+		this.transform.rotation.onDeselect(editorPanes);
 		super.onDeselect(editorPanes);
 		GuiElementContainer editor = editorPanes.editor.container;
 		editor.removeElement(labelPos);
@@ -176,6 +177,5 @@ public abstract class PosedBoneEffect extends BoneEffect
 		posZP     = null;
 		posZS     = null;
 		rotMode   = null;
-		this.transform.rotation.onDeselect(editorPanes);
 	}
 }

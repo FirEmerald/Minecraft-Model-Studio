@@ -153,7 +153,7 @@ public class ComponentMeshTrue extends ComponentMesh
 		super.loadFromXML(el);
 		try
 		{
-			this.mesh().loadFromXML(el);
+			this.mesh = ModelMesh.readFromXML(el);
 			origUV = mesh().getTexs();
 			newUV = new float[origUV.length];
 			setTexs();

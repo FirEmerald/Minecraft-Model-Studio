@@ -27,7 +27,7 @@ import firemerald.mcms.gui.popups.model.GuiPopupFluid;
 import firemerald.mcms.gui.popups.model.GuiPopupItem;
 import firemerald.mcms.model.EditorPanes;
 import firemerald.mcms.shader.ModelShaderBase;
-import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.Material;
 import firemerald.mcms.util.GuiUpdate;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
@@ -307,7 +307,7 @@ public abstract class BoneEffect implements IModelEditable
 
 	public abstract BoneEffect cloneObject(RenderBone<?> clonedParent);
 	
-	public @Nullable Texture getTexture(Texture prev)
+	public @Nullable Material getTexture(Material prev)
 	{
 		return prev;
 	}

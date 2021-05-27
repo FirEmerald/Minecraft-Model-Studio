@@ -21,12 +21,12 @@ import firemerald.mcms.api.data.AbstractElement;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.gui.popups.GuiPopupException;
 
-public class ReloadingTexture extends Texture
+public class FileTexture extends Texture
 {
 	public final File file;
 	public final Reloader reloader;
 	
-	public ReloadingTexture(File file) throws IOException
+	public FileTexture(File file) throws IOException
 	{
 		super();
 		this.file = file;
@@ -86,9 +86,9 @@ public class ReloadingTexture extends Texture
 	
 	protected static class Reloader implements Consumer<WatchEvent<?>>
 	{
-		protected final ReloadingTexture tex;
+		protected final FileTexture tex;
 		
-		protected Reloader(ReloadingTexture tex)
+		protected Reloader(FileTexture tex)
 		{
 			this.tex = tex;
 		}

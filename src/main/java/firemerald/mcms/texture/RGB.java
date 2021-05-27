@@ -15,6 +15,7 @@ public class RGB extends ColorModel
 	public static final RGB GREY = new RGB(.5f);
 	public static final RGB LIGHT_GREY = new RGB(.75f);
 	public static final RGB WHITE = new RGB(1);
+	public static final RGB NORMALS = new RGB(0.5f, 0.5f, 1);
 	
 	public float r, g, b;
 	

@@ -15,8 +15,8 @@ import firemerald.mcms.model.ComponentBox;
 import firemerald.mcms.model.EditorPanes;
 import firemerald.mcms.model.ProjectModel;
 import firemerald.mcms.model.RenderObjectComponents;
-import firemerald.mcms.texture.ReloadingTexture;
-import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.FileTexture;
+import firemerald.mcms.texture.space.Material;
 import firemerald.mcms.util.ApplicationState.EnumLayout;
 import firemerald.mcms.util.GuiUpdate;
 
@@ -44,9 +44,9 @@ public class GuiMain extends GuiScreen
 		Project project = Main.instance.project;
 		try
 		{
-			Texture tex = (new ReloadingTexture(new File("texture.png")));
+			Material tex = new Material(new FileTexture(new File("texture.png")));
 			project.addTexture("test", tex);
-			project.setTextureSize(tex.w, tex.h);
+			project.setTextureSize(tex.getDiffuse().w, tex.getDiffuse().h);
 		}
 		catch (IOException e1)
 		{
@@ -119,8 +119,8 @@ public class GuiMain extends GuiScreen
 		editorPanel.setSize(0, 16, 300, h - 312);
 		toolsPanel.setSize(0, h - 312, 300, h - 112);
 		modelView.setSize(300, 16, w - 274, h - 112);
-		texturePanel.setSize(w - 274, 16, w, 306);
-		elementsPanel.setSize(w - 274, 306, w, h - 112);
+		texturePanel.setSize(w - 274, 16, w, 322);
+		elementsPanel.setSize(w - 274, 322, w, h - 112);
 		animationBar.setSize(0, h - 112, w, h);
 		Main.instance.editorPanes.setOffsets(0, 0, 0, Main.instance.state.getLayout() == EnumLayout.LEGACY ? 0 : 16);
 	}

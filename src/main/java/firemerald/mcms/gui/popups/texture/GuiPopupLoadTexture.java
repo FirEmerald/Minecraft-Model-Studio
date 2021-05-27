@@ -12,8 +12,8 @@ import firemerald.mcms.gui.components.StandardButton;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.decoration.DecoPane;
 import firemerald.mcms.gui.popups.GuiPopupException;
-import firemerald.mcms.texture.ReloadingTexture;
-import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.FileTexture;
+import firemerald.mcms.texture.space.Material;
 import firemerald.mcms.util.FileUtils;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.Textures;
@@ -84,7 +84,7 @@ public class GuiPopupLoadTexture extends GuiPopup
 		final Project project = Main.instance.project;
 		try
 		{
-			final Texture tex = new ReloadingTexture(new File(file.getText()));
+			final Material tex = new Material(new FileTexture(new File(file.getText())));
 			final String name = MiscUtil.ensureUnique(this.name.getText(), project.getTextureNames());
 			project.addTexture(name, tex);
 			project.onAction(new HistoryAction(() -> project.removeTexture(name), () -> project.addTexture(name, tex)));

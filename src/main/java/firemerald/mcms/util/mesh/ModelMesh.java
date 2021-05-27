@@ -16,8 +16,8 @@ public class ModelMesh
     protected final int vaoId, vboPos, vboTex, vboNorm, vboInd;
     public DrawMode drawMode;
     public int usage;
-    private float[] verts, texs, norms;
-    private int[] inds;
+    protected float[] verts, texs, norms;
+    protected int[] inds;
 
     protected int vertexCount;
     
@@ -190,7 +190,7 @@ public class ModelMesh
         endRender();
     }
     
-    private boolean cleaned = false;
+    protected boolean cleaned = false;
 
 	public synchronized void cleanUp()
     {
@@ -494,4 +494,105 @@ public class ModelMesh
     {
     	return new ModelMesh(MiscUtil.copy(this.verts), MiscUtil.copy(this.texs), MiscUtil.copy(this.norms), MiscUtil.copy(this.inds), this.drawMode, this.usage);
     }
+
+	public static ModelMesh readFromXML(AbstractElement loadFrom) throws Exception
+	{
+		String vertsStr = null, texsStr = null, normsStr = null, colorsStr = null, indsStr = null;
+		for (AbstractElement el : loadFrom.getChildren()) switch (el.getName())
+		{
+		case "vertices":
+		{
+			vertsStr = el.getValue();
+			break;
+		}
+		case "texture_coordinates":
+		{
+			texsStr = el.getValue();
+			break;
+		}
+		case "normals":
+		{
+			normsStr = el.getValue();
+			break;
+		}
+		case "colors":
+		{
+			colorsStr = el.getValue();
+			break;
+		}
+		case "indices":
+		{
+			indsStr = el.getValue();
+			break;
+		}
+		}
+		if (vertsStr == null) throw new Exception("Failed to load mesh: missing vertices");
+		if (texsStr == null) throw new Exception("Failed to load mesh: missing texture coordinates");
+		if (normsStr == null) throw new Exception("Failed to load mesh: missing normals");
+		if (indsStr == null) throw new Exception("Failed to load mesh: missing indices");
+		DrawMode drawMode = loadFrom.getEnum("mode", DrawMode.values(), DrawMode.TRIANGLES);
+		String[] indsStrs = indsStr.split(" ");
+		if (!drawMode.isValid(indsStrs.length)) throw new Exception("Failed to load mesh: invalid number of indices for draw mode");
+		int[] inds = new int[indsStrs.length];
+		int maxInd = 0;
+		for (int i = 0; i < inds.length; i++) try
+		{
+			int ind = inds[i] = Integer.parseInt(indsStrs[i]);
+			if (ind < 0) throw new Exception("Failed to load mesh: vertex index below 0");
+			else if (ind > maxInd) maxInd = ind;
+		}
+		catch (NumberFormatException e)
+		{
+			throw new Exception("Failed to load mesh: non-integer vertex index", e);
+		}
+		String[] vertsStrs = vertsStr.split(" ");
+		if (vertsStrs.length < (maxInd * 3)) throw new Exception("Failed to load mesh: too few vertex coordinates.");
+		float[] verts = new float[vertsStrs.length];
+		for (int i = 0; i < verts.length; i++) try
+		{
+			verts[i] = Float.parseFloat(vertsStrs[i]);
+		}
+		catch (NumberFormatException e)
+		{
+			throw new Exception("Failed to load mesh: non-float vertex coordinate", e);
+		}
+		String[] texsStrs = texsStr.split(" ");
+		if (texsStrs.length < (maxInd * 2)) throw new Exception("Failed to load mesh: too few texture coordinates.");
+		float[] texs = new float[texsStrs.length];
+		for (int i = 0; i < texs.length; i++) try
+		{
+			texs[i] = Float.parseFloat(texsStrs[i]);
+		}
+		catch (NumberFormatException e)
+		{
+			throw new Exception("Failed to load mesh: non-float texture coordinate", e);
+		}
+		String[] normsStrs = normsStr.split(" ");
+		if (normsStrs.length < (maxInd * 3)) throw new Exception("Failed to load mesh: too few normal coordinates.");
+		float[] norms = new float[normsStrs.length];
+		for (int i = 0; i < norms.length; i++) try
+		{
+			norms[i] = Float.parseFloat(normsStrs[i]);
+		}
+		catch (NumberFormatException e)
+		{
+			throw new Exception("Failed to load mesh: non-float normal coordinate", e);
+		}
+		if (colorsStr != null)
+		{
+			String[] colorsStrs = colorsStr.split(" ");
+			if (colorsStrs.length < (maxInd * 4)) throw new Exception("Failed to load mesh: too few color values.");
+			float[] colors = new float[colorsStrs.length];
+			for (int i = 0; i < colors.length; i++) try
+			{
+				colors[i] = Float.parseFloat(colorsStrs[i]);
+			}
+			catch (NumberFormatException e)
+			{
+				throw new Exception("Failed to load mesh: non-float color value", e);
+			}
+			return new ColoredModelMesh(verts, texs, norms, colors, inds, drawMode);
+		}
+		else return new ModelMesh(verts, texs, norms, inds, drawMode);
+	}
 }

@@ -14,6 +14,7 @@ import firemerald.mcms.gui.popups.hotkeys.GuiPopupHotkeys;
 import firemerald.mcms.gui.themes.GuiThemes;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.util.ApplicationState.EnumLayout;
+import firemerald.mcms.util.ApplicationState.EnumRenderMode;
 import firemerald.mcms.util.font.FormattedText;
 import firemerald.mcms.util.hotkey.Action;
 
@@ -23,6 +24,11 @@ public class TitlebarItems
 	static
 	{
 		for (EnumLayout layout : EnumLayout.values()) LAYOUT_ITEMS.put(layout, setAction(new MenuItem(layout.displayName), action -> Main.instance.state.setLayout(layout)));
+	}
+	public static final Map<EnumRenderMode, MenuItem> RENDER_MODE_ITEMS = new LinkedHashMap<>();
+	static
+	{
+		for (EnumRenderMode mode : EnumRenderMode.values()) RENDER_MODE_ITEMS.put(mode, setAction(new MenuItem(mode.displayName), action -> Main.instance.state.setRenderMode(mode)));
 	}
 	
 	public static final MenuItem 
@@ -69,6 +75,7 @@ public class TitlebarItems
 	TOGGLE_NODES = setAction(new MenuItem("Toggle nodes"), action -> Main.instance.state.setShowNodes(!Main.instance.state.showNodes())),
 	TOGGLE_BONES = setAction(new MenuItem("Toggle bones"), action -> Main.instance.state.setShowBones(!Main.instance.state.showBones())),
 	TOGGLE_SHADOWS = setAction(new MenuItem("Toggle shadows"), action -> Main.instance.state.setEnableShadows(!Main.instance.state.enableShadows())),
+	RENDER_MODE_MENU = makeMenu("Render mode", RENDER_MODE_ITEMS.values().stream()),
 	CHANGE_THEME = setAction(new MenuItem("Change theme"), action -> new GuiThemes().activate()),
 	HOTKEYS = setAction(new MenuItem("Hotkeys"), action -> new GuiPopupHotkeys().activate()),
 	LAYOUT_MENU = makeMenu("Layout", LAYOUT_ITEMS.values().stream()),

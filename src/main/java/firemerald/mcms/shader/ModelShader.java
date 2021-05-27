@@ -35,6 +35,23 @@ public class ModelShader extends ModelShaderBase
 		enable_shadows = glGetUniformLocation(prog, "enable_shadows");
 	}
 	
+	public ModelShader(String vert, String geom, String frag)
+	{
+		super(vert, geom, frag);
+		normal = glGetUniformLocation(prog, "normalMatrix");
+		lightSpace = glGetUniformLocation(prog, "lightSpaceMatrix");
+		overlay_sampler = glGetUniformLocation(prog, "overlay_sampler");
+		shadow_sampler = glGetUniformLocation(prog, "shadow_sampler");
+		color = glGetUniformLocation(prog, "color");
+		color2 = glGetUniformLocation(prog, "color2");
+		light = glGetUniformLocation(prog, "light");
+		hueSet = glGetUniformLocation(prog, "hueSet");
+		invert = glGetUniformLocation(prog, "invert");
+		use_overlay = glGetUniformLocation(prog, "use_overlay");
+		ignore_lighting = glGetUniformLocation(prog, "ignore_lighting");
+		enable_shadows = glGetUniformLocation(prog, "enable_shadows");
+	}
+	
 	public void bind()
 	{
 		super.bind();

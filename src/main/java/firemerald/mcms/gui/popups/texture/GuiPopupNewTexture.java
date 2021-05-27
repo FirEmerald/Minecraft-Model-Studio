@@ -9,7 +9,7 @@ import firemerald.mcms.gui.components.text.ComponentIncrementInt;
 import firemerald.mcms.gui.components.text.ComponentText;
 import firemerald.mcms.gui.components.text.ComponentTextInt;
 import firemerald.mcms.gui.decoration.DecoPane;
-import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.Material;
 import firemerald.mcms.util.MiscUtil;
 import firemerald.mcms.util.history.HistoryAction;
 
@@ -94,7 +94,8 @@ public class GuiPopupNewTexture extends GuiPopup
 		Project project = Main.instance.project;
 		int w = width.getText().length() == 0 ? project.getTextureWidth() : width.getVal();
 		int h = height.getText().length() == 0 ? project.getTextureHeight() : height.getVal();
-		Texture tex = new Texture(w, h);
+		Material tex = new Material(w, h);
+		tex.getOrCreateTexture(Main.instance.activeSpace);
 		String name = MiscUtil.ensureUnique(this.name.getText(), project.getTextureNames());
 		project.addTexture(name, tex);
 		project.onAction(new HistoryAction(() -> project.removeTexture(name), () -> project.addTexture(name, tex)));

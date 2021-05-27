@@ -1,6 +1,6 @@
 package firemerald.mcms.shader;
 
-import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL32.*;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -285,6 +285,77 @@ public class GuiShader
 		if (glGetProgrami(prog, GL_LINK_STATUS) == GL_FALSE)
 		{
 			glDeleteShader(vert);
+			glDeleteShader(frag);
+			glDeleteProgram(prog);
+			throw new IllegalStateException("Unable to link shader program!");
+		}
+		printErr(glGetProgramInfoLog(prog));
+		return prog;
+	}
+	
+	public static int createShaderProgram(String vertFile, String geomFile, String fragFile)
+	{
+		int vert = glCreateShader(GL_VERTEX_SHADER);
+		if (vert <= 0) throw new IllegalStateException("Unable to create a vertex shader!");
+		String vertShader = FileUtils.readTextFile(new ResourceLocation(Main.ID, "shaders/" + vertFile + ".vsh"), StandardCharsets.UTF_8);
+		Main.LOGGER.log(Level.DEBUG, "Loaded vertex shader:\n" + vertShader);
+		glShaderSource(vert, vertShader);
+		glCompileShader(vert);
+		printErr(glGetShaderInfoLog(vert));
+		if (glGetShaderi(vert, GL_COMPILE_STATUS) == GL_FALSE) 
+		{
+			glDeleteShader(vert);
+			throw new IllegalStateException("Unable to compile vertex shader " + vertFile + "!");
+		}
+		int geom = glCreateShader(GL_GEOMETRY_SHADER);
+		if (geom <= 0) throw new IllegalStateException("Unable to create a geometry shader!");
+		String geomShader = FileUtils.readTextFile(new ResourceLocation(Main.ID, "shaders/" + geomFile + ".gsh"), StandardCharsets.UTF_8);
+		Main.LOGGER.log(Level.DEBUG, "Loaded geometry shader:\n" + geomShader);
+		glShaderSource(geom, geomShader);
+		glCompileShader(geom);
+		printErr(glGetShaderInfoLog(geom));
+		if (glGetShaderi(geom, GL_COMPILE_STATUS) == GL_FALSE) 
+		{
+			glDeleteShader(vert);
+			glDeleteShader(geom);
+			throw new IllegalStateException("Unable to compile geometry shader " + geomFile + "!");
+		}
+		int frag = glCreateShader(GL_FRAGMENT_SHADER);
+		if (frag <= 0)
+		{
+			glDeleteShader(vert);
+			glDeleteShader(geom);
+			throw new IllegalStateException("Unable to create a fragment shader!");
+		}
+		String fragShader = FileUtils.readTextFile(new ResourceLocation(Main.ID, "shaders/" + fragFile + ".fsh"), StandardCharsets.UTF_8);
+		Main.LOGGER.log(Level.DEBUG, "Loaded fragment shader:\n" + fragShader);
+		glShaderSource(frag, fragShader);
+		glCompileShader(frag);
+		printErr(glGetShaderInfoLog(frag));
+		if (glGetShaderi(frag, GL_COMPILE_STATUS) == GL_FALSE) 
+		{
+			glDeleteShader(vert);
+			glDeleteShader(geom);
+			glDeleteShader(frag);
+			throw new IllegalStateException("Unable to compile fragment shader " + fragFile + "!");
+		}
+		int prog = glCreateProgram();
+		if (prog <= 0)
+		{
+			glDeleteShader(vert);
+			glDeleteShader(geom);
+			glDeleteShader(frag);
+			throw new IllegalStateException("Unable to create a shader program!");
+		}
+		glAttachShader(prog, vert);
+		glAttachShader(prog, geom);
+		glAttachShader(prog, frag);
+		glLinkProgram(prog);
+		printErr(glGetProgramInfoLog(prog));
+		if (glGetProgrami(prog, GL_LINK_STATUS) == GL_FALSE)
+		{
+			glDeleteShader(vert);
+			glDeleteShader(geom);
 			glDeleteShader(frag);
 			glDeleteProgram(prog);
 			throw new IllegalStateException("Unable to link shader program!");

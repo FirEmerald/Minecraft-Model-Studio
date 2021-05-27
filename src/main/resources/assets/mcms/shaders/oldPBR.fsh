@@ -4,11 +4,15 @@ in vec4 outLightPos;
 in vec2 outTexCoord;
 in vec3 outNormal;
 in vec4 outColor;
+in mat3 outTBN;
 out vec4 fragColor;
 
 uniform sampler2D texture_sampler;
 uniform sampler2D overlay_sampler;
 uniform sampler2D shadow_sampler;
+uniform sampler2D normal_sampler;
+uniform sampler2D specular_sampler;
+uniform sampler2D emissive_sampler;
 uniform vec3 light;
 uniform vec4 color;
 uniform vec4 color2;
@@ -18,6 +22,9 @@ uniform bool use_overlay;
 uniform bool clip_outside;
 uniform bool ignore_lighting;
 uniform bool enable_shadows;
+uniform bool enable_normal;
+uniform bool enable_specular;
+uniform bool enable_emissive;
 
 const vec3 shadowWeights[69]=vec3[69](
 	vec3(-4.0, -2.0, 0.0040522087),
@@ -121,9 +128,15 @@ void main()
 	}
     else fragColor *= color;
 	fragColor *= color2;
+	vec4 normalTex = enable_normal ? texture(normal_sampler, outTexCoord) : vec4(0.5, 0.5, 1.0, 1.0);
+	vec4 specularTex = enable_specular ? texture(specular_sampler, outTexCoord) : vec4(0.0, 0.0, 0.0, 1.0);
+	vec4 emissiveTex = enable_emissive ? texture(emissive_sampler, outTexCoord) : vec4(0.0);
 	if (!ignore_lighting)
 	{
-		float dp = dot(normalize(outNormal), light);
+		vec3 normal;
+		if (enable_normal) normal = normalize(outTBN * (normalTex.rgb * 2.0 - 1.0));
+		else normal = normalize(outNormal);
+		float dp = dot(normal, light);
 		if (dp >= 0.0) fragColor.rgb *= vec3(0.5);
 		else if (enable_shadows) fragColor.rgb *= vec3(0.5 + 0.5 * dp * (shadowOp(outLightPos) - 1.0));
 		else fragColor.rgb *= vec3(0.5 - 0.5 * dp);

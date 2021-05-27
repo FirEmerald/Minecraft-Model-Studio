@@ -16,6 +16,9 @@ public class Color
 	public static final Color GREY = new Color(RGB.GREY);
 	public static final Color LIGHT_GREY = new Color(RGB.LIGHT_GREY);
 	public static final Color WHITE = new Color(RGB.WHITE);
+	public static final Color NORMALS = new Color(RGB.NORMALS);
+	public static final Color SPECULARS = BLACK;
+	public static final Color EMMISIVES = BLACK;
 	public static final float MULT = 1f / 255f;
 	
 	public ColorModel c;

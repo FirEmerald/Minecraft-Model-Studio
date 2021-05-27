@@ -14,7 +14,7 @@ import firemerald.mcms.texture.Texture;
 import firemerald.mcms.util.history.HistoryActionTextureDraw;
 import firemerald.mcms.window.api.MouseButtons;
 
-public abstract class AbstractToolBrush implements ITool
+public abstract class AbstractToolBrush implements ITextureTool
 {
 	@Override
 	public boolean onModelViewClick(ComponentModelViewer viewer, float mx, float my, int button, int mods)

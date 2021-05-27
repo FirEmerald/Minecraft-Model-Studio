@@ -20,13 +20,16 @@ import java.util.regex.Pattern;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.gui.popups.GuiPopupException;
+import firemerald.mcms.util.Pair;
 
 public class ObjData
 {
 	public static final Pattern vertexPattern = Pattern.compile("(v( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *\\n)|(v( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *$)");
+	public static final Pattern coloredVertexPattern = Pattern.compile("(v( (\\-){0,1}\\d+(\\.\\d+)?){6,8} *\\n)|(v( (\\-){0,1}\\d+(\\.\\d+)?){6,8} *$)");
 	public static final Pattern vertexNormalPattern = Pattern.compile("(vn( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *\\n)|(vn( (\\-){0,1}\\d+(\\.\\d+)?){3,4} *$)");
 	public static final Pattern textureCoordinatePattern = Pattern.compile("(vt( (\\-){0,1}\\d+\\.\\d+){2,3} *\\n)|(vt( (\\-){0,1}\\d+(\\.\\d+)?){2,3} *$)");
 	public static final Pattern face_V_VT_VN_Pattern = Pattern.compile("(f( \\d+/\\d+/\\d+){3,4} *\\n)|(f( \\d+/\\d+/\\d+){3,4} *$)");
@@ -35,14 +38,15 @@ public class ObjData
 	public static final Pattern face_V_Pattern = Pattern.compile("(f( \\d+){3,4} *\\n)|(f( \\d+){3,4} *$)");
 	public static final Pattern groupObjectPattern = Pattern.compile("([go]( [\\w\\d\\.]+) *\\n)|([go]( [\\w\\d\\.]+) *$)");
 	
-	public static Matcher vertexMatcher, vertexNormalMatcher, textureCoordinateMatcher;
+	public static Matcher vertexMatcher, coloredVertexMatcher, vertexNormalMatcher, textureCoordinateMatcher;
 	public static Matcher face_V_VT_VN_Matcher, face_V_VT_Matcher, face_V_VN_Matcher, face_V_Matcher;
 	public static Matcher groupObjectMatcher;
 
-	public List<Vector3f> vertices = new ArrayList<>();
+	public List<Pair<Vector3f, Vector4f>> vertices = new ArrayList<>();
 	public List<Vector2f> textureCoordinates = new ArrayList<>();
 	public List<Vector3f> vertexNormals = new ArrayList<>();
 	public Map<String, List<int[][]>> groupObjects;
+	private boolean hasColorData;
 	
 	public static ObjData tryLoad(File file)
 	{
@@ -81,7 +85,7 @@ public class ObjData
 		groupObjects = loadObjModel(in);
 	}
 	
-	public ObjData(Collection<Vector3f> vertices, Collection<Vector2f> textureCoordinates, Collection<Vector3f> vertexNormals, Map<String, List<int[][]>> groupObjects)
+	public ObjData(Collection<Pair<Vector3f, Vector4f>> vertices, Collection<Vector2f> textureCoordinates, Collection<Vector3f> vertexNormals, Map<String, List<int[][]>> groupObjects)
 	{
 		this.vertices.addAll(vertices);
 		this.textureCoordinates.addAll(textureCoordinates);
@@ -92,6 +96,11 @@ public class ObjData
 	public ObjData()
 	{
 		groupObjects = new LinkedHashMap<String, List<int[][]>>();
+	}
+	
+	public boolean hasColorData()
+	{
+		return hasColorData;
 	}
 
 	private Map<String, List<int[][]>> loadObjModel(InputStream inputStream) throws Exception
@@ -112,8 +121,12 @@ public class ObjData
 				if (currentLine.startsWith("#") || currentLine.length() == 0) continue;
 				else if (currentLine.startsWith("v "))
 				{
-					Vector3f vertex = parseVertex(currentLine, lineCount);
-					if (vertex != null) vertices.add(vertex);
+					Pair<Vector3f, Vector4f> vertex = parseVertex(currentLine, lineCount);
+					if (vertex != null)
+					{
+						if (vertex.right != null) hasColorData = true;
+						vertices.add(vertex);
+					}
 				}
 				else if (currentLine.startsWith("vt "))
 				{
@@ -156,6 +169,8 @@ public class ObjData
 		}
 		catch (Exception e)
 		{
+			FileUtil.closeSafe(reader);
+			FileUtil.closeSafe(inputStream);
 			throw new Exception("IO Exception reading model format", e);
 		}
 		finally
@@ -166,7 +181,7 @@ public class ObjData
 		return groupObjects;
 	}
 
-	private Vector3f parseVertex(String line, int lineCount) throws Exception
+	private Pair<Vector3f, Vector4f> parseVertex(String line, int lineCount) throws Exception
 	{
 		if (isValidVertexLine(line))
 		{
@@ -174,7 +189,20 @@ public class ObjData
 			String[] tokens = line.split(" ");
 			try
 			{
-				if (tokens.length == 3) return new Vector3f(Float.parseFloat(tokens[0]), Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2]));
+				if (tokens.length == 3) return new Pair<>(new Vector3f(Float.parseFloat(tokens[0]), Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2])), null); //xyz
+			} catch (NumberFormatException e)
+			{
+				throw new Exception(String.format("Number formatting error at line %d", lineCount), e);
+			}
+		}
+		else if (isValidColoredVertexLine(line))
+		{
+			line = line.substring(line.indexOf(" ") + 1);
+			String[] tokens = line.split(" ");
+			try
+			{
+				if (tokens.length == 6) return new Pair<>(new Vector3f(Float.parseFloat(tokens[0]), Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2])), new Vector4f(Float.parseFloat(tokens[3]), Float.parseFloat(tokens[4]), Float.parseFloat(tokens[5]), 1)); //xyzrgb 
+				else if (tokens.length == 7) return new Pair<>(new Vector3f(Float.parseFloat(tokens[0]), Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2])), new Vector4f(Float.parseFloat(tokens[3]), Float.parseFloat(tokens[4]), Float.parseFloat(tokens[5]), Float.parseFloat(tokens[6]))); //xyzrgba
 			} catch (NumberFormatException e)
 			{
 				throw new Exception(String.format("Number formatting error at line %d", lineCount), e);
@@ -320,6 +348,20 @@ public class ObjData
 		if (vertexMatcher != null) vertexMatcher.reset();
 		vertexMatcher = vertexPattern.matcher(line);
 		return vertexMatcher.matches();
+	}
+
+	/***
+	 * Verifies that the given line from the model file is a valid vertex
+	 * 
+	 * @param line
+	 *            the line being validated
+	 * @return true if the line is a valid vertex, false otherwise
+	 */
+	private static boolean isValidColoredVertexLine(String line)
+	{
+		if (coloredVertexMatcher != null) coloredVertexMatcher.reset();
+		coloredVertexMatcher = coloredVertexPattern.matcher(line);
+		return coloredVertexMatcher.matches();
 	}
 
 	/***
@@ -519,9 +561,9 @@ public class ObjData
 				{
 					if (removeNonTriangles)
 					{
-						Vector3f p0 = vertices.get(triangle[0][0]);
-						Vector3f p1 = vertices.get(triangle[1][0]);
-						Vector3f p2 = vertices.get(triangle[2][0]);
+						Vector3f p0 = vertices.get(triangle[0][0]).left;
+						Vector3f p1 = vertices.get(triangle[1][0]).left;
+						Vector3f p2 = vertices.get(triangle[2][0]).left;
 						if ((p0.x() == p1.x() && p0.y() == p1.y() && p0.z() == p1.z()) || (p0.x() == p2.x() && p0.y() == p2.y() && p0.z() == p2.z()) || (p1.x() == p2.x() && p1.y() == p2.y() && p1.z() == p2.z())) //duplicate vertices are always points or lines
 						{
 							double x1 = p1.x() - p0.x();
@@ -557,10 +599,10 @@ public class ObjData
 		}
 		//vertex optimization
 		Map<Integer, Integer> newVert = new HashMap<>();
-		List<Vector3f> verts = new ArrayList<>();
+		List<Pair<Vector3f, Vector4f>> verts = new ArrayList<>();
 		for (int i = 0; i < vertices.size(); i++) if (usedVerts.get(i))
 		{
-			Vector3f vert = vertices.get(i);
+			Pair<Vector3f, Vector4f> vert = vertices.get(i);
 			int ind = verts.indexOf(vert);
 			if (ind < 0)
 			{
@@ -642,14 +684,28 @@ public class ObjData
 		str.append("\n#Number of groups: ");
 		str.append(groupObjects.size());
 		str.append("\n\n#Verticies\n");
-		for (Vector3f vec : vertices)
+		for (Pair<Vector3f, Vector4f> vec : vertices)
 		{
 			str.append("v ");
-			str.append(toString(vec.x()));
+			str.append(toString(vec.left.x()));
 			str.append(' ');
-			str.append(toString(vec.y()));
+			str.append(toString(vec.left.y()));
 			str.append(' ');
-			str.append(toString(vec.z()));
+			str.append(toString(vec.left.z()));
+			if (vec.right != null)
+			{
+				str.append(' ');
+				str.append(toString(vec.right.x()));
+				str.append(' ');
+				str.append(toString(vec.right.y()));
+				str.append(' ');
+				str.append(toString(vec.right.z()));
+				if (vec.right.w() != 1)
+				{
+					str.append(' ');
+					str.append(toString(vec.right.w()));
+				}
+			}
 			str.append('\n');
 		}
 		str.append("\n#Texture Coordinates\n");

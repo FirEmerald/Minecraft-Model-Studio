@@ -81,6 +81,11 @@ public class Texture implements IClonableObject<Texture>
 	/** this does not clear the texture! **/
 	public void resize(int w, int h)
 	{
+		resize(w, h, 0);
+	}
+	
+	public void resize(int w, int h, int clearColor)
+	{
 		if (data == null)
 		{
 			data = MemoryUtil.memAlloc((this.w  = w) * (this.h = h) * 4);
@@ -98,7 +103,7 @@ public class Texture implements IClonableObject<Texture>
 				for (int x = 0; x < w; x++)
 				{
 					if (x < oldW && y < oldH) data.putInt(pos, oldData.getInt(oldPos));
-					else data.putInt(pos, 0);
+					else data.putInt(pos, clearColor);
 					oldPos += 4;
 					pos += 4;
 				}
@@ -246,6 +251,17 @@ public class Texture implements IClonableObject<Texture>
 	public void clearTexture()
 	{
 		for (int i = 0; i < data.capacity(); i++) data.put(i, (byte) 0);
+		needsSet = true;
+	}
+	
+	public void clearTexture(Color color)
+	{
+		clearTexture(color.toARGB());
+	}
+	
+	public void clearTexture(int argb)
+	{
+		for (int i = 0; i < data.capacity(); i += 4) data.putInt(i, argb);
 		needsSet = true;
 	}
 	
@@ -398,7 +414,7 @@ public class Texture implements IClonableObject<Texture>
 				File file = new File(fileName);
 				if (file.exists()) try
 				{
-					return new ReloadingTexture(file);
+					return new FileTexture(file);
 				}
 				catch (IOException e)
 				{

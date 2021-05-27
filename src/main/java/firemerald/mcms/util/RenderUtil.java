@@ -23,6 +23,7 @@ import firemerald.mcms.api.model.Bone;
 import firemerald.mcms.api.model.ObjData;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.shader.ModelShaderBase;
+import firemerald.mcms.util.mesh.ColoredModelMesh;
 import firemerald.mcms.util.mesh.DrawMode;
 import firemerald.mcms.util.mesh.ModelMesh;
 
@@ -244,6 +245,7 @@ public class RenderUtil
 		List<Float> verts = new ArrayList<>();
 		List<Float> texs = new ArrayList<>();
 		List<Float> norms = new ArrayList<>();
+		List<Float> colors = obj.hasColorData() ? new ArrayList<>() : null;
 		List<Integer> indicies = new ArrayList<>();
 		for (int[][] face : mesh)
 		{
@@ -254,12 +256,26 @@ public class RenderUtil
 				int vert = data[0];
 				int tex = data[1];
 				int norm = data[2];
-				Vector3f vertex = obj.vertices.get(vert);
-				Vector4f vertexVec = new Vector4f(vertex, 1);
+				Pair<Vector3f, Vector4f> vertex = obj.vertices.get(vert);
+				Vector4f vertexVec = new Vector4f(vertex.left, 1);
 				if (m != null) vertexVec = MathUtils.toVector4f(m.transform(MathUtils.toVector4d(vertexVec)));
 				verts.add(vertexVec.x());
 				verts.add(vertexVec.y());
 				verts.add(vertexVec.z());
+				if (vertex.right != null)
+				{
+					colors.add(vertex.right.x());
+					colors.add(vertex.right.y());
+					colors.add(vertex.right.z());
+					colors.add(vertex.right.w());
+				}
+				else if (obj.hasColorData())
+				{
+					colors.add(1f);
+					colors.add(1f);
+					colors.add(1f);
+					colors.add(1f);
+				}
 				if (tex >= 0)
 				{
 					Vector2f texture = obj.textureCoordinates.get(tex);
@@ -293,7 +309,7 @@ public class RenderUtil
 				}
 			}
 		}
-		return new ModelMesh(toFloats(verts), toFloats(texs), toFloats(norms), toInts(indicies));
+		return obj.hasColorData() ? new ColoredModelMesh(toFloats(verts), toFloats(texs), toFloats(norms), toFloats(colors), toInts(indicies)) : new ModelMesh(toFloats(verts), toFloats(texs), toFloats(norms), toInts(indicies));
 	}
 	
 	public static float[] toFloats(List<Float> list)

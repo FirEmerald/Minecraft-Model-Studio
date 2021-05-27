@@ -31,7 +31,7 @@ import firemerald.mcms.shader.DepthBuffer;
 import firemerald.mcms.shader.FrameBuffer;
 import firemerald.mcms.shader.ModelShader;
 import firemerald.mcms.shader.ModelShaderBase;
-import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.Material;
 import firemerald.mcms.theme.ThemeElement;
 import firemerald.mcms.util.ApplicationState;
 import firemerald.mcms.util.GuiUpdate;
@@ -295,7 +295,7 @@ public class ComponentModelViewer extends Component
             		TextureRaytraceResult texRes = (TextureRaytraceResult) trace;
             		if (texRes.tex != null && texRes.tex == project.getTexture()) //TODO overlay on other textures
             		{
-                		if (main.getOverlay().w != texRes.tex.w || main.getOverlay().h != texRes.tex.h) main.getOverlay().setSize(texRes.tex.w, texRes.tex.h);
+                		if (main.getOverlay().w != texRes.tex.getDiffuse().w || main.getOverlay().h != texRes.tex.getDiffuse().h) main.getOverlay().setSize(texRes.tex.getDiffuse().w, texRes.tex.getDiffuse().h);
                 		Main.instance.tool.drawOnOverlay(main.getOverlay(), texRes.u, texRes.v);
             		}
             	}
@@ -321,23 +321,29 @@ public class ComponentModelViewer extends Component
 	{
     	IModel<?, ?> model = project.getModel();
     	ExtendedAnimationState[] states = project.getStates();
-    	if (model != null)
-    	{
-        	Map<String, Matrix4d> map = model.getPose(states);
-        	project.bindTex();
-        	main.currentModelShader.setOverlayTexture(main.getOverlay());
-        	model.render(null, map, () -> project.bindTex());
-        	main.currentModelShader.setOverlayTexture(null);
-        	project.unbindTex();
-    	}
     	project.lockedModels.forEach((m, tex) -> {
     		if (m != model)
     		{
-        		if (tex != null) tex.bind();
+        		if (tex != null) main.currentModelShader.bindMaterial(tex);
         		else main.textureManager.unbindTexture();
-        		renderModel(m, states, tex == null ? main.textureManager::unbindTexture : tex::bind);
+        		renderModel(m, states, tex == null ? main.textureManager::unbindTexture : () -> main.currentModelShader.bindMaterial(tex));
     		}
     	});
+    	if (model != null)
+    	{
+        	Map<String, Matrix4d> map = model.getPose(states);
+        	Material mat = project.getTexture();
+        	if (mat != null) main.currentModelShader.bindMaterial(mat);
+        	else main.textureManager.unbindTexture();
+        	main.currentModelShader.setOverlayTexture(main.getOverlay());
+        	model.render(null, map, () -> {
+            	if (mat != null) main.currentModelShader.bindMaterial(mat);
+            	else main.textureManager.unbindTexture();
+            	main.currentModelShader.setOverlayTexture(main.getOverlay());
+        	});
+        	main.textureManager.unbindTexture();
+        	main.currentModelShader.setOverlayTexture(null);
+    	}
 	}
 	
 	@Override
@@ -381,7 +387,7 @@ public class ComponentModelViewer extends Component
         	Main.listGLErrors("post-shadow");
     	}
     	/**/
-    	main.currentModelShader = main.modelShader;
+    	main.currentModelShader = Main.instance.state.getRenderMode().shader.get();
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fb.frameBuffer);
 		main.currentModelShader.reset();
@@ -404,7 +410,7 @@ public class ComponentModelViewer extends Component
 		lightMatrix.get(ModelShader.LIGHT.matrix());
 		main.currentModelShader.updateModelViewProjection();
 		main.currentModelShader.updateTexture();
-		main.modelShader.updateLightSpace();
+		((ModelShader) main.currentModelShader).updateLightSpace();
     	Main.listGLErrors("pre-render");
     	if (!state.showNodes() && !state.showBones() && (pan >= 0 || look >= 0 || Modifier.CONTROL.isDown(main.window) || Modifier.SHIFT.isDown(main.window)))
     	{
@@ -416,9 +422,9 @@ public class ComponentModelViewer extends Component
     		ModelShaderBase.MODEL.pop();
     		main.currentModelShader.updateModel();
     	}
-    	if (enableShadows) main.modelShader.setShadowTexture(shadowMap.depth_texture);
+    	if (enableShadows) ((ModelShader) main.currentModelShader).setShadowTexture(shadowMap.depth_texture);
     	renderPass(main, project);
-		if (enableShadows) main.modelShader.setShadowTexture(0);
+		if (enableShadows) ((ModelShader) main.currentModelShader).setShadowTexture(0);
     	IModel<?, ?> model = project.getModel();
     	ExtendedAnimationState[] states = project.getStates();
 		if (state.showNodes() || state.showBones())
@@ -464,6 +470,8 @@ public class ComponentModelViewer extends Component
     		main.currentModelShader.updateModel();
     	}
         glDisable(GL_CULL_FACE);
+        main.currentModelShader.unbind();
+        main.currentModelShader = main.modelShader;
         
         //render widget
 		glBindFramebuffer(GL_FRAMEBUFFER, widget.frameBuffer);
@@ -582,7 +590,7 @@ public class ComponentModelViewer extends Component
 		    		{
 		    			project.lockedModels.put(model, project.getTexture());
 		    			project.setModel(clicked);
-		    			Texture tex = project.lockedModels.get(clicked);
+		    			Material tex = project.lockedModels.get(clicked);
 		    			if (tex != project.getTexture()) project.setTexture(tex);
 		    		}
 		    		if (trace instanceof TextureRaytraceResult)

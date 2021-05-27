@@ -12,11 +12,16 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import firemerald.mcms.api.model.ObjData;
+import firemerald.mcms.util.mesh.ColoredModelMesh;
 import firemerald.mcms.util.mesh.ModelMesh;
 
 public class ObjUtil
 {
 	public static void addQuad(ObjData obj, List<int[][]> mesh, Vector3f v1, Vector3f v2, Vector3f v3, Vector3f v4, Vector3f norm)
+	{
+		addQuad(obj, mesh, new Pair<>(v1, new Vector4f(1)), new Pair<>(v2, new Vector4f(1)), new Pair<>(v3, new Vector4f(1)), new Pair<>(v4, new Vector4f(1)), norm);
+	}
+	public static void addQuad(ObjData obj, List<int[][]> mesh, Pair<Vector3f, Vector4f> v1, Pair<Vector3f, Vector4f> v2, Pair<Vector3f, Vector4f> v3, Pair<Vector3f, Vector4f> v4, Vector3f norm)
 	{
 		int ind1 = getSetIndex(obj.vertices, v1);
 		int ind2 = getSetIndex(obj.vertices, v2);
@@ -53,6 +58,7 @@ public class ObjUtil
 		List<Float> verts = new ArrayList<>();
 		List<Float> texs = new ArrayList<>();
 		List<Float> norms = new ArrayList<>();
+		List<Float> colors = obj.hasColorData() ? new ArrayList<>() : null;
 		List<Integer> indicies = new ArrayList<>();
 		for (List<int[][]> mesh : obj.groupObjects.values()) for (int[][] face : mesh)
 		{
@@ -63,11 +69,25 @@ public class ObjUtil
 				int vert = data[0];
 				int tex = data[1];
 				int norm = data[2];
-				Vector3f vertex = obj.vertices.get(vert);
-				Vector4f vertexVec = transformVerts.apply(new Vector4f(vertex, 1));
+				Pair<Vector3f, Vector4f> vertex = obj.vertices.get(vert);
+				Vector4f vertexVec = transformVerts.apply(new Vector4f(vertex.left, 1));
 				verts.add(vertexVec.x());
 				verts.add(vertexVec.y());
 				verts.add(vertexVec.z());
+				if (vertex.right != null)
+				{
+					colors.add(vertex.right.x());
+					colors.add(vertex.right.y());
+					colors.add(vertex.right.z());
+					colors.add(vertex.right.w());
+				}
+				else if (obj.hasColorData())
+				{
+					colors.add(1f);
+					colors.add(1f);
+					colors.add(1f);
+					colors.add(1f);
+				}
 				if (tex >= 0)
 				{
 					Vector2f texture = obj.textureCoordinates.get(tex);
@@ -100,7 +120,7 @@ public class ObjUtil
 				}
 			}
 		}
-		return new ModelMesh(toFloats(verts), toFloats(texs), toFloats(norms), toInts(indicies));
+		return obj.hasColorData() ? new ColoredModelMesh(toFloats(verts), toFloats(texs), toFloats(norms), toFloats(colors), toInts(indicies)) : new ModelMesh(toFloats(verts), toFloats(texs), toFloats(norms), toInts(indicies));
 	}
 	
 	private static float[] toFloats(List<Float> list)

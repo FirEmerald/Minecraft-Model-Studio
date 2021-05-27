@@ -3,6 +3,7 @@ package firemerald.mcms.texture.tools;
 import firemerald.mcms.gui.GuiSection;
 import firemerald.mcms.gui.main.components.model.ComponentModelViewer;
 import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.Material;
 
 public interface ITool
 {
@@ -12,11 +13,11 @@ public interface ITool
 	
 	public boolean onModelViewRelease(ComponentModelViewer viewer, float mx, float my, int button);
 	
-	public void onMouseClick(Texture tex, double u, double v, int button);
+	public void onMouseClick(Material tex, double u, double v, int button);
 
-	public void onMouseDrag(Texture tex, double prevU, double prevV, double u, double v, int button, boolean isNewObject);
+	public void onMouseDrag(Material tex, double prevU, double prevV, double u, double v, int button, boolean isNewObject);
 
-	public void onMouseRelease(Texture tex, double u, double v, int button);
+	public void onMouseRelease(Material tex, double u, double v, int button);
 	
 	public void drawOnOverlay(Texture tex, double u, double v);
 	

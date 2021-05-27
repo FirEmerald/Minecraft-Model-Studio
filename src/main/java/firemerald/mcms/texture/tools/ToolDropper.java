@@ -13,7 +13,7 @@ import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.Texture;
 import firemerald.mcms.window.api.MouseButtons;
 
-public class ToolDropper implements ITool
+public class ToolDropper implements ITextureTool
 {
 	public static final ToolDropper INSTANCE = new ToolDropper();
 	

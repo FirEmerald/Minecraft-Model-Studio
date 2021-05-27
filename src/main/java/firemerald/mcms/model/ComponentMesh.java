@@ -11,16 +11,17 @@ import firemerald.mcms.Main;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.shader.GuiShader;
-import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.Material;
 import firemerald.mcms.util.MathUtil;
 import firemerald.mcms.util.TextureRaytraceResult;
+import firemerald.mcms.util.mesh.ColoredModelMesh;
 import firemerald.mcms.util.mesh.DrawMode;
 import firemerald.mcms.util.mesh.GuiMesh;
 import firemerald.mcms.util.mesh.ModelMesh;
 
 public abstract class ComponentMesh extends ModelComponent
 {
-	protected final ModelMesh mesh;
+	protected ModelMesh mesh;
 	protected final GuiMesh texMesh = new GuiMesh(DrawMode.LINES);
 	
 	public ComponentMesh(ModelMesh mesh, String name)
@@ -45,9 +46,9 @@ public abstract class ComponentMesh extends ModelComponent
 	public void doRender(Object holder, Matrix4d currentTransform, Runnable defaultTexture)
 	{
 		boolean traced = (Main.instance.trace != null) && (Main.instance.trace.hit == this);
-		if (traced) Main.instance.guiShader.setColor(.5f, .5f, 1, 1);
+		if (traced) Main.instance.currentModelShader.setColor(.5f, .5f, 1, 1);
 		mesh.render();
-		if (traced) Main.instance.guiShader.setColor(1, 1, 1, 1);
+		if (traced) Main.instance.currentModelShader.setColor(1, 1, 1, 1);
 	}
 
 	@Override
@@ -119,6 +120,7 @@ public abstract class ComponentMesh extends ModelComponent
 			float[] verts = this.mesh.getVerticies();
 			float[] texs = this.mesh.getTexs();
 			float[] norms = this.mesh.getNormals();
+			float[] cols = mesh instanceof ColoredModelMesh ? ((ColoredModelMesh) mesh).getColors() : null;
 			int[] inds = this.mesh.getIndicies();
 			int size = inds.length / length;
 			float[][][] faces = new float[size][][];
@@ -131,7 +133,13 @@ public abstract class ComponentMesh extends ModelComponent
 					int v = inds[i + j];
 					int vInd = v * 3;
 					int tInd = v * 2;
-					face[j] = new float[] {
+					int cInd = v * 4;
+					face[j] = cols != null ? new float[] {
+							verts[vInd], verts[vInd + 1], verts[vInd + 2],
+							texs[tInd], texs[tInd + 1],
+							norms[vInd], norms[vInd + 1], norms[vInd + 2],
+							cols[cInd], cols[cInd + 1], cols[cInd + 2], cols[cInd + 3]
+					} : new float[] {
 							verts[vInd], verts[vInd + 1], verts[vInd + 2],
 							texs[tInd], texs[tInd + 1],
 							norms[vInd], norms[vInd + 1], norms[vInd + 2]
@@ -158,7 +166,7 @@ public abstract class ComponentMesh extends ModelComponent
 		RaytraceResult result = null;
 		if (mesh != null)
 		{
-			Texture tex = this.getTexture();
+			Material tex = this.getTexture();
 			if (tex != null)
 			{
 				Vector3f res = MathUtil.rayTraceMeshUV(fx, fy, fz, dx, dy, dz, mesh, transformation);

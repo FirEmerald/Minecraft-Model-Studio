@@ -180,6 +180,7 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 	@Override
 	public void onDeselect(EditorPanes editorPanes)
 	{
+		this.defaultTransform.rotation.onDeselect(editorPanes);
 		editorPanes.addBone.setBone(null);
 		editorPanes.addItem.setBone(null);
 		editorPanes.addFluid.setBone(null);
@@ -232,7 +233,6 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 		scaleZP    = null;
 		scaleZS    = null;
 		rotMode    = null;
-		this.defaultTransform.rotation.onDeselect(editorPanes);
 	}
 
 	@Override

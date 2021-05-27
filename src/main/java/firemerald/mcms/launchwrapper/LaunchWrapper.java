@@ -19,7 +19,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.function.Consumer;
 
 public class LaunchWrapper
@@ -29,6 +28,27 @@ public class LaunchWrapper
 	private static ProgressBars progressBars;
 	private static int item;
 	private static boolean isMDK = false;
+	public static final byte[] 
+			MD5_JUNIT =                fromHex("1F40FB782A4F2CF78F161D32670F7A3A"),
+			MD5_IMAGE4J =              fromHex("408cfc40d39010ecd2408ef51247ec8c"),
+			MD5_LOG4J_CORE =           fromHex("CC7D55ED69CC5FD34035B15C6EDF79A0"),
+			MD5_LOG4J_API =            fromHex("236B9969DF6B394E88283A9F813B9B95"),
+			MD5_LWJGL =                fromHex("2ECC76E5C61DCCD1E82F86748006473B"),
+			MD5_LWJGL_GLFW =           fromHex("8E466FD7A961B6A00252B9F162D3FF63"),
+			MD5_LWJGL_JAWT =           fromHex("7DD898DD2BF81748EAD765E6C656ECB1"),
+			MD5_LWJGL_NFD =            fromHex("CEC5B8F0965CA609F3E58AC3E043DD9E"),
+			MD5_LWJGL_OPENGL =         fromHex("A774338DC1FFF3AF3EA56A9DDE6A71CF"),
+			MD5_GSON =                 fromHex("089104CB90D8B4E1AA00B1F5FAEF0742"),
+			MD5_LWJGL3_AWT =           fromHex("2E39DBCACEC97E60ED8138477CB368D6"),
+			MD5_JOML =                 fromHex("2F245D9F01C38A9E42668A203D48AB4D"),
+			MD5_ASM =                  fromHex("13AD7C0B2CCE789FF54ABAC0457A481D"),
+			MD5_ASM_COMMONS =          fromHex("E62250EFF80324EB575B904E51960072"),
+			MD5_ASML_ANALYSIS =        fromHex("1FD0C7DD40CDEA384705E27846DCA6CB"),
+			MD5_ASM_TREE =             fromHex("C6C29DB770E61DEFDE1BC14FD385F770"),
+			MD5_LWJGL_NATIVES =        fromHex(EnumOS.getOS().md5_LWJGL_natvies),
+			MD5_LWJGL_GLFW_NATIVES =   fromHex(EnumOS.getOS().md5_LWJGL_GLFW_natvies),
+			MD5_LWJGL_NFD_NATIVES =    fromHex(EnumOS.getOS().md5_LWJGL_NFD_natvies),
+			MD5_LWJGL_OPENGL_NATIVES = fromHex(EnumOS.getOS().md5_LWJGL_OpenGL_natvies);
 	
 	static
 	{
@@ -59,22 +79,22 @@ public class LaunchWrapper
 			final String log4jVersion = "2.13.3";
 			final String objectWebASMVersion = "6.2.1";
 			EnumOS os = EnumOS.getOS();
-			downloadMaven("junit", "junit", "3.8.1", jars, new byte[]{31, 64, -5, 120, 42, 79, 44, -9, -113, 22, 29, 50, 103, 15, 122, 58});
-			downloadJar("https://github.com/imcdonagh/image4j/releases/download/0.7.2/image4j-0.7.2.jar", "github/image4j/0.7.2/image4j-0.7.2.jar", jars, new byte[]{64, -116, -4, 64, -45, -112, 16, -20, -46, 64, -114, -11, 18, 71, -20, -116});
-			downloadMaven("org.apache.logging.log4j", "log4j-core", log4jVersion, jars, new byte[]{-52, 125, 85, -19, 105, -52, 95, -45, 64, 53, -79, 92, 110, -33, 121, -96});
-			downloadMaven("org.apache.logging.log4j", "log4j-api", log4jVersion, jars, new byte[]{35, 107, -103, 105, -33, 107, 57, 78, -120, 40, 58, -97, -127, 59, -101, -107});
-			downloadLWJGL("org.lwjgl", "lwjgl", lwjglVersion, os, jars, new byte[]{46, -52, 118, -27, -58, 29, -52, -47, -24, 47, -122, 116, -128, 6, 71, 59}, new byte[]{97, 10, 70, -109, -21, 97, 113, 28, -45, 30, -2, 53, 98, -60, 13, -41});
-			downloadLWJGL("org.lwjgl", "lwjgl-glfw", lwjglVersion, os, jars, new byte[]{-114, 70, 111, -41, -87, 97, -74, -96, 2, 82, -71, -15, 98, -45, -1, 99}, new byte[]{48, 119, 51, -35, -42, 42, 34, 120, -96, 103, 122, 99, -109, -67, -61, -87});
-			downloadMaven("org.lwjgl", "lwjgl-jawt", lwjglVersion, jars, new byte[]{125, -40, -104, -35, 43, -8, 23, 72, -22, -41, 101, -26, -58, 86, -20, -79});
-			downloadLWJGL("org.lwjgl", "lwjgl-nfd", lwjglVersion, os, jars, new byte[]{-50, -59, -72, -16, -106, 92, -90, 9, -13, -27, -118, -61, -32, 67, -35, -98}, new byte[]{-3, 3, -19, -113, 58, 1, -7, -114, -78, 42, 101, 2, -102, 64, -117, -61});
-			downloadLWJGL("org.lwjgl", "lwjgl-opengl", lwjglVersion, os, jars, new byte[]{-89, 116, 51, -115, -63, -1, -13, -81, 62, -91, 106, -99, -34, 106, 113, -49}, new byte[]{51, 77, 83, -112, 93, 103, -2, -11, -117, -37, -124, -65, -127, -14, -114, -8});
-			downloadMaven("com.google.code.gson", "gson", "2.8.5", jars, new byte[]{8, -111, 4, -53, -112, -40, -76, -31, -86, 0, -79, -11, -6, -17, 7, 66});
-			downloadMaven("org.lwjglx", "lwjgl3-awt", "0.1.1", jars, new byte[]{-113, -44, -117, -104, 4, 89, 23, -56, -73, 9, 34, 10, -9, -103, 97, -65});
-			downloadMaven("org.joml", "joml", "1.9.16", jars, new byte[]{119, -11, 11, -67, 51, -115, -117, -73, -71, 108, -54, 52, -68, -100, -88, 24});
-			downloadMaven("org.ow2.asm", "asm", objectWebASMVersion, jars, new byte[]{19, -83, 124, 11, 44, -50, 120, -97, -11, 74, -70, -64, 69, 122, 72, 29});
-			downloadMaven("org.ow2.asm", "asm-commons", objectWebASMVersion, jars, new byte[]{-26, 34, 80, -17, -8, 3, 36, -21, 87, 91, -112, 78, 81, -106, 0, 114});
-			downloadMaven("org.ow2.asm", "asm-analysis", objectWebASMVersion, jars, new byte[]{31, -48, -57, -35, 64, -51, -22, 56, 71, 5, -30, 120, 70, -36, -90, -53});
-			downloadMaven("org.ow2.asm", "asm-tree", objectWebASMVersion, jars, new byte[]{-58, -62, -99, -73, 112, -26, 29, -17, -34, 27, -63, 79, -45, -123, -9, 112});
+			downloadMaven("junit", "junit", "3.8.1", jars, MD5_JUNIT);
+			downloadJar("https://github.com/imcdonagh/image4j/releases/download/0.7.2/image4j-0.7.2.jar", "github/image4j/0.7.2/image4j-0.7.2.jar", jars, MD5_IMAGE4J);
+			downloadMaven("org.apache.logging.log4j", "log4j-core", log4jVersion, jars, MD5_LOG4J_CORE);
+			downloadMaven("org.apache.logging.log4j", "log4j-api", log4jVersion, jars, MD5_LOG4J_API);
+			downloadLWJGL("org.lwjgl", "lwjgl", lwjglVersion, os, jars, MD5_LWJGL, MD5_LWJGL_NATIVES);
+			downloadLWJGL("org.lwjgl", "lwjgl-glfw", lwjglVersion, os, jars, MD5_LWJGL_GLFW, MD5_LWJGL_GLFW_NATIVES);
+			downloadMaven("org.lwjgl", "lwjgl-jawt", lwjglVersion, jars, MD5_LWJGL_JAWT);
+			downloadLWJGL("org.lwjgl", "lwjgl-nfd", lwjglVersion, os, jars, MD5_LWJGL_NFD, MD5_LWJGL_NFD_NATIVES);
+			downloadLWJGL("org.lwjgl", "lwjgl-opengl", lwjglVersion, os, jars, MD5_LWJGL_OPENGL, MD5_LWJGL_OPENGL_NATIVES);
+			downloadMaven("com.google.code.gson", "gson", "2.8.5", jars, MD5_GSON);
+			downloadMaven("org.lwjglx", "lwjgl3-awt", "0.1.7", jars, MD5_LWJGL3_AWT);
+			downloadMaven("org.joml", "joml", "1.9.25", jars, MD5_JOML);
+			downloadMaven("org.ow2.asm", "asm", objectWebASMVersion, jars, MD5_ASM);
+			downloadMaven("org.ow2.asm", "asm-commons", objectWebASMVersion, jars, MD5_ASM_COMMONS);
+			downloadMaven("org.ow2.asm", "asm-analysis", objectWebASMVersion, jars, MD5_ASML_ANALYSIS);
+			downloadMaven("org.ow2.asm", "asm-tree", objectWebASMVersion, jars, MD5_ASM_TREE);
 			progressBars.dispose();
 			progressBars = null;
 		}
@@ -147,7 +167,7 @@ public class LaunchWrapper
 					digest.update(bytes, 0, read);
 				}
 				byte[] got = digest.digest();
-				LOGGER.debug(file + " MD5: " + convertByteArrayToString(got));
+				LOGGER.debug(file + " MD5: " + convertByteArrayToHexString(got));
 				if (got.length != md5.length) LOGGER.warn("Invalid MD5 for " + des + " library, was " + convertByteArrayToHexString(got) + ", should be " + convertByteArrayToHexString(md5));
 				else
 				{
@@ -213,7 +233,7 @@ public class LaunchWrapper
 				}
 				LOGGER.info("downloaded " + url + " successfully");
 				byte[] got = digest.digest();
-				LOGGER.debug(url + " MD5: " + convertByteArrayToString(got));
+				LOGGER.debug(url + " MD5: " + convertByteArrayToHexString(got));
 				if (got.length != md5.length) LOGGER.warn("Invalid MD5 for " + des + " library, was " + convertByteArrayToHexString(got) + ", should be " + convertByteArrayToHexString(md5));
 				else
 				{
@@ -284,18 +304,10 @@ public class LaunchWrapper
 		return stringBuffer.toString();
 	}
 	
-	/** /
-	private static String convertByteArrayToCodeString(byte[] arrayBytes)
+	protected static byte[] fromHex(String string)
 	{
-		StringJoiner joiner = new StringJoiner(", ");
-	    for (byte b : arrayBytes) joiner.add(Byte.toString(b));
-	    return "new byte[] {" + joiner.toString() + "}";
-	}
-	/**/
-	private static String convertByteArrayToString(byte[] arrayBytes)
-	{
-		StringJoiner joiner = new StringJoiner(", ");
-	    for (byte b : arrayBytes) joiner.add(Byte.toString(b));
-	    return joiner.toString();
+		byte[] vals = new byte[(string.length() + 1) / 2];
+		for (int i = 0; i < vals.length; i++) vals[i] = (byte) Integer.parseInt(string.substring(i * 2, Math.min(i * 2 + 2, string.length())), 16);
+		return vals;
 	}
 }

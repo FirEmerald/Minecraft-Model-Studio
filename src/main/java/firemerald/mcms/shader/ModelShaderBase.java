@@ -11,6 +11,7 @@ import org.lwjgl.system.MemoryStack;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.texture.RGB;
 import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.Material;
 
 public abstract class ModelShaderBase
 {
@@ -18,7 +19,7 @@ public abstract class ModelShaderBase
 	public static final MatrixStack4 VIEW = new MatrixStack4();
 	public static final MatrixStack4 PROJECTION = new MatrixStack4();
 	public static final MatrixStack4 TEXTURE = new MatrixStack4();
-	protected int model, viewProjection, texture, texture_sampler, clip_outside;
+	protected int model, viewProjection, texture, texture_sampler, clip_outside, hasColor;
 	public int prog;
 	
 	protected static float r1, g1, b1, a1, r2, g2, b2, a2, lX, lY, lZ;
@@ -32,6 +33,18 @@ public abstract class ModelShaderBase
 		texture = glGetUniformLocation(prog, "textureMatrix");
 		texture_sampler = glGetUniformLocation(prog, "texture_sampler");
 		clip_outside = glGetUniformLocation(prog, "clip_outside");
+		hasColor = glGetUniformLocation(prog, "hasColor");
+	}
+	
+	public ModelShaderBase(String vert, String geom, String frag)
+	{
+		prog = GuiShader.createShaderProgram(vert, geom, frag);
+		model = glGetUniformLocation(prog, "modelMatrix");
+		viewProjection = glGetUniformLocation(prog, "viewProjectionMatrix");
+		texture = glGetUniformLocation(prog, "textureMatrix");
+		texture_sampler = glGetUniformLocation(prog, "texture_sampler");
+		clip_outside = glGetUniformLocation(prog, "clip_outside");
+		hasColor = glGetUniformLocation(prog, "hasColor");
 	}
 	
 	public void reset()
@@ -127,6 +140,16 @@ public abstract class ModelShaderBase
 
 	public abstract void setIgnoreLighting(boolean ignoreLighting);
 	
+	public void setHasColor()
+	{
+		glUniform1i(hasColor, 1);
+	}
+	
+	public void unsetHasColor()
+	{
+		glUniform1i(hasColor, 0);
+	}
+	
 	public void setTexOffset(float uOff, float vOff)
 	{
 		TEXTURE.matrix().identity().translate(uOff, vOff, 0);
@@ -154,6 +177,11 @@ public abstract class ModelShaderBase
 	public void unbind()
 	{
 		glUseProgram(0);
+	}
+	
+	public void bindMaterial(Material mat)
+	{
+		mat.getDiffuse().bind();
 	}
 	
 	public void updateModel()

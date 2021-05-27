@@ -15,6 +15,13 @@ public class ButtonAction extends ItemButton16
 		super(x, y);
 		this.texture = texture;
 		this.action = action;
+		this.enabled = action.canRun.getAsBoolean();
+	}
+
+	@Override
+	public boolean isEnabled()
+	{
+		return action.canRun.getAsBoolean();
 	}
 	
 	@Override

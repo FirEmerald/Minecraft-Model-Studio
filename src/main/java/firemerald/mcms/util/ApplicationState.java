@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import javax.xml.transform.TransformerException;
 
@@ -14,8 +15,10 @@ import firemerald.mcms.api.data.*;
 import firemerald.mcms.api.util.FileUtil;
 import firemerald.mcms.events.ApplicationStateEvent;
 import firemerald.mcms.gui.popups.GuiPopupException;
+import firemerald.mcms.shader.ModelShader;
 import firemerald.mcms.texture.ColorModel;
 import firemerald.mcms.texture.RGB;
+import firemerald.mcms.texture.space.EnumTextureSpace;
 import firemerald.mcms.theme.BasicTheme;
 import firemerald.mcms.theme.GuiTheme;
 import firemerald.mcms.util.hotkey.Action;
@@ -37,6 +40,24 @@ public class ApplicationState
 			this.displayName = displayName;
 		}
 	}
+
+	public static enum EnumRenderMode
+	{
+		VANILLA("Vanilla", () -> Main.instance.modelShader),
+		LAB_PBR("LabPBR (WIP, not working)", () -> Main.instance.labPBRShader, EnumTextureSpace.NORMAL_LAB_PBR, EnumTextureSpace.SPECULAR_LAB_PBR),
+		OLD_PBR("OldPBR (WIP, not working)", () -> Main.instance.oldPBRShader, EnumTextureSpace.NORMAL_OLD_PBR, EnumTextureSpace.SPECULAR_OLD_PBR, EnumTextureSpace.EMISSIVE_OLD_PBR);
+
+		public final String displayName;
+		public final Supplier<? extends ModelShader> shader;
+		public final EnumTextureSpace[] textureSpaces;
+		
+		EnumRenderMode(String displayName, Supplier<? extends ModelShader> shader, EnumTextureSpace... textureSpaces)
+		{
+			this.displayName = displayName;
+			this.shader = shader;
+			this.textureSpaces = textureSpaces;
+		}
+	}
 	
 	public static final File FILE = new File("state.xml");
 	
@@ -48,6 +69,7 @@ public class ApplicationState
 	private static final int MAX_COLOR_HISTORY = 16;
 	private boolean eventLogging = false;
 	private EnumLayout layout = EnumLayout.LAYOUT_A;
+	private EnumRenderMode renderMode = EnumRenderMode.VANILLA;
 	
 	public ApplicationState()
 	{
@@ -170,6 +192,19 @@ public class ApplicationState
 		saveState();
 	}
 
+	public EnumRenderMode getRenderMode()
+	{
+		return renderMode;
+	}
+
+	public void setRenderMode(EnumRenderMode renderMode)
+	{
+		TitlebarItems.RENDER_MODE_ITEMS.get(this.renderMode).setEnabled(true);
+		TitlebarItems.RENDER_MODE_ITEMS.get(renderMode).setEnabled(false);
+		this.renderMode = renderMode;
+		saveState();
+	}
+
 	public boolean eventBusLogging()
 	{
 		return eventLogging;
@@ -266,6 +301,11 @@ public class ApplicationState
 					layout = optionsChild.getEnum("value", EnumLayout.values(), EnumLayout.LAYOUT_A);
 					TitlebarItems.LAYOUT_ITEMS.get(layout).setEnabled(false);
 					break;
+				case "render_mode":
+					if (renderMode != null) TitlebarItems.RENDER_MODE_ITEMS.get(renderMode).setEnabled(true);
+					renderMode = optionsChild.getEnum("value", EnumRenderMode.values(), EnumRenderMode.VANILLA);
+					TitlebarItems.RENDER_MODE_ITEMS.get(renderMode).setEnabled(false);
+					break;
 				}
 				break;
 			case "color_history":
@@ -325,6 +365,8 @@ public class ApplicationState
 			});
 			AbstractElement layout = options.addChild("layout");
 			layout.setEnum("value", this.layout);
+			AbstractElement renderMode = options.addChild("render_mode");
+			renderMode.setEnum("value", this.renderMode);
 			if (!colorHistory.isEmpty())
 			{
 				AbstractElement colorHistory = root.addChild("color_history");

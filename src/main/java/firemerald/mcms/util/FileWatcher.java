@@ -3,7 +3,6 @@ package firemerald.mcms.util;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
@@ -20,7 +19,7 @@ public class FileWatcher
 	public static final Kind<?>[] ALL_KINDS = {StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY};
 	
 	private final WatchService watcher;
-	private final Map<Path, DirWatcher> watchers = new HashMap<>();
+	private final Map<File, DirWatcher> watchers = new HashMap<>();
 	
 	public FileWatcher() throws IOException
 	{
@@ -30,14 +29,18 @@ public class FileWatcher
 	public void addWatcher(File file, Consumer<WatchEvent<?>> consumer, Kind<?>... kinds) throws IOException
 	{
 		file = file.getAbsoluteFile();
-		if (file.isDirectory()) addWatcher(file.toPath(), consumer, kinds);
+		if (file.isDirectory())
+		{
+			DirWatcher watcher = watchers.get(file);
+			if (watcher == null) watchers.put(file, watcher = new DirWatcher(file.toPath().register(this.watcher, ALL_KINDS), file));
+			watcher.addConsumer(consumer, kinds);
+		}
 		else
 		{
-			Path rel = file.toPath().toAbsolutePath();
-			Path dir = rel.getParent().resolve("./");
+			File dir = file.getParentFile();
 			DirWatcher watcher = watchers.get(dir);
-			if (watcher == null) watchers.put(dir, watcher = new DirWatcher(dir.register(this.watcher, ALL_KINDS), dir));
-			watcher.addConsumer(rel, consumer, kinds);
+			if (watcher == null) watchers.put(dir, watcher = new DirWatcher(dir.toPath().register(this.watcher, ALL_KINDS), dir));
+			watcher.addConsumer(file, consumer, kinds);
 		}
 	}
 	
@@ -46,29 +49,23 @@ public class FileWatcher
 		addWatcher(file, consumer, ALL_KINDS);
 	}
 	
-	public void addWatcher(Path dir, Consumer<WatchEvent<?>> consumer, Kind<?>... kinds) throws IOException
-	{
-		dir = dir.toAbsolutePath();
-		DirWatcher watcher = watchers.get(dir);
-		if (watcher == null) watchers.put(dir, watcher = new DirWatcher(dir.register(this.watcher, ALL_KINDS), dir));
-		watcher.addConsumer(consumer, kinds);
-	}
-	
-	public void addWatcher(Path dir, Consumer<WatchEvent<?>> consumer) throws IOException
-	{
-		addWatcher(dir, consumer, ALL_KINDS);
-	}
-	
 	public void removeWatcher(File file, Consumer<WatchEvent<?>> consumer, Kind<?>... kinds)
 	{
 		file = file.getAbsoluteFile();
-		if (file.isDirectory()) removeWatcher(file.toPath(), consumer, kinds);
+		if (file.isDirectory())
+		{
+			DirWatcher watcher = watchers.get(file);
+			if (watcher != null && watcher.removeConsumer(consumer, kinds))
+			{
+				watcher.watchKey.cancel();
+				watchers.remove(file);
+			}
+		}
 		else
 		{
-			Path rel = file.toPath().toAbsolutePath();
-			Path dir = rel.getParent().resolve("./");
+			File dir = file.getParentFile();
 			DirWatcher watcher = watchers.get(dir);
-			if (watcher != null && watcher.removeConsumer(rel, consumer, kinds))
+			if (watcher != null && watcher.removeConsumer(file, consumer, kinds))
 			{
 				watcher.watchKey.cancel();
 				watchers.remove(dir);
@@ -81,22 +78,6 @@ public class FileWatcher
 		removeWatcher(file, consumer, ALL_KINDS);
 	}
 	
-	public void removeWatcher(Path dir, Consumer<WatchEvent<?>> consumer, Kind<?>... kinds)
-	{
-		dir = dir.toAbsolutePath();
-		DirWatcher watcher = watchers.get(dir);
-		if (watcher != null && watcher.removeConsumer(consumer, kinds))
-		{
-			watcher.watchKey.cancel();
-			watchers.remove(dir);
-		}
-	}
-	
-	public void removeWatcher(Path dir, Consumer<WatchEvent<?>> consumer)
-	{
-		removeWatcher(dir, consumer, ALL_KINDS);
-	}
-	
 	public void poll()
 	{
 		watchers.values().forEach(watcher -> watcher.poll());
@@ -104,22 +85,22 @@ public class FileWatcher
 	
 	private static class DirWatcher
 	{
-		private final Path dir;
-		private final Map<Path, Map<Kind<?>, List<Consumer<WatchEvent<?>>>>> consumers = new HashMap<>();
+		private final File dir;
+		private final Map<File, Map<Kind<?>, List<Consumer<WatchEvent<?>>>>> consumers = new HashMap<>();
 		Map<Kind<?>, List<Consumer<WatchEvent<?>>>> dirConsumers = new HashMap<>();
 		private final WatchKey watchKey;
 		
-		public DirWatcher(WatchKey watchKey, Path dir)
+		public DirWatcher(WatchKey watchKey, File dir)
 		{
 			this.watchKey = watchKey;
 			this.dir = dir;
 		}
 		
-		public void addConsumer(Path path, Consumer<WatchEvent<?>> consumer, Kind<?>... kinds)
+		public void addConsumer(File file, Consumer<WatchEvent<?>> consumer, Kind<?>... kinds)
 		{
-			path = path.toAbsolutePath();
-			Map<Kind<?>, List<Consumer<WatchEvent<?>>>> map = consumers.get(path);
-			if (map == null) consumers.put(path, map = new HashMap<>());
+			file = file.getAbsoluteFile();
+			Map<Kind<?>, List<Consumer<WatchEvent<?>>>> map = consumers.get(file);
+			if (map == null) consumers.put(file, map = new HashMap<>());
 			for (Kind<?> kind : kinds)
 			{
 				List<Consumer<WatchEvent<?>>> list = map.get(kind);
@@ -138,10 +119,10 @@ public class FileWatcher
 			}
 		}
 		
-		public boolean removeConsumer(Path path, Consumer<WatchEvent<?>> consumer, Kind<?>... kinds)
+		public boolean removeConsumer(File file, Consumer<WatchEvent<?>> consumer, Kind<?>... kinds)
 		{
-			path = path.toAbsolutePath();
-			Map<Kind<?>, List<Consumer<WatchEvent<?>>>> map = consumers.get(path);
+			file = file.getAbsoluteFile();
+			Map<Kind<?>, List<Consumer<WatchEvent<?>>>> map = consumers.get(file);
 			if (map != null)
 			{
 				for (Kind<?> kind : kinds)
@@ -153,7 +134,7 @@ public class FileWatcher
 						if (list.isEmpty()) map.remove(kind);
 					}
 				}
-				if (map.isEmpty()) consumers.remove(path);
+				if (map.isEmpty()) consumers.remove(file);
 			}
 			return dirConsumers.isEmpty() && consumers.isEmpty();
 		}
@@ -178,7 +159,7 @@ public class FileWatcher
 	    	{
     			List<Consumer<WatchEvent<?>>> list = dirConsumers.get(event.kind());
 				if (list != null) list.forEach(consumer -> consumer.accept(event));
-    			Map<Kind<?>, List<Consumer<WatchEvent<?>>>> map = consumers.get(((Path) event.context()).toAbsolutePath());
+    			Map<Kind<?>, List<Consumer<WatchEvent<?>>>> map = consumers.get(new File(dir, event.context().toString()));
     			if (map != null)
     			{
     				list = map.get(event.kind());

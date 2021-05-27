@@ -44,6 +44,8 @@ import firemerald.mcms.plugin.PluginLoader;
 import firemerald.mcms.shader.GuiShader;
 import firemerald.mcms.shader.ModelShader;
 import firemerald.mcms.shader.ModelShaderBase;
+import firemerald.mcms.shader.ModelShaderLabPBR;
+import firemerald.mcms.shader.ModelShaderOldPBR;
 import firemerald.mcms.shader.ShadowShader;
 import firemerald.mcms.texture.BlendMode;
 import firemerald.mcms.texture.Color;
@@ -52,6 +54,7 @@ import firemerald.mcms.texture.HSL;
 import firemerald.mcms.texture.HSV;
 import firemerald.mcms.texture.RGB;
 import firemerald.mcms.texture.Texture;
+import firemerald.mcms.texture.space.EnumTextureSpace;
 import firemerald.mcms.texture.tools.ITool;
 import firemerald.mcms.texture.tools.IToolHolder;
 import firemerald.mcms.texture.tools.ToolView;
@@ -76,8 +79,8 @@ import firemerald.mcms.window.glfw.GLFWWindow;
 public class Main
 {
 	public static final String ID = "mcms";
-	public static final String VERSION = "0.1.3";
-	public static final String BUILD_DATE = "10/12/2020 14:33";
+	public static final String VERSION = "0.2.0";
+	public static final String BUILD_DATE = "05/26/2021 22:08";
 	public static final Logger LOGGER = LogManager.getLogger("MCMS"); //the main logger;
 	public static Main instance;
 	public static final int MIN_W = 640, MIN_H = 480;
@@ -87,6 +90,8 @@ public class Main
 	public GuiShader guiShader;
 	public ModelShaderBase currentModelShader;
 	public ModelShader modelShader;
+	public ModelShaderOldPBR oldPBRShader;
+	public ModelShaderLabPBR labPBRShader;
 	public ShadowShader shadowShader;
 	public TextureManager textureManager;
 	protected GuiScreen gui = new GuiScreen() {}; //blank gui to prevent null pointer exceptions
@@ -103,6 +108,7 @@ public class Main
 	private Texture overlay;
 	public static double time = 0;
 	public EditorPanes editorPanes;
+	public EnumTextureSpace activeSpace = EnumTextureSpace.DIFFUSE;
 	public IToolHolder toolHolder = new IToolHolder()
 	{
 		public Color color1 = new Color(0, 0, 0, 1), color2 = new Color(1, 1, 1, 1);
@@ -562,6 +568,8 @@ public class Main
         glEnable(GL_BLEND);
 		guiShader = new GuiShader("gui", "gui");
 		currentModelShader = modelShader = new ModelShader("model", "model");
+		oldPBRShader = new ModelShaderOldPBR("tbn", "tbn", "oldPBR");
+		labPBRShader = new ModelShaderLabPBR("tbn", "tbn", "labPBR");
 		shadowShader = new ShadowShader("shadows", "shadows");
 		glDisable(GL_CULL_FACE);
 
@@ -1020,6 +1028,7 @@ public class Main
 		options.apply(TitlebarItems.TOGGLE_NODES);
 		options.apply(TitlebarItems.TOGGLE_BONES);
 		options.apply(TitlebarItems.TOGGLE_SHADOWS);
+		options.apply(TitlebarItems.RENDER_MODE_MENU);
 		options.apply(TitlebarItems.CHANGE_THEME);
 		options.apply(TitlebarItems.HOTKEYS);
 		options.apply(TitlebarItems.LAYOUT_MENU);
