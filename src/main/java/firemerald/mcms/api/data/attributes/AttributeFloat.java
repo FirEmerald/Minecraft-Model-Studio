@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
-
 import firemerald.mcms.api.data.BinaryFormat;
 import firemerald.mcms.api.util.FileUtil;
 
@@ -88,11 +85,5 @@ public class AttributeFloat implements IAttribute
 	public static AttributeFloat read(InputStream in) throws IOException
 	{
 		return new AttributeFloat(FileUtil.readFloat(in));
-	}
-
-	@Override
-	public JsonElement makeElement()
-	{
-		return new JsonPrimitive(val);
 	}
 }

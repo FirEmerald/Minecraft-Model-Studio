@@ -82,7 +82,7 @@ public class Main
 {
 	public static final String ID = "mcms";
 	public static final String VERSION = "0.2.1";
-	public static final String BUILD_DATE = "03/14/2022 15:15";
+	public static final String BUILD_DATE = "03/14/2022 15:25";
 	public static final Logger LOGGER = LogManager.getLogger("MCMS"); //the main logger;
 	public static Main instance;
 	public static final int MIN_W = 640, MIN_H = 480;
