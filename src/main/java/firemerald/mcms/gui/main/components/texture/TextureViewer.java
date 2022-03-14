@@ -236,18 +236,27 @@ public class TextureViewer extends Component implements IScrollable, IScrollable
 	@Override
 	public void onMousePressed(float mx, float my, int button, int mods)
 	{
-		if (Main.instance.project.getTexture(Main.instance.activeSpace) != null) Main.instance.tool.onMouseClick(Main.instance.project.getTexture(), prevU = getTexU(mx), prevV = getTexV(my), button);
+		if (Main.instance.project.getTexture(Main.instance.activeSpace) != null)
+		{
+			if (!Main.instance.tool.onTextureViewClick(this, mx, my, button, mods)) Main.instance.tool.onMouseClick(Main.instance.project.getTexture(), prevU = getTexU(mx), prevV = getTexV(my), button);
+		}
 	}
 
 	@Override
 	public void onMouseReleased(float mx, float my, int button, int mods)
 	{
-		if (Main.instance.project.getTexture(Main.instance.activeSpace) != null) Main.instance.tool.onMouseRelease(Main.instance.project.getTexture(), prevU = getTexU(mx), prevV = getTexV(my), button);
+		if (Main.instance.project.getTexture(Main.instance.activeSpace) != null)
+		{
+			if (!Main.instance.tool.onTextureViewRelease(this, mx, my, button)) Main.instance.tool.onMouseRelease(Main.instance.project.getTexture(), prevU = getTexU(mx), prevV = getTexV(my), button);
+		}
 	}
 
 	@Override
 	public void onDrag(float mx, float my, int button)
 	{
-		if (Main.instance.project.getTexture(Main.instance.activeSpace) != null) Main.instance.tool.onMouseDrag(Main.instance.project.getTexture(), prevU, prevV, prevU = getTexU(mx), prevV = getTexV(my), button, false);
+		if (Main.instance.project.getTexture(Main.instance.activeSpace) != null)
+		{
+			if (!Main.instance.tool.onTextureViewDrag(this, mx, my, button)) Main.instance.tool.onMouseDrag(Main.instance.project.getTexture(), prevU, prevV, prevU = getTexU(mx), prevV = getTexV(my), button, false);
+		}
 	}
 }

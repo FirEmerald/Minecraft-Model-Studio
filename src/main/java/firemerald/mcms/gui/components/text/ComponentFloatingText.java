@@ -336,6 +336,14 @@ public class ComponentFloatingText extends Component
 		case V:
 			if ((mods & Modifier.CONTROL.flag) > 0) onPaste();
 			break;
+		case A:
+			if ((mods & Modifier.CONTROL.flag) > 0)
+			{
+				selStart = 0;
+				selEnd = pos = text.length();
+				updatePos2();
+			}
+			break;
 		default:
 			return false;
 		}
@@ -484,7 +492,7 @@ public class ComponentFloatingText extends Component
 		boolean isShift = (mods & Modifier.SHIFT.flag) > 0;
 		if (pos > 0)
 		{
-			if ((mods & Modifier.CONTROL.flag) > 0)
+			if (isShift)
 			{
 				if (pos == selEnd) selEnd = selStart;
 				selStart = pos = 0;
@@ -504,7 +512,7 @@ public class ComponentFloatingText extends Component
 		boolean isShift = (mods & Modifier.SHIFT.flag) > 0;
 		if (pos < text.length())
 		{
-			if ((mods & Modifier.CONTROL.flag) > 0)
+			if (isShift)
 			{
 				if (pos == selStart) selStart = selEnd;
 				selEnd = pos = text.length();

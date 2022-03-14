@@ -8,6 +8,7 @@ import firemerald.mcms.gui.GuiSection;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.main.components.model.ComponentModelViewer;
+import firemerald.mcms.gui.main.components.texture.TextureViewer;
 import firemerald.mcms.texture.BlendMode;
 import firemerald.mcms.texture.Color;
 import firemerald.mcms.texture.Texture;
@@ -30,6 +31,24 @@ public abstract class AbstractToolBrush implements ITextureTool
 
 	@Override
 	public boolean onModelViewRelease(ComponentModelViewer viewer, float mx, float my, int button)
+	{
+		return false;
+	}
+
+	@Override
+	public boolean onTextureViewClick(TextureViewer viewer, float mx, float my, int button, int mods)
+	{
+		return false;
+	}
+
+	@Override
+	public boolean onTextureViewDrag(TextureViewer viewer, float mx, float my, int button)
+	{
+		return false;
+	}
+
+	@Override
+	public boolean onTextureViewRelease(TextureViewer viewer, float mx, float my, int button)
 	{
 		return false;
 	}

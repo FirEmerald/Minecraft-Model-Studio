@@ -24,7 +24,8 @@ public class GuiPopupNewAnimation extends GuiPopup
 	public final ComponentTextFloat length;
 	public final ComponentIncrementFloat lengthUp, lengthDown;
 	public final ComponentFloatingLabel labelLoop;
-	public final ComponentToggle loop;
+	public final ComponentTextFloat loop;
+	public final ComponentIncrementFloat loopUp, loopDown;
 	public final ComponentFloatingLabel labelRelative;
 	public final ComponentToggle relative;
 	public final StandardButton ok, cancel;
@@ -33,7 +34,7 @@ public class GuiPopupNewAnimation extends GuiPopup
 	{
 		Project project = Main.instance.project;
 		final int cw = 180;
-		final int ch = 100;
+		final int ch = 140;
 		final int cx = 20;
 		final int cy = 20;
 		this.addElement(pane = new DecoPane(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20, 2, 16));
@@ -41,17 +42,26 @@ public class GuiPopupNewAnimation extends GuiPopup
 		this.addElement(name = new ComponentText(cx, y, cx + cw, y + 20, Main.instance.fontMsg, MiscUtil.ensureUnique("Untitled", project.getAnimationNames()), null));
 		y += 20;
 		this.addElement(labelLength = new ComponentFloatingLabel(cx, y, cx + 50, y + 20, Main.instance.fontMsg, "length"));
-		this.addElement(length = new ComponentTextFloat(cx + 50, y, cx + cw - 10, y + 20, Main.instance.fontMsg, 5, 0, Float.MAX_VALUE, null));
+		this.addElement(length = new ComponentTextFloat(cx + 50, y, cx + cw - 10, y + 20, Main.instance.fontMsg, 5, 0, Float.MAX_VALUE, this::onLengthChanged));
 		this.addElement(lengthUp = new ComponentIncrementFloat(cx + cw - 10, y, length, .05f));
 		this.addElement(lengthDown = new ComponentIncrementFloat(cx + cw - 10, y + 10, length, -.05f));
 		y += 20;
-		this.addElement(labelLoop = new ComponentFloatingLabel(cx, y, cx + 30, y + 20, Main.instance.fontMsg, "loop"));
-		this.addElement(loop = new ComponentToggle(cx + 35, y + 5, cx + 45, y + 15, true, null));
-		this.addElement(labelRelative = new ComponentFloatingLabel(cx + 50, y, cx + 103, y + 20, Main.instance.fontMsg, "relative"));
-		this.addElement(relative = new ComponentToggle(cx + 108, y + 5, cx + 118, y + 15, false, null));
+		this.addElement(labelLoop = new ComponentFloatingLabel(cx, y, cx + cw, y + 20, Main.instance.fontMsg, "loop start (-.05 for none)"));
+		y += 20;
+		this.addElement(loop = new ComponentTextFloat(cx, y, cx + cw - 10, y + 20, Main.instance.fontMsg, -.05f, -.05f, length.getVal(), null));
+		this.addElement(loopUp = new ComponentIncrementFloat(cx + cw - 10, y, loop, .05f));
+		this.addElement(loopDown = new ComponentIncrementFloat(cx + cw - 10, y + 10, loop, -.05f));
+		y += 20;
+		this.addElement(labelRelative = new ComponentFloatingLabel(cx, y, cx + 53, y + 20, Main.instance.fontMsg, "relative"));
+		this.addElement(relative = new ComponentToggle(cx + 58, y + 5, cx + 68, y + 15, false, null));
 		y += 20;
 		this.addElement(ok = new StandardButton(cx, cy + ch - 20, cx + 80, cy + ch, 1, 4, "add", this::apply));
 		this.addElement(cancel = new StandardButton(cx + cw - 80, cy + ch - 20, cx + cw, cy + ch, 1, 4, "cancel", this::deactivate));
+	}
+	
+	public void onLengthChanged(float val)
+	{
+		loop.setBounds(-1, val);
 	}
 
 	@Override
@@ -59,7 +69,7 @@ public class GuiPopupNewAnimation extends GuiPopup
 	{
 		super.setSize(w, h);
 		final int cw = 180;
-		final int ch = 100;
+		final int ch = 140;
 		final int cx = (w - cw) / 2;
 		final int cy = (h - ch) / 2;
 		pane.setSize(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20);
@@ -71,10 +81,14 @@ public class GuiPopupNewAnimation extends GuiPopup
 		lengthUp.setPosition(cx + cw - 10, y);
 		lengthDown.setPosition(cx + cw - 10, y + 10);
 		y += 20;
-		labelLoop.setSize(cx, y, cx + 30, y + 20);
-		loop.setSize(cx + 35, y + 5, cx + 45, y + 15);
-		labelRelative.setSize(cx + 50, y, cx + 103, y + 20);
-		relative.setSize(cx + 108, y + 5, cx + 118, y + 15);
+		labelLoop.setSize(cx, y, cx + cw, y + 20);
+		y += 20;
+		loop.setSize(cx, y, cx + cw - 10, y + 20);
+		loopUp.setPosition(cx + cw - 10, y);
+		loopDown.setPosition(cx + cw - 10, y + 10);
+		y += 20;
+		labelRelative.setSize(cx, y, cx + 53, y + 20);
+		relative.setSize(cx + 58, y + 5, cx + 68, y + 15);
 		y += 20;
 		ok.setSize(cx, cy + ch - 20, cx + 80, cy + ch);
 		cancel.setSize(cx + cw - 80, cy + ch - 20, cx + cw, cy + ch);
@@ -95,7 +109,7 @@ public class GuiPopupNewAnimation extends GuiPopup
 		deactivate();
 		final Project project = Main.instance.project;
 		final String name = MiscUtil.ensureUnique(this.name.getText(), project.getAnimationNames());
-		final IAnimation anim = length.getVal() == 0 ? new Pose(relative.state) : new Animation(length.getVal(), loop.state, relative.state);
+		final IAnimation anim = length.getVal() == 0 ? new Pose(relative.state) : new Animation(length.getVal(), loop.getVal(), relative.state);
 		project.onAction(new HistoryAction(() -> project.removeAnimation(name), () -> project.addAnimation(name, anim)));
 		project.addAnimation(name, anim);
 	}

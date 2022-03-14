@@ -229,5 +229,11 @@ public class ComponentEditSelector extends ScrollableComponentPane
 		{
 			return NONE;
 		}
+
+		@Override
+		public IModelEditable getParent()
+		{
+			return null;
+		}
 	}
 }

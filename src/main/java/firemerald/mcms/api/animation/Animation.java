@@ -25,25 +25,25 @@ public class Animation implements IAnimation
 {
 	public final Map<String, NavigableMap<Float, TweeningFrame>> animation;
 	protected float length;
-	public boolean loop;
+	public float loopStart;
 	protected boolean relative;
 	
-	public Animation(float length, boolean loop, boolean relative)
+	public Animation(float length, float loopStart, boolean relative)
 	{
-		this(new HashMap<>(), length, loop, relative);
+		this(new HashMap<>(), length, loopStart, relative);
 	}
 	
-	public Animation(Map<String, NavigableMap<Float, TweeningFrame>> animation, float length, boolean loop, boolean relative)
+	public Animation(Map<String, NavigableMap<Float, TweeningFrame>> animation, float length, float loopStart, boolean relative)
 	{
 		this.animation = animation;
 		this.length = length;
-		this.loop = loop;
+		this.loopStart = loopStart;
 		this.relative = relative;
 	}
 	
 	public Animation(Map<String, NavigableMap<Float, TweeningFrame>> animation, float length)
 	{
-		this(animation, length, true, false);
+		this(animation, length, 0, false);
 	}
 	
 	public Animation(AbstractElement el)
@@ -56,6 +56,14 @@ public class Animation implements IAnimation
 	public float getLength()
 	{
 		return length;
+	}
+	
+	@Override
+	public float getAnimTime(float timestamp)
+	{
+		if (timestamp < 0) return 0;
+		else if (loopStart < 0) return timestamp > length ? length : timestamp;
+		else return timestamp < loopStart ? timestamp : loopStart + ((timestamp - loopStart) % (length - loopStart));
 	}
 	
 	public void setLength(float length, Collection<? extends Bone<?>> bones)
@@ -139,7 +147,7 @@ public class Animation implements IAnimation
 	@Override
 	public Map<String, Matrix4d> getBones(Map<String, Matrix4d> map, float frame, Collection<? extends Bone<?>> bones)
 	{
-		if (frame > length && loop) frame %= length;
+		frame = getAnimTime(frame);
 		for (Bone<?> bone : bones)
 		{
 			NavigableMap<Float, TweeningFrame> anim = animation.get(bone.getName());
@@ -188,8 +196,8 @@ public class Animation implements IAnimation
 						}
 					}
 				}
-				Matrix4d mat = new Matrix4d().translate(res.translation);
-				mat.mul(res.rotation.getQuaternion().get(new Matrix4d()));
+				Matrix4d mat = res.getTransformation();
+				//Matrix4d mat = new Matrix4d().scale(MathUtils.toVector3d(res.scaling)).translate(res.translation).mul(res.rotation.getQuaternion().get(new Matrix4d()));
 				if (relative) map.get(bone.getName()).mul(mat);
 				else map.put(bone.getName(), mat);
 			}
@@ -201,7 +209,8 @@ public class Animation implements IAnimation
 	public void load(AbstractElement root, float scale)
 	{
 		length = root.getFloat("length", 1);
-		loop = root.getBoolean("loop", true);
+		if (root.hasAttribute("loopStart")) loopStart = root.getFloat("loopStart", -1);
+		else loopStart = root.getBoolean("loop", true) ? 0 : -.05f;
 		relative = root.getBoolean("relative", false);
 		animation.clear();
 		for (AbstractElement frameEl : root.getChildren()) if (frameEl.getName().equals("frame"))
@@ -249,7 +258,7 @@ public class Animation implements IAnimation
 			}
 		}
 		root.setDouble("length", length);
-		root.setBoolean("loop", loop);
+		root.setFloat("loopStart", loopStart);
 		root.setBoolean("relative", relative);
 		for (Entry<Float, Map<String, TweeningFrame>> entry : map.entrySet())
 		{
@@ -318,7 +327,7 @@ public class Animation implements IAnimation
 				newAnim.put(time, new TweeningFrame(transform));
 			});
 		});
-		return new Animation(newAnimation, this.length, this.loop, this.relative);
+		return new Animation(newAnimation, this.length, this.loopStart, this.relative);
 	}
 
 	@Override

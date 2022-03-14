@@ -42,6 +42,7 @@ public interface Textures
 		PLAYBACK_PAUSE = new ResourceLocation(Main.ID, "playback/pause.png"),
 		PLAYBACK_FORWARD = new ResourceLocation(Main.ID, "playback/forward.png"),
 		PLAYBACK_FORWARD_REPEAT = new ResourceLocation(Main.ID, "playback/forward_repeat.png"),
+		PLAYBACK_FORWARD_PROGRAMMED = new ResourceLocation(Main.ID, "playback/forward_programmed.png"),
 		PLAYBACK_END = new ResourceLocation(Main.ID, "playback/end.png"),
 		TOOL_MODEL = new ResourceLocation(Main.ID, "tools/model.png"),
 		TOOL_LIGHT = new ResourceLocation(Main.ID, "tools/light.png"),

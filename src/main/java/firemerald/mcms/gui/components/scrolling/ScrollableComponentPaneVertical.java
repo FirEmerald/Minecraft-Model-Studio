@@ -183,6 +183,6 @@ public class ScrollableComponentPaneVertical extends ComponentPane implements IS
 	@Override
 	public int getComponentOffsetY()
 	{
-		return super.getComponentOffsetY() + (int) Math.floor(scroll);
+		return super.getComponentOffsetY() - (int) Math.floor(scroll);
 	}
 }

@@ -28,6 +28,7 @@ public class PlaybackReverseButton extends PlaybackButton
 		state.animMode = EnumPlaybackMode.REVERSE;
 		if (state.time == 0) state.time = Main.instance.project.getAnimation().getLength();
 		state.animLoop = Modifier.SHIFT.isDown(Main.instance.window);
+		state.animProgrammed = false;
 	}
 
 	@Override

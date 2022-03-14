@@ -8,3 +8,6 @@ target/*
 state.xml
 org.eclipse.jdt.annotation_2.2.300.v20190328-1431.jar
 /target/
+libs/
+org.eclipse.jdt.annotation_2.2.600.v20200408-1511.jar
+.classpath

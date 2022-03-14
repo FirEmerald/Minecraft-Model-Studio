@@ -123,6 +123,12 @@ public abstract class BoneEffect implements IModelEditable
 		if (parent == null) this.parent = null;
 		else (this.parent = parent).addEffect(this);
 	}
+
+	@Override
+	public IModelEditable getParent()
+	{
+		return parent;
+	}
 	
 	@Override
 	public String getBoneName()

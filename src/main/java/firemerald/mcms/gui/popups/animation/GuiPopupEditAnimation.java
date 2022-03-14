@@ -32,7 +32,8 @@ public class GuiPopupEditAnimation extends GuiPopup
 	public final ComponentFloatingLabel labelScale;
 	public final ComponentToggle scale;
 	public final ComponentFloatingLabel labelLoop;
-	public final ComponentToggle loop;
+	public final ComponentTextFloat loop;
+	public final ComponentIncrementFloat loopUp, loopDown;
 	public final ComponentFloatingLabel labelRelative;
 	public final ComponentToggle relative;
 	public final StandardButton ok, cancel;
@@ -41,7 +42,7 @@ public class GuiPopupEditAnimation extends GuiPopup
 	{
 		IAnimation anim = Main.instance.project.getAnimation();
 		final int cw = 180;
-		final int ch = 120;
+		final int ch = 160;
 		final int cx = 20;
 		final int cy = 20;
 		this.addElement(pane = new DecoPane(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20, 2, 16));
@@ -56,13 +57,22 @@ public class GuiPopupEditAnimation extends GuiPopup
 		this.addElement(labelScale = new ComponentFloatingLabel(cx, y, cx + 117, y + 20, Main.instance.fontMsg, "rescale animation"));
 		this.addElement(scale = new ComponentToggle(cx + 122, y + 5, cx + 132, y + 15, true, null));
 		y += 20;
-		this.addElement(labelLoop = new ComponentFloatingLabel(cx, y, cx + 30, y + 20, Main.instance.fontMsg, "loop"));
-		this.addElement(loop = new ComponentToggle(cx + 35, y + 5, cx + 45, y + 15, anim instanceof Animation ? ((Animation) anim).loop : true, null));
-		this.addElement(labelRelative = new ComponentFloatingLabel(cx + 50, y, cx + 103, y + 20, Main.instance.fontMsg, "relative"));
-		this.addElement(relative = new ComponentToggle(cx + 108, y + 5, cx + 118, y + 15, anim.isRelative(), null));
+		this.addElement(labelLoop = new ComponentFloatingLabel(cx, y, cx + cw, y + 20, Main.instance.fontMsg, "loop start (-.05 for none)"));
+		y += 20;
+		this.addElement(loop = new ComponentTextFloat(cx, y, cx + cw - 10, y + 20, Main.instance.fontMsg, anim instanceof Animation ? ((Animation) anim).loopStart : -.05f, -.05f, length.getVal(), null));
+		this.addElement(loopUp = new ComponentIncrementFloat(cx + cw - 10, y, loop, .05f));
+		this.addElement(loopDown = new ComponentIncrementFloat(cx + cw - 10, y + 10, loop, -.05f));
+		y += 20;
+		this.addElement(labelRelative = new ComponentFloatingLabel(cx, y, cx + 53, y + 20, Main.instance.fontMsg, "relative"));
+		this.addElement(relative = new ComponentToggle(cx + 58, y + 5, cx + 68, y + 15, anim.isRelative(), null));
 		y += 20;
 		this.addElement(ok = new StandardButton(cx, cy + ch - 20, cx + 80, cy + ch, 1, 4, "ok", this::apply));
 		this.addElement(cancel = new StandardButton(cx + cw - 80, cy + ch - 20, cx + cw, cy + ch, 1, 4, "cancel", this::deactivate));
+	}
+	
+	public void onLengthChanged(float val)
+	{
+		loop.setBounds(0, val);
 	}
 
 	@Override
@@ -70,7 +80,7 @@ public class GuiPopupEditAnimation extends GuiPopup
 	{
 		super.setSize(w, h);
 		final int cw = 180;
-		final int ch = 120;
+		final int ch = 160;
 		final int cx = (w - cw) / 2;
 		final int cy = (h - ch) / 2;
 		pane.setSize(cx - 20, cy - 20, cx + cw + 20, cy + ch + 20);
@@ -85,10 +95,14 @@ public class GuiPopupEditAnimation extends GuiPopup
 		labelScale.setSize(cx, y, cx + 117, y + 20);
 		scale.setSize(cx + 122, y + 5, cx + 132, y + 15);
 		y += 20;
-		labelLoop.setSize(cx, y, cx + 30, y + 20);
-		loop.setSize(cx + 35, y + 5, cx + 45, y + 15);
-		labelRelative.setSize(cx + 50, y, cx + 103, y + 20);
-		relative.setSize(cx + 108, y + 5, cx + 118, y + 15);
+		labelLoop.setSize(cx, y, cx + cw, y + 20);
+		y += 20;
+		loop.setSize(cx, y, cx + cw - 10, y + 20);
+		loopUp.setPosition(cx + cw - 10, y);
+		loopDown.setPosition(cx + cw - 10, y + 10);
+		y += 20;
+		labelRelative.setSize(cx, y, cx + 53, y + 20);
+		relative.setSize(cx + 58, y + 5, cx + 68, y + 15);
 		y += 20;
 		ok.setSize(cx, cy + ch - 20, cx + 80, cy + ch);
 		cancel.setSize(cx + cw - 80, cy + ch - 20, cx + cw, cy + ch);
@@ -129,7 +143,7 @@ public class GuiPopupEditAnimation extends GuiPopup
 			else
 			{
 				newAnimation = anim;
-				anim.loop = loop.state;
+				anim.loopStart = loop.getVal();
 				if (length.getVal() != anim.getLength())
 				{
 					if (scale.state) anim.scaleTo(length.getVal());
@@ -149,7 +163,7 @@ public class GuiPopupEditAnimation extends GuiPopup
 			}
 			else //convert to animation
 			{
-				Animation anim = new Animation(length.getVal(), loop.state, relative.state);
+				Animation anim = new Animation(length.getVal(), loop.getVal(), relative.state);
 				newAnimation = anim;
 				pose.pose.forEach((bone, transform) -> {
 					NavigableMap<Float, TweeningFrame> map = anim.animation.get(bone);

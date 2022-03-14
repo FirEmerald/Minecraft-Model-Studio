@@ -178,6 +178,6 @@ public class ScrollableComponentPaneHorizontal extends ComponentPane implements 
 	@Override
 	public int getComponentOffsetX()
 	{
-		return super.getComponentOffsetX() + (int) Math.floor(scrollH);
+		return super.getComponentOffsetX() - (int) Math.floor(scrollH);
 	}
 }

@@ -230,4 +230,11 @@ public class ComponentMeshTrue extends ComponentMesh
 		texHP    = null;
 		texHS    = null;
 	}
+
+	@Override
+	public void move(float dU, float dV)
+	{
+		super.move(dU, dV);
+		setTexs();
+	}
 }

@@ -25,6 +25,7 @@ import firemerald.mcms.api.model.IEditableParent;
 import firemerald.mcms.api.model.IModelEditable;
 import firemerald.mcms.api.model.IRaytraceTarget;
 import firemerald.mcms.api.model.IRigged;
+import firemerald.mcms.api.model.IUVMovable;
 import firemerald.mcms.api.model.ObjData;
 import firemerald.mcms.api.util.RaytraceResult;
 import firemerald.mcms.gui.GuiElementContainer;
@@ -44,7 +45,7 @@ import firemerald.mcms.util.mesh.ModelMesh;
  * @author FirEmerald
  *
  */
-public abstract class ModelComponent implements IRaytraceTarget, IComponentParent //TODO fix offset calculation TODO add registry
+public abstract class ModelComponent implements IRaytraceTarget, IComponentParent, IUVMovable //TODO fix offset calculation TODO add registry
 {
 	private static final Map<String, BiFunction<IComponentParent, AbstractElement, ModelComponent>> COMPONENT_TYPES = new HashMap<>();
 
@@ -111,6 +112,12 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 		this.name = name;
 		if ((this.parent = parent) != null) parent.getChildrenComponents().add(this);
 	}
+
+	@Override
+	public IModelEditable getParent()
+	{
+		return parent;
+	}
 	
 	public ModelComponent(IComponentParent parent, ModelComponent from)
 	{
@@ -144,8 +151,13 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	
 	public void updateTransformVals()
 	{
-		if (position.rotation == IRotation.NONE) position.rotation = new QuaternionRotation();
-		position.setFromMatrix(transformation);
+		if (Main.instance.getEditing() == this)
+		{
+			Main.instance.setEditing(null);
+			position.setFromMatrix(transformation);
+			Main.instance.setEditing(this);
+		}
+		else position.setFromMatrix(transformation);
 	}
 	
 	public abstract void onTexSizeChange();
@@ -724,5 +736,14 @@ public abstract class ModelComponent implements IRaytraceTarget, IComponentParen
 	public @Nullable Material getTexture()
 	{
 		return parent == null ? null : parent.getTexture();
+	}
+
+	@Override
+	public void move(float dU, float dV)
+	{
+		this.texU += dU;
+		this.texV += dV;
+		if (texOU != null) texOU.setValNoUpdate(texU());
+		if (texOV != null) texOV.setValNoUpdate(texV());
 	}
 }

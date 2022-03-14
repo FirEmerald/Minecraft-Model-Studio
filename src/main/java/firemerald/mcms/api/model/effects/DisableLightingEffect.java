@@ -52,11 +52,13 @@ public class DisableLightingEffect extends BoneEffect
 	@Override
 	public void doPostRenderBone(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex)
 	{
-		Main.instance.currentModelShader.setIgnoreLighting(false);
 	}
 
 	@Override
-	public void doPostRenderChildren(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex) {}
+	public void doPostRenderChildren(IModelHolder holder, Matrix4d currentTransform, Runnable defaultTex)
+	{
+		Main.instance.currentModelShader.setIgnoreLighting(false);
+	}
 
 	@Override
 	public void doCleanUp() {}

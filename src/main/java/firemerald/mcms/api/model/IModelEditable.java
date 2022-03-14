@@ -6,6 +6,8 @@ import firemerald.mcms.util.ResourceLocation;
 
 public interface IModelEditable extends IEditableParent, IEditable
 {	
+	public IModelEditable getParent();
+	
 	public ResourceLocation getDisplayIcon();
 	
 	public String getName();

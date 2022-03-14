@@ -168,13 +168,13 @@ public class ScrollableComponentPane extends ComponentPane implements IScrollabl
 	@Override
 	public int getComponentOffsetX()
 	{
-		return super.getComponentOffsetX() + (int) Math.floor(scrollH);
+		return super.getComponentOffsetX() - (int) Math.floor(scrollH);
 	}
 	
 	@Override
 	public int getComponentOffsetY()
 	{
-		return super.getComponentOffsetY() + (int) Math.floor(scroll);
+		return super.getComponentOffsetY() - (int) Math.floor(scroll);
 	}
 
 	@Override

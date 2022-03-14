@@ -925,4 +925,11 @@ public class ComponentBox extends ComponentMesh
 	{
 		return new ComponentBox(clonedParent, this);
 	}
+
+	@Override
+	public void move(float dU, float dV)
+	{
+		super.move(dU, dV);
+		setTexs();
+	}
 }

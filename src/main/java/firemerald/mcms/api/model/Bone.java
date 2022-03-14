@@ -69,6 +69,12 @@ public abstract class Bone<T extends Bone<T>> implements ISelfTyped<T>, IModelEd
 			parent.children.add(self());
 		}
 	}
+
+	@Override
+	public IModelEditable getParent()
+	{
+		return parent;
+	}
 	
 	@Override
 	public String getBoneName()

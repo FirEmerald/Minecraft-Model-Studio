@@ -50,6 +50,12 @@ public class Pose implements IAnimation
 	}
 	
 	@Override
+	public float getAnimTime(float timestamp)
+	{
+		return 0;
+	}
+	
+	@Override
 	public Map<String, Matrix4d> getBones(Map<String, Matrix4d> map, float frame, Collection<? extends Bone<?>> bones)
 	{
 		for (Bone<?> bone : bones)

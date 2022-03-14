@@ -81,7 +81,7 @@ public class FileUtil
 		Transformer tf;
 		try
 		{
-			TFF.setAttribute("indent-number", new Integer(4));
+			TFF.setAttribute("indent-number", Integer.valueOf(4));
 			tf = TFF.newTransformer();
 			tf.setOutputProperty(OutputKeys.INDENT, "yes");
 		}

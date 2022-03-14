@@ -88,6 +88,7 @@ public class Project
 	{
 		public EnumPlaybackMode animMode = EnumPlaybackMode.PAUSED;
 		public boolean animLoop = false;
+		public boolean animProgrammed = false;
 		public float scale = 1;
 		public boolean locked = false;
 		
@@ -101,21 +102,25 @@ public class Project
 			if (animMode.step != 0)
 			{
 				time += deltaTime * animMode.step * scale;
-				float length = anim.get().getLength();
-				if (animLoop)
+				if (animProgrammed) time = anim.get().getAnimTime(time);
+				else
 				{
-					time %= length;
-					if (time < 0) time += length;
-				}
-				else if (time >= length)
-				{
-					time = length;
-					animMode = EnumPlaybackMode.PAUSED;
-				}
-				else if (time <= 0)
-				{
-					time = 0;
-					animMode = EnumPlaybackMode.PAUSED;
+					float length = anim.get().getLength();
+					if (animLoop)
+					{
+						time %= length;
+						if (time < 0) time += length;
+					}
+					else if (time >= length)
+					{
+						time = length;
+						animMode = EnumPlaybackMode.PAUSED;
+					}
+					else if (time <= 0)
+					{
+						time = 0;
+						animMode = EnumPlaybackMode.PAUSED;
+					}
 				}
 			}
 		}
@@ -1293,6 +1298,7 @@ public class Project
 				e.setFloat("time", animation.right.time);
 				e.setFloat("scale", animation.right.scale);
 				e.setBoolean("loop", animation.right.animLoop);
+				e.setBoolean("programmed", animation.right.animProgrammed);
 				e.setEnum("mode", animation.right.animMode);
 			}
 		});
@@ -1368,14 +1374,15 @@ public class Project
 	static class AnimationLockData
 	{
 		final float time, scale;
-		final boolean loop;
+		final boolean loop, programmed;
 		final EnumPlaybackMode mode;
 		
-		AnimationLockData(float time, float scale, boolean loop, EnumPlaybackMode mode)
+		AnimationLockData(float time, float scale, boolean loop, boolean programmed, EnumPlaybackMode mode)
 		{
 			this.time = time;
 			this.scale = scale;
 			this.loop = loop;
+			this.programmed = programmed;
 			this.mode = mode;
 		}
 	}
@@ -1469,7 +1476,7 @@ public class Project
 			}
 			case "LockedAnimations":
 			{
-				child.getChildren().forEach(el -> lockedAnimationsData.put(el.getString("name", null), new AnimationLockData(el.getFloat("time", 0), el.getFloat("scale", 1), el.getBoolean("loop", false), el.getEnum("mode", EnumPlaybackMode.values(), EnumPlaybackMode.PAUSED))));
+				child.getChildren().forEach(el -> lockedAnimationsData.put(el.getString("name", null), new AnimationLockData(el.getFloat("time", 0), el.getFloat("scale", 1), el.getBoolean("loop", false), el.getBoolean("programmed", false), el.getEnum("mode", EnumPlaybackMode.values(), EnumPlaybackMode.PAUSED))));
 				break;
 			}
 			default:
@@ -1511,6 +1518,7 @@ public class Project
 					animation.right.time = data.time;
 					animation.right.scale = data.scale;
 					animation.right.animLoop = data.loop;
+					animation.right.animProgrammed = data.programmed;
 					animation.right.animMode = data.mode;
 					animation.right.locked = true;
 				}

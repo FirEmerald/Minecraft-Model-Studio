@@ -14,6 +14,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Stack;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 
@@ -37,6 +38,7 @@ import firemerald.mcms.events.gui.TitlebarInitEvent;
 import firemerald.mcms.gui.GuiPopup;
 import firemerald.mcms.gui.GuiScreen;
 import firemerald.mcms.gui.main.GuiMain;
+import firemerald.mcms.gui.main.components.elements.SelectorEntry;
 import firemerald.mcms.gui.popups.GuiPopupException;
 import firemerald.mcms.gui.popups.GuiPopupUnsavedChanges;
 import firemerald.mcms.model.EditorPanes;
@@ -212,6 +214,26 @@ public class Main
 		{
 			this.editingModel = editable.getRenderComponent();
 			editable.onSelect(editorPanes, editorPanes.editor.minY);
+			IModelEditable cur = editable.getRenderComponent();
+			Stack<IModelEditable> stack = new Stack<>();
+			do stack.add(cur);
+			while ((cur = cur.getParent()) != null);
+			SelectorEntry entry = editorPanes.selector.getBase();
+			while (!stack.empty())
+			{
+				entry.expanded = true;
+				final IModelEditable cur2 = stack.pop();
+				entry = entry.children.stream().filter(e -> e.editable == cur2).findAny().orElse(null);
+				if (entry == null) break; //failed
+			}
+			editorPanes.selector.updateList();
+			if (entry != null)
+			{
+				float startY = editorPanes.selector.getScroll();
+				float endY = startY + editorPanes.selector.h; //TODO margin
+				if (startY > entry.y) editorPanes.selector.setScroll(entry.y);
+				else if (endY < entry.y + 16) editorPanes.selector.setScroll(entry.y + 16 - editorPanes.selector.h);
+			}
 		}
 	}
 	
@@ -273,7 +295,6 @@ public class Main
 	
 	public Window window;
 	
-	@SuppressWarnings("deprecation")
 	public void run(String[] args)
 	{
 		/*
@@ -311,7 +332,7 @@ public class Main
 		catch (IOException e)
 		{
 			LOGGER.log(Level.FATAL, "Could not instantiate the filesystem watcher service", e);
-			Thread.currentThread().stop(e);
+			throw new IllegalStateException(e);
 		}
 		window = new GLFWWindow(this);
 		//window = new AWTWindow(this);

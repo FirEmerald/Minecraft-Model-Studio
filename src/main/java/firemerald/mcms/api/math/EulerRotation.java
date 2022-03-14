@@ -46,19 +46,19 @@ public abstract class EulerRotation implements IRotation
 	{
 		GuiElementContainer editor = editorPanes.editor.container;
 		int editorX = editorPanes.editor.minX;
-		editor.addElement(rotXT     = new ComponentTextDouble(     editorX      , editorY, editorX + 90 , editorY + 20, Main.instance.fontMsg, vec.x(), -180, 180, value -> {
+		editor.addElement(rotXT     = new ComponentTextDouble(     editorX      , editorY, editorX + 90 , editorY + 20, Main.instance.fontMsg, vec.x(), -360, 360, value -> {
 			vec.x = value;
 			onUpdate.run();
 		}));
 		editor.addElement(rotXP     = new ComponentIncrementDouble(editorX + 90 , editorY                             , rotXT, 1));
 		editor.addElement(rotXS     = new ComponentIncrementDouble(editorX + 90 , editorY + 10                        , rotXT, -1));
-		editor.addElement(rotYT     = new ComponentTextDouble(     editorX + 100, editorY, editorX + 190, editorY + 20, Main.instance.fontMsg, vec.y(), -180, 180, value -> {
+		editor.addElement(rotYT     = new ComponentTextDouble(     editorX + 100, editorY, editorX + 190, editorY + 20, Main.instance.fontMsg, vec.y(), -360, 360, value -> {
 			vec.y = value;
 			onUpdate.run();
 		}));
 		editor.addElement(rotYP     = new ComponentIncrementDouble(editorX + 190, editorY                             , rotYT, 1));
 		editor.addElement(rotYS     = new ComponentIncrementDouble(editorX + 190, editorY + 10                        , rotYT, -1));
-		editor.addElement(rotZT     = new ComponentTextDouble(     editorX + 200, editorY, editorX + 290, editorY + 20, Main.instance.fontMsg, vec.z(), -180, 180, value -> {
+		editor.addElement(rotZT     = new ComponentTextDouble(     editorX + 200, editorY, editorX + 290, editorY + 20, Main.instance.fontMsg, vec.z(), -360, 360, value -> {
 			vec.z = value;
 			onUpdate.run();
 		}));

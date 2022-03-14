@@ -29,6 +29,14 @@ public interface IAnimation extends ISaveable, IClonableObject<IAnimation>
 	 * @return the animation's total length (use {@link Float#POSITIVE_INFINITY} for custom animations that have no specified length)
 	 */
 	public float getLength();
+
+	/**
+	 * gets the animation timestamp from the playing timestamp.
+	 * 
+	 * @param timestamp the playing timestamp
+	 * @return the animation timestamp
+	 */
+	public float getAnimTime(float timestamp);
 	
 	public void reverseAnimation(IRigged<?, ?> rig);
 	
