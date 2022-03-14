@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
     <groupId>firemerald</groupId>
     <artifactId>minecraft_model_studio_base</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
 	<name>Minecraft Model Studio - Base</name>
 	<packaging>pom</packaging>
 	
