@@ -15,6 +15,7 @@ import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.util.ResourceLocation;
 import firemerald.mcms.util.Textures;
+import firemerald.mcms.util.history.IHistoryAction;
 import firemerald.mcms.util.mesh.DrawMode;
 import firemerald.mcms.util.mesh.ModelMesh;
 
@@ -24,6 +25,7 @@ public class ComponentBox extends ComponentMesh
 	{
 		CUBEMAP,
 		SIDES_ALL,
+		SIDES_FLAT,
 		OLD
 	}
 	
@@ -151,6 +153,11 @@ public class ComponentBox extends ComponentMesh
 		});
 	}
 	
+	private static void copyVertex(float[] source, int sourceIndex, float[] des, int desIndex)
+	{
+		System.arraycopy(source, sourceIndex * 2, des, desIndex * 2, 2);
+	}
+	
 	@Override
 	public void setTexs()
 	{
@@ -159,7 +166,53 @@ public class ComponentBox extends ComponentMesh
 		float tU = texU / texSizeU, tV = texV / texSizeV;
 		float tUX = lengthX * texScale / texSizeU, tUZ = lengthZ * texScale / texSizeU;
 		float tVY = lengthY * texScale / texSizeV, tVZ = lengthZ * texScale / texSizeV;
-		if (type == Type.SIDES_ALL)
+		float[] texCoordsTop = null, texCoordsBottom = null, texCoordsLeft = null, texCoordsRight = null, texCoordsFront = null, texCoordsBack = null;
+		switch (type)
+		{
+		case CUBEMAP:
+		default:
+		{
+			float u0 = tU, u1 = u0 + tUZ, u2 = u1 + tUX, u3a = u2 + tUZ, u3b = u2 + tUX, u4 = u3a + tUX;
+			float v0 = tV, v1 = v0 + tVZ, v2 = v1 + tVY;
+			texCoordsLeft = new float[] {
+					u2, v2,
+					u3a, v2,
+					u3a, v1,
+					u2, v1
+			};
+			texCoordsTop = new float[] {
+					u1, v1,
+					u2, v1,
+					u2, v0,
+					u1, v0
+			};
+			texCoordsFront = new float[] {
+					u1, v2,
+					u2, v2,
+					u2, v1,
+					u1, v1
+			};
+			texCoordsRight = new float[] {
+					u0, v2,
+					u1, v2,
+					u1, v1,
+					u0, v1
+			};
+			texCoordsBottom = new float[] {
+					u2, v1,
+					u3b, v1,
+					u3b, v0,
+					u2, v0
+			};
+			texCoordsBack = new float[] {
+					u3a, v2,
+					u4, v2,
+					u4, v1,
+					u3a, v1
+			};
+			break;
+		}
+		case SIDES_ALL:
 		{
 			float u0 = tU;
 			float u1X = tU + tUX;
@@ -167,444 +220,246 @@ public class ComponentBox extends ComponentMesh
 			float v0 = tV;
 			float v1Y = v0 + tVY;
 			float v1Z = v0 + tVZ;
-			if (mirror)
+			texCoordsLeft = new float[] {
+					u0, v1Y,
+					u1Z, v1Y,
+					u1Z, v0,
+					u0, v0
+			};
+			texCoordsTop = new float[] {
+					u0, v1Z,
+					u1X, v1Z,
+					u1X, v0,
+					u0, v0
+			};
+			texCoordsFront = new float[] {
+					u0, v1Y,
+					u1X, v1Y,
+					u1X, v0,
+					u0, v0
+			};
+			texCoordsRight = new float[] {
+					u0, v1Y,
+					u1Z, v1Y,
+					u1Z, v0,
+					u0, v0
+			};
+			texCoordsBottom = new float[] {
+					u0, v1Z,
+					u1X, v1Z,
+					u1X, v0,
+					u0, v0
+			};
+			texCoordsBack = new float[] {
+					u0, v1Y,
+					u1X, v1Y,
+					u1X, v0,
+					u0, v0
+			};
+			break;
+		}
+		case SIDES_FLAT:
+		{
+			float u0 = tU;
+			float u1X = tU + tUX;
+			float u1Z = tU + tUZ;
+			float v0 = tV;
+			float v1Y = v0 + tVY;
+			float v1Z = v0 + tVZ;
+			texCoordsLeft = new float[] {
+					u0, v1Y,
+					u1Z, v1Y,
+					u1Z, v0,
+					u0, v0
+			};
+			texCoordsTop = new float[] {
+					u0, v1Z,
+					u1X, v1Z,
+					u1X, v0,
+					u0, v0
+			};
+			texCoordsFront = new float[] {
+					u0, v1Y,
+					u1X, v1Y,
+					u1X, v0,
+					u0, v0
+			};
+			texCoordsRight = new float[] {
+					u1Z, v1Y,
+					u0, v1Y,
+					u0, v0,
+					u1Z, v0
+			};
+			texCoordsBottom = new float[] {
+					u1X, v1Z,
+					u0, v1Z,
+					u0, v0,
+					u1X, v0
+			};
+			texCoordsBack = new float[] {
+					u1X, v1Y,
+					u0, v1Y,
+					u0, v0,
+					u1X, v0
+			};
+			break;
+		}
+		case OLD:
+		{
+			float u0 = tU, u1 = u0 + tUZ, u2 = u1 + tUX, u3a = u2 + tUZ, u3b = u2 + tUX, u4 = u3a + tUX;
+			float v0 = tV, v1 = v0 + tVZ, v2 = v1 + tVY;
+			texCoordsLeft = new float[] {
+					u2, v2,
+					u3a, v2,
+					u3a, v1,
+					u2, v1
+			};
+			texCoordsTop = new float[] {
+					u1, v1,
+					u2, v1,
+					u2, v0,
+					u1, v0
+			};
+			texCoordsFront = new float[] {
+					u1, v2,
+					u2, v2,
+					u2, v1,
+					u1, v1
+			};
+			texCoordsRight = new float[] {
+					u0, v2,
+					u1, v2,
+					u1, v1,
+					u0, v1
+			};
+			texCoordsBottom = new float[] {
+					u3b, v0,
+					u2, v0,
+					u2, v1,
+					u3b, v1
+			};
+			texCoordsBack = new float[] {
+					u3a, v2,
+					u4, v2,
+					u4, v1,
+					u3a, v1
+			};
+			break;
+		}
+		}
+		float[] texCoords = new float[48];
+		if (mirror)
+		{
+			if (flipped)
 			{
-				if (flipped)
-				{
-					mesh().setTexCoords(new float[] {
-							u0, v1Y,
-							u1Z, v1Y,
-							u1Z, v0, //2
-							u0, v0,
+				copyVertex(texCoordsLeft, 0, texCoords, 0);
+				copyVertex(texCoordsLeft, 1, texCoords, 1);
+				copyVertex(texCoordsLeft, 2, texCoords, 2);
+				copyVertex(texCoordsLeft, 3, texCoords, 3);
 
-							u0, v1Z,
-							u1X, v1Z,
-							u1X, v0,  //1
-							u0, v0,
-							
-							u0, v1Y,
-							u1X, v1Y,
-							u1X, v0, //5
-							u0, v0,
+				copyVertex(texCoordsBottom, 0, texCoords, 4);
+				copyVertex(texCoordsBottom, 1, texCoords, 5);
+				copyVertex(texCoordsBottom, 2, texCoords, 6);
+				copyVertex(texCoordsBottom, 3, texCoords, 7);
 
-							u0, v1Y,
-							u1Z, v1Y,
-							u1Z, v0, //4
-							u0, v0,
-							
-							u0, v1Z,
-							u1X, v1Z,
-							u1X, v0, //0
-							u0, v0,
-							
-							u0, v1Y,
-							u1X, v1Y,
-							u1X, v0,//3
-							u0, v0
-					});
-				}
-				else
-				{
-					mesh().setTexCoords(new float[] {
-							u1Z, v1Y,
-							u0, v1Y,
-							u0, v0,
-							u1Z, v0, //4
-							
-							u1X, v1Z,
-							u0, v1Z,
-							u0, v0,
-							u1X, v0, //0
-							
-							u1X, v1Y,
-							u0, v1Y,
-							u0, v0,
-							u1X, v0, //3
-							
-							u1Z, v1Y,
-							u0, v1Y,
-							u0, v0,
-							u1Z, v0, //2
+				copyVertex(texCoordsBack, 0, texCoords, 8);
+				copyVertex(texCoordsBack, 1, texCoords, 9);
+				copyVertex(texCoordsBack, 2, texCoords, 10);
+				copyVertex(texCoordsBack, 3, texCoords, 11);
 
-							u1X, v1Z,
-							u0, v1Z,
-							u0, v0,
-							u1X, v0,  //1
-							
-							u1X, v1Y,
-							u0, v1Y,
-							u0, v0,
-							u1X, v0 //5
-					});
-				}
+				copyVertex(texCoordsRight, 0, texCoords, 12);
+				copyVertex(texCoordsRight, 1, texCoords, 13);
+				copyVertex(texCoordsRight, 2, texCoords, 14);
+				copyVertex(texCoordsRight, 3, texCoords, 15);
+
+				copyVertex(texCoordsTop, 0, texCoords, 16);
+				copyVertex(texCoordsTop, 1, texCoords, 17);
+				copyVertex(texCoordsTop, 2, texCoords, 18);
+				copyVertex(texCoordsTop, 3, texCoords, 19);
+
+				copyVertex(texCoordsFront, 0, texCoords, 20);
+				copyVertex(texCoordsFront, 1, texCoords, 21);
+				copyVertex(texCoordsFront, 2, texCoords, 22);
+				copyVertex(texCoordsFront, 3, texCoords, 23);
 			}
 			else
 			{
-				if (flipped)
-				{
-					mesh().setTexCoords(new float[] {
-							u1Z, v1Y,
-							u0, v1Y,
-							u0, v0, //2
-							u1Z, v0,
+				copyVertex(texCoordsRight, 1, texCoords, 0);
+				copyVertex(texCoordsRight, 0, texCoords, 1);
+				copyVertex(texCoordsRight, 3, texCoords, 2);
+				copyVertex(texCoordsRight, 2, texCoords, 3);
 
-							u1X, v1Z,
-							u0, v1Z,
-							u0, v0,  //1
-							u1X, v0,
-							
-							u1X, v1Y,
-							u0, v1Y,
-							u0, v0, //5
-							u1X, v0,
+				copyVertex(texCoordsTop, 1, texCoords, 4);
+				copyVertex(texCoordsTop, 0, texCoords, 5);
+				copyVertex(texCoordsTop, 3, texCoords, 6);
+				copyVertex(texCoordsTop, 2, texCoords, 7);
 
-							u1Z, v1Y,
-							u0, v1Y,
-							u0, v0, //4
-							u1Z, v0,
+				copyVertex(texCoordsFront, 1, texCoords, 8);
+				copyVertex(texCoordsFront, 0, texCoords, 9);
+				copyVertex(texCoordsFront, 3, texCoords, 10);
+				copyVertex(texCoordsFront, 2, texCoords, 11);
 
-							u1X, v1Z,
-							u0, v1Z,
-							u0, v0, //0
-							u1X, v0,
+				copyVertex(texCoordsLeft, 1, texCoords, 12);
+				copyVertex(texCoordsLeft, 0, texCoords, 13);
+				copyVertex(texCoordsLeft, 3, texCoords, 14);
+				copyVertex(texCoordsLeft, 2, texCoords, 15);
 
-							u1X, v1Y,
-							u0, v1Y,
-							u0, v0, //3
-							u1X, v0
-					});
-				}
-				else
-				{
-					mesh().setTexCoords(new float[] {
-							u0, v1Y,
-							u1Z, v1Y,
-							u1Z, v0,
-							u0, v0, //4
-							
-							u0, v1Z,
-							u1X, v1Z,
-							u1X, v0,
-							u0, v0, //0
-							
-							u0, v1Y,
-							u1X, v1Y,
-							u1X, v0,
-							u0, v0, //3
-							
-							u0, v1Y,
-							u1Z, v1Y,
-							u1Z, v0,
-							u0, v0, //2
+				copyVertex(texCoordsBottom, 1, texCoords, 16);
+				copyVertex(texCoordsBottom, 0, texCoords, 17);
+				copyVertex(texCoordsBottom, 3, texCoords, 18);
+				copyVertex(texCoordsBottom, 2, texCoords, 19);
 
-							u0, v1Z,
-							u1X, v1Z,
-							u1X, v0,
-							u0, v0,  //1
-							
-							u0, v1Y,
-							u1X, v1Y,
-							u1X, v0,
-							u0, v0 //5
-					});
-				}
+				copyVertex(texCoordsBack, 1, texCoords, 20);
+				copyVertex(texCoordsBack, 0, texCoords, 21);
+				copyVertex(texCoordsBack, 3, texCoords, 22);
+				copyVertex(texCoordsBack, 2, texCoords, 23);
 			}
 		}
 		else
 		{
-			float u0 = tU, u1 = u0 + tUZ, u2 = u1 + tUX, u3a = u2 + tUZ, u3b = u2 + tUX, u4 = u3a + tUX;
-			float v0 = tV, v1 = v0 + tVZ, v2 = v1 + tVY;
-			if (mirror)
+			if (flipped)
 			{
-				if (flipped)
-				{
-					if (type == Type.OLD)
-					{
-						mesh().setTexCoords(new float[] {
-								u2, v2,
-								u3a, v2,
-								u3a, v1, //4
-								u2, v1,
-								
-								u3b, v0, 
-								u2, v0,
-								u2, v1, //1
-								u3b, v1,
-								
-								u3a, v2,
-								u4, v2,
-								u4, v1, //5
-								u3a, v1,
-								
-								u0, v2,
-								u1, v2,
-								u1, v1, //2
-								u0, v1,
-								
-								u1, v1,
-								u2, v1,
-								u2, v0, //0
-								u1, v0,
-								
-								u1, v2,
-								u2, v2,
-								u2, v1, //3
-								u1, v1,
-						});
-					}
-					else
-					{
-						mesh().setTexCoords(new float[] {
-								u2, v2,
-								u3a, v2,
-								u3a, v1, //4
-								u2, v1,
-								
-								u3b, v0, 
-								u2, v0,
-								u2, v1, //1
-								u3b, v1,
-								
-								u3a, v2,
-								u4, v2,
-								u4, v1, //5
-								u3a, v1,
-								
-								u0, v2,
-								u1, v2,
-								u1, v1, //2
-								u0, v1,
-								
-								u2, v0,
-								u1, v0,
-								u1, v1, //0
-								u2, v1,
-								
-								u1, v2,
-								u2, v2,
-								u2, v1, //3
-								u1, v1,
-						});
-					}
-				}
-				else
-				{
-					if (type == Type.OLD)
-					{
-						mesh().setTexCoords(new float[] {
-								u1, v2,
-								u0, v2,
-								u0, v1,
-								u1, v1, //2
-								
-								u2, v1,
-								u1, v1,
-								u1, v0,
-								u2, v0, //0
-								
-								u2, v2,
-								u1, v2,
-								u1, v1,
-								u2, v1, //3
+				copyVertex(texCoordsRight, 1, texCoords, 0);
+				copyVertex(texCoordsRight, 0, texCoords, 1);
+				copyVertex(texCoordsRight, 3, texCoords, 2);
+				copyVertex(texCoordsRight, 2, texCoords, 3);
 
-								u3a, v2,
-								u2, v2,
-								u2, v1,
-								u3a, v1, //4
-								
-								u2, v0,
-								u3b, v0, 
-								u3b, v1,
-								u2, v1, //1
-								
-								u4, v2,
-								u3a, v2,
-								u3a, v1,
-								u4, v1 //5
-						});
-					}
-					else
-					{
-						mesh().setTexCoords(new float[] {
-								u1, v2,
-								u0, v2,
-								u0, v1,
-								u1, v1, //2
-								
-								u2, v1,
-								u1, v1,
-								u1, v0,
-								u2, v0, //0
-								
-								u2, v2,
-								u1, v2,
-								u1, v1,
-								u2, v1, //3
+				copyVertex(texCoordsBottom, 1, texCoords, 4);
+				copyVertex(texCoordsBottom, 0, texCoords, 5);
+				copyVertex(texCoordsBottom, 3, texCoords, 6);
+				copyVertex(texCoordsBottom, 2, texCoords, 7);
 
-								u3a, v2,
-								u2, v2,
-								u2, v1,
-								u3a, v1, //4
+				copyVertex(texCoordsBack, 1, texCoords, 8);
+				copyVertex(texCoordsBack, 0, texCoords, 9);
+				copyVertex(texCoordsBack, 3, texCoords, 10);
+				copyVertex(texCoordsBack, 2, texCoords, 11);
 
-								u3b, v1,
-								u2, v1,
-								u2, v0,
-								u3b, v0,  //1
-								
-								u4, v2,
-								u3a, v2,
-								u3a, v1,
-								u4, v1 //5
-						});
-					}
-				}
+				copyVertex(texCoordsLeft, 1, texCoords, 12);
+				copyVertex(texCoordsLeft, 0, texCoords, 13);
+				copyVertex(texCoordsLeft, 3, texCoords, 14);
+				copyVertex(texCoordsLeft, 2, texCoords, 15);
+
+				copyVertex(texCoordsTop, 1, texCoords, 16);
+				copyVertex(texCoordsTop, 0, texCoords, 17);
+				copyVertex(texCoordsTop, 3, texCoords, 18);
+				copyVertex(texCoordsTop, 2, texCoords, 19);
+
+				copyVertex(texCoordsFront, 1, texCoords, 20);
+				copyVertex(texCoordsFront, 0, texCoords, 21);
+				copyVertex(texCoordsFront, 3, texCoords, 22);
+				copyVertex(texCoordsFront, 2, texCoords, 23);
 			}
 			else
 			{
-				if (flipped)
-				{
-					if (type == Type.OLD)
-					{
-						mesh().setTexCoords(new float[] {
-								u1, v2,
-								u0, v2,
-								u0, v1, //2
-								u1, v1,
-								
-								u2, v0, 
-								u3b, v0,
-								u3b, v1, //1
-								u2, v1,
-								
-								u4, v2,
-								u3a, v2,
-								u3a, v1, //5
-								u4, v1,
-								
-								u3a, v2,
-								u2, v2,
-								u2, v1, //4
-								u3a, v1,
-								
-								u2, v1,
-								u1, v1,
-								u1, v0, //0
-								u2, v0,
-								
-								u2, v2,
-								u1, v2,
-								u1, v1, //3
-								u2, v1,
-						});
-					}
-					else
-					{
-						mesh().setTexCoords(new float[] {
-								u1, v2,
-								u0, v2,
-								u0, v1, //2
-								u1, v1,
-								
-								u2, v0, 
-								u3b, v0,
-								u3b, v1, //1
-								u2, v1,
-								
-								u4, v2,
-								u3a, v2,
-								u3a, v1, //5
-								u4, v1,
-								
-								u3a, v2,
-								u2, v2,
-								u2, v1, //4
-								u3a, v1,
-
-								u1, v0,
-								u2, v0,
-								u2, v1, //0
-								u1, v1,
-								
-								u2, v2,
-								u1, v2,
-								u1, v1, //3
-								u2, v1,
-						});
-					}
-				}
-				else
-				{
-					if (type == Type.OLD)
-					{
-						mesh().setTexCoords(new float[] {
-								u2, v2,
-								u3a, v2,
-								u3a, v1,
-								u2, v1, //4
-								
-								u1, v1,
-								u2, v1,
-								u2, v0,
-								u1, v0, //0
-								
-								u1, v2,
-								u2, v2,
-								u2, v1,
-								u1, v1, //3
-								
-								u0, v2,
-								u1, v2,
-								u1, v1,
-								u0, v1, //2
-								
-								u3b, v0,
-								u2, v0, 
-								u2, v1,
-								u3b, v1, //1
-								
-								u3a, v2,
-								u4, v2,
-								u4, v1,
-								u3a, v1 //5
-						});
-					}
-					else
-					{
-						mesh().setTexCoords(new float[] {
-								u2, v2,
-								u3a, v2,
-								u3a, v1,
-								u2, v1, //4
-								
-								u1, v1,
-								u2, v1,
-								u2, v0,
-								u1, v0, //0
-								
-								u1, v2,
-								u2, v2,
-								u2, v1,
-								u1, v1, //3
-								
-								u0, v2,
-								u1, v2,
-								u1, v1,
-								u0, v1, //2
-
-								u2, v1,
-								u3b, v1,
-								u3b, v0,
-								u2, v0,  //1
-								
-								u3a, v2,
-								u4, v2,
-								u4, v1,
-								u3a, v1 //5
-						});
-					}
-				}
+				System.arraycopy(texCoordsLeft, 0, texCoords, 0, 8);
+				System.arraycopy(texCoordsTop, 0, texCoords, 8, 8);
+				System.arraycopy(texCoordsFront, 0, texCoords, 16, 8);
+				System.arraycopy(texCoordsRight, 0, texCoords, 24, 8);
+				System.arraycopy(texCoordsBottom, 0, texCoords, 32, 8);
+				System.arraycopy(texCoordsBack, 0, texCoords, 40, 8);
 			}
 		}
+		mesh().setTexCoords(texCoords);
 		setTexMesh();
 	}
 	
@@ -917,8 +772,40 @@ public class ComponentBox extends ComponentMesh
 	{
 		if (type != this.type)
 		{
+			Type old = this.type;
 			this.type = type;
 			setTexs();
+			Main.instance.project.onAction(new ChangeBoxType(this, old));
+		}
+	}
+	
+	public static class ChangeBoxType implements IHistoryAction<ChangeBoxType>
+	{
+		public final ComponentBox box;
+		public final Type type;
+		public final ChangeBoxType opposite;
+		
+		public ChangeBoxType(ComponentBox box, Type type)
+		{
+			this.box = box;
+			this.type = type;
+			this.opposite = new ChangeBoxType(this);
+		}
+		
+		private ChangeBoxType(ChangeBoxType opposite)
+		{
+			this.box = opposite.box;
+			this.type = box.getType();
+			this.opposite = opposite;
+		}
+		
+		@Override
+		public ChangeBoxType perform()
+		{
+			if (Main.instance.getEditing() == box) Main.instance.setEditing(null);
+			this.box.setType(type);
+			Main.instance.setEditing(box);
+			return opposite;
 		}
 	}
 	
@@ -1093,7 +980,7 @@ public class ComponentBox extends ComponentMesh
 		editor.addElement(westLabel    = new ComponentFloatingLabel(editorX + 170, editorY    , editorX + 300, editorY + 20, Main.instance.fontMsg, "west face"));
 		editorY += 20;
 		editor.addElement(typeLabel    = new ComponentFloatingLabel(editorX, editorY, editorX + 150, editorY + 20, Main.instance.fontMsg, "Box type"));
-		editor.addElement(typeSelector   = new SelectorButton(editorX + 150, editorY, editorX + 300, editorY + 20, this.getType(), Type.values(), this::setType));
+		editor.addElement(typeSelector = new SelectorButton(editorX + 150, editorY, editorX + 300, editorY + 20, this.getType(), Type.values(), this::setType));
 		editorY += 20;
 		//TODO inverted
 		return editorY;
@@ -1144,6 +1031,8 @@ public class ComponentBox extends ComponentMesh
 		editor.removeElement(eastLabel);
 		editor.removeElement(westButton);
 		editor.removeElement(westLabel);
+		editor.removeElement(typeLabel);
+		editor.removeElement(typeSelector);
 		labelTexScale = null;
 		scaleTex      = null;
 		scaleTexP     = null;
@@ -1184,6 +1073,8 @@ public class ComponentBox extends ComponentMesh
 		eastLabel     = null;
 		westButton    = null;
 		westLabel     = null;
+		typeLabel     = null;
+		typeSelector  = null;
 	}
 	
 	@Override
