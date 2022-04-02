@@ -71,6 +71,7 @@ public class ComponentBox extends ComponentMesh
 		this.enableEast = from.enableEast;
 		this.enableSouth = from.enableSouth;
 		this.enableWest = from.enableWest;
+		this.type = from.type;
 		setVerts();
 		setTexs();
 		setNorms();
