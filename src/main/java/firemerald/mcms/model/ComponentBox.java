@@ -10,6 +10,7 @@ import firemerald.mcms.api.model.IRigged;
 import firemerald.mcms.gui.GuiElementContainer;
 import firemerald.mcms.gui.components.ComponentFloatingLabel;
 import firemerald.mcms.gui.components.ComponentToggle;
+import firemerald.mcms.gui.components.SelectorButton;
 import firemerald.mcms.gui.components.text.ComponentIncrementFloat;
 import firemerald.mcms.gui.components.text.ComponentTextFloat;
 import firemerald.mcms.util.ResourceLocation;
@@ -19,10 +20,18 @@ import firemerald.mcms.util.mesh.ModelMesh;
 
 public class ComponentBox extends ComponentMesh
 {
+	public static enum Type
+	{
+		CUBEMAP,
+		SIDES_ALL,
+		OLD
+	}
+	
 	private float texScale = 1;
 	private float lengthX, lengthY, lengthZ, marginX, marginY, marginZ;
 	private boolean mirror = false;
 	private boolean enableUp = true, enableDown = true, enableNorth = true, enableEast = true, enableSouth = true, enableWest = true, flipped = false; //x+ = east z+ = south
+	private Type type = Type.CUBEMAP;
 	
 	private static ModelMesh makeMesh()
 	{
@@ -150,148 +159,450 @@ public class ComponentBox extends ComponentMesh
 		float tU = texU / texSizeU, tV = texV / texSizeV;
 		float tUX = lengthX * texScale / texSizeU, tUZ = lengthZ * texScale / texSizeU;
 		float tVY = lengthY * texScale / texSizeV, tVZ = lengthZ * texScale / texSizeV;
-		float u0 = tU, u1 = u0 + tUZ, u2 = u1 + tUX, u3a = u2 + tUZ, u3b = u2 + tUX, u4 = u3a + tUX;
-		float v0 = tV, v1 = v0 + tVZ, v2 = v1 + tVY;
-		if (mirror)
+		if (type == Type.SIDES_ALL)
 		{
-			if (flipped)
+			float u0 = tU;
+			float u1X = tU + tUX;
+			float u1Z = tU + tUZ;
+			float v0 = tV;
+			float v1Y = v0 + tVY;
+			float v1Z = v0 + tVZ;
+			if (mirror)
 			{
-				mesh().setTexCoords(new float[] {
-						u2, v2,
-						u3a, v2,
-						u3a, v1, //4
-						u2, v1,
-						
-						u3b, v0, 
-						u2, v0,
-						u2, v1, //1
-						u3b, v1,
-						
-						u3a, v2,
-						u4, v2,
-						u4, v1, //5
-						u3a, v1,
-						
-						u0, v2,
-						u1, v2,
-						u1, v1, //2
-						u0, v1,
-						
-						u1, v1,
-						u2, v1,
-						u2, v0, //0
-						u1, v0,
-						
-						u1, v2,
-						u2, v2,
-						u2, v1, //3
-						u1, v1,
-				});
+				if (flipped)
+				{
+					mesh().setTexCoords(new float[] {
+							u0, v1Y,
+							u1Z, v1Y,
+							u1Z, v0, //2
+							u0, v0,
+
+							u0, v1Z,
+							u1X, v1Z,
+							u1X, v0,  //1
+							u0, v0,
+							
+							u0, v1Y,
+							u1X, v1Y,
+							u1X, v0, //5
+							u0, v0,
+
+							u0, v1Y,
+							u1Z, v1Y,
+							u1Z, v0, //4
+							u0, v0,
+							
+							u0, v1Z,
+							u1X, v1Z,
+							u1X, v0, //0
+							u0, v0,
+							
+							u0, v1Y,
+							u1X, v1Y,
+							u1X, v0,//3
+							u0, v0
+					});
+				}
+				else
+				{
+					mesh().setTexCoords(new float[] {
+							u1Z, v1Y,
+							u0, v1Y,
+							u0, v0,
+							u1Z, v0, //4
+							
+							u1X, v1Z,
+							u0, v1Z,
+							u0, v0,
+							u1X, v0, //0
+							
+							u1X, v1Y,
+							u0, v1Y,
+							u0, v0,
+							u1X, v0, //3
+							
+							u1Z, v1Y,
+							u0, v1Y,
+							u0, v0,
+							u1Z, v0, //2
+
+							u1X, v1Z,
+							u0, v1Z,
+							u0, v0,
+							u1X, v0,  //1
+							
+							u1X, v1Y,
+							u0, v1Y,
+							u0, v0,
+							u1X, v0 //5
+					});
+				}
 			}
 			else
 			{
-				mesh().setTexCoords(new float[] {
-						u1, v2,
-						u0, v2,
-						u0, v1,
-						u1, v1, //2
-						
-						u2, v1,
-						u1, v1,
-						u1, v0,
-						u2, v0, //0
-						
-						u2, v2,
-						u1, v2,
-						u1, v1,
-						u2, v1, //3
+				if (flipped)
+				{
+					mesh().setTexCoords(new float[] {
+							u1Z, v1Y,
+							u0, v1Y,
+							u0, v0, //2
+							u1Z, v0,
 
-						u3a, v2,
-						u2, v2,
-						u2, v1,
-						u3a, v1, //4
-						
-						u2, v0,
-						u3b, v0, 
-						u3b, v1,
-						u2, v1, //1
-						
-						u4, v2,
-						u3a, v2,
-						u3a, v1,
-						u4, v1 //5
-				});
+							u1X, v1Z,
+							u0, v1Z,
+							u0, v0,  //1
+							u1X, v0,
+							
+							u1X, v1Y,
+							u0, v1Y,
+							u0, v0, //5
+							u1X, v0,
+
+							u1Z, v1Y,
+							u0, v1Y,
+							u0, v0, //4
+							u1Z, v0,
+
+							u1X, v1Z,
+							u0, v1Z,
+							u0, v0, //0
+							u1X, v0,
+
+							u1X, v1Y,
+							u0, v1Y,
+							u0, v0, //3
+							u1X, v0
+					});
+				}
+				else
+				{
+					mesh().setTexCoords(new float[] {
+							u0, v1Y,
+							u1Z, v1Y,
+							u1Z, v0,
+							u0, v0, //4
+							
+							u0, v1Z,
+							u1X, v1Z,
+							u1X, v0,
+							u0, v0, //0
+							
+							u0, v1Y,
+							u1X, v1Y,
+							u1X, v0,
+							u0, v0, //3
+							
+							u0, v1Y,
+							u1Z, v1Y,
+							u1Z, v0,
+							u0, v0, //2
+
+							u0, v1Z,
+							u1X, v1Z,
+							u1X, v0,
+							u0, v0,  //1
+							
+							u0, v1Y,
+							u1X, v1Y,
+							u1X, v0,
+							u0, v0 //5
+					});
+				}
 			}
 		}
 		else
 		{
-			if (flipped)
+			float u0 = tU, u1 = u0 + tUZ, u2 = u1 + tUX, u3a = u2 + tUZ, u3b = u2 + tUX, u4 = u3a + tUX;
+			float v0 = tV, v1 = v0 + tVZ, v2 = v1 + tVY;
+			if (mirror)
 			{
-				mesh().setTexCoords(new float[] {
-						u1, v2,
-						u0, v2,
-						u0, v1, //2
-						u1, v1,
-						
-						u2, v0, 
-						u3b, v0,
-						u3b, v1, //1
-						u2, v1,
-						
-						u4, v2,
-						u3a, v2,
-						u3a, v1, //5
-						u4, v1,
-						
-						u3a, v2,
-						u2, v2,
-						u2, v1, //4
-						u3a, v1,
-						
-						u2, v1,
-						u1, v1,
-						u1, v0, //0
-						u2, v0,
-						
-						u2, v2,
-						u1, v2,
-						u1, v1, //3
-						u2, v1,
-				});
+				if (flipped)
+				{
+					if (type == Type.OLD)
+					{
+						mesh().setTexCoords(new float[] {
+								u2, v2,
+								u3a, v2,
+								u3a, v1, //4
+								u2, v1,
+								
+								u3b, v0, 
+								u2, v0,
+								u2, v1, //1
+								u3b, v1,
+								
+								u3a, v2,
+								u4, v2,
+								u4, v1, //5
+								u3a, v1,
+								
+								u0, v2,
+								u1, v2,
+								u1, v1, //2
+								u0, v1,
+								
+								u1, v1,
+								u2, v1,
+								u2, v0, //0
+								u1, v0,
+								
+								u1, v2,
+								u2, v2,
+								u2, v1, //3
+								u1, v1,
+						});
+					}
+					else
+					{
+						mesh().setTexCoords(new float[] {
+								u2, v2,
+								u3a, v2,
+								u3a, v1, //4
+								u2, v1,
+								
+								u3b, v0, 
+								u2, v0,
+								u2, v1, //1
+								u3b, v1,
+								
+								u3a, v2,
+								u4, v2,
+								u4, v1, //5
+								u3a, v1,
+								
+								u0, v2,
+								u1, v2,
+								u1, v1, //2
+								u0, v1,
+								
+								u2, v0,
+								u1, v0,
+								u1, v1, //0
+								u2, v1,
+								
+								u1, v2,
+								u2, v2,
+								u2, v1, //3
+								u1, v1,
+						});
+					}
+				}
+				else
+				{
+					if (type == Type.OLD)
+					{
+						mesh().setTexCoords(new float[] {
+								u1, v2,
+								u0, v2,
+								u0, v1,
+								u1, v1, //2
+								
+								u2, v1,
+								u1, v1,
+								u1, v0,
+								u2, v0, //0
+								
+								u2, v2,
+								u1, v2,
+								u1, v1,
+								u2, v1, //3
+
+								u3a, v2,
+								u2, v2,
+								u2, v1,
+								u3a, v1, //4
+								
+								u2, v0,
+								u3b, v0, 
+								u3b, v1,
+								u2, v1, //1
+								
+								u4, v2,
+								u3a, v2,
+								u3a, v1,
+								u4, v1 //5
+						});
+					}
+					else
+					{
+						mesh().setTexCoords(new float[] {
+								u1, v2,
+								u0, v2,
+								u0, v1,
+								u1, v1, //2
+								
+								u2, v1,
+								u1, v1,
+								u1, v0,
+								u2, v0, //0
+								
+								u2, v2,
+								u1, v2,
+								u1, v1,
+								u2, v1, //3
+
+								u3a, v2,
+								u2, v2,
+								u2, v1,
+								u3a, v1, //4
+
+								u3b, v1,
+								u2, v1,
+								u2, v0,
+								u3b, v0,  //1
+								
+								u4, v2,
+								u3a, v2,
+								u3a, v1,
+								u4, v1 //5
+						});
+					}
+				}
 			}
 			else
 			{
-				mesh().setTexCoords(new float[] {
-						u2, v2,
-						u3a, v2,
-						u3a, v1,
-						u2, v1, //4
-						
-						u1, v1,
-						u2, v1,
-						u2, v0,
-						u1, v0, //0
-						
-						u1, v2,
-						u2, v2,
-						u2, v1,
-						u1, v1, //3
-						
-						u0, v2,
-						u1, v2,
-						u1, v1,
-						u0, v1, //2
-						
-						u3b, v0,
-						u2, v0, 
-						u2, v1,
-						u3b, v1, //1
-						
-						u3a, v2,
-						u4, v2,
-						u4, v1,
-						u3a, v1 //5
-				});
+				if (flipped)
+				{
+					if (type == Type.OLD)
+					{
+						mesh().setTexCoords(new float[] {
+								u1, v2,
+								u0, v2,
+								u0, v1, //2
+								u1, v1,
+								
+								u2, v0, 
+								u3b, v0,
+								u3b, v1, //1
+								u2, v1,
+								
+								u4, v2,
+								u3a, v2,
+								u3a, v1, //5
+								u4, v1,
+								
+								u3a, v2,
+								u2, v2,
+								u2, v1, //4
+								u3a, v1,
+								
+								u2, v1,
+								u1, v1,
+								u1, v0, //0
+								u2, v0,
+								
+								u2, v2,
+								u1, v2,
+								u1, v1, //3
+								u2, v1,
+						});
+					}
+					else
+					{
+						mesh().setTexCoords(new float[] {
+								u1, v2,
+								u0, v2,
+								u0, v1, //2
+								u1, v1,
+								
+								u2, v0, 
+								u3b, v0,
+								u3b, v1, //1
+								u2, v1,
+								
+								u4, v2,
+								u3a, v2,
+								u3a, v1, //5
+								u4, v1,
+								
+								u3a, v2,
+								u2, v2,
+								u2, v1, //4
+								u3a, v1,
+
+								u1, v0,
+								u2, v0,
+								u2, v1, //0
+								u1, v1,
+								
+								u2, v2,
+								u1, v2,
+								u1, v1, //3
+								u2, v1,
+						});
+					}
+				}
+				else
+				{
+					if (type == Type.OLD)
+					{
+						mesh().setTexCoords(new float[] {
+								u2, v2,
+								u3a, v2,
+								u3a, v1,
+								u2, v1, //4
+								
+								u1, v1,
+								u2, v1,
+								u2, v0,
+								u1, v0, //0
+								
+								u1, v2,
+								u2, v2,
+								u2, v1,
+								u1, v1, //3
+								
+								u0, v2,
+								u1, v2,
+								u1, v1,
+								u0, v1, //2
+								
+								u3b, v0,
+								u2, v0, 
+								u2, v1,
+								u3b, v1, //1
+								
+								u3a, v2,
+								u4, v2,
+								u4, v1,
+								u3a, v1 //5
+						});
+					}
+					else
+					{
+						mesh().setTexCoords(new float[] {
+								u2, v2,
+								u3a, v2,
+								u3a, v1,
+								u2, v1, //4
+								
+								u1, v1,
+								u2, v1,
+								u2, v0,
+								u1, v0, //0
+								
+								u1, v2,
+								u2, v2,
+								u2, v1,
+								u1, v1, //3
+								
+								u0, v2,
+								u1, v2,
+								u1, v1,
+								u0, v1, //2
+
+								u2, v1,
+								u3b, v1,
+								u3b, v0,
+								u2, v0,  //1
+								
+								u3a, v2,
+								u4, v2,
+								u4, v1,
+								u3a, v1 //5
+						});
+					}
+				}
 			}
 		}
 		setTexMesh();
@@ -597,6 +908,20 @@ public class ComponentBox extends ComponentMesh
 		}
 	}
 	
+	public Type getType()
+	{
+		return type;
+	}
+	
+	public void setType(Type type)
+	{
+		if (type != this.type)
+		{
+			this.type = type;
+			setTexs();
+		}
+	}
+	
 	public boolean hasUp()
 	{
 		return enableUp;
@@ -708,6 +1033,8 @@ public class ComponentBox extends ComponentMesh
 	private ComponentToggle eastButton;
 	private ComponentFloatingLabel westLabel;
 	private ComponentToggle westButton;
+	private ComponentFloatingLabel typeLabel;
+	private SelectorButton typeSelector;
 	
 	@Override
 	public int onSelect(EditorPanes editorPanes, int editorY)
@@ -764,6 +1091,9 @@ public class ComponentBox extends ComponentMesh
 		editor.addElement(eastLabel    = new ComponentFloatingLabel(editorX + 20 , editorY    , editorX + 150, editorY + 20, Main.instance.fontMsg, "east face"));
 		editor.addElement(westButton   = new ComponentToggle(       editorX + 155, editorY + 5, editorX + 165, editorY + 15, this.hasWest(), (value) -> this.setWest(value)));
 		editor.addElement(westLabel    = new ComponentFloatingLabel(editorX + 170, editorY    , editorX + 300, editorY + 20, Main.instance.fontMsg, "west face"));
+		editorY += 20;
+		editor.addElement(typeLabel    = new ComponentFloatingLabel(editorX, editorY, editorX + 150, editorY + 20, Main.instance.fontMsg, "Box type"));
+		editor.addElement(typeSelector   = new SelectorButton(editorX + 150, editorY, editorX + 300, editorY + 20, this.getType(), Type.values(), this::setType));
 		editorY += 20;
 		//TODO inverted
 		return editorY;
@@ -881,6 +1211,7 @@ public class ComponentBox extends ComponentMesh
 		if (!enableEast) el.setBoolean("enableEast", false);
 		if (!enableSouth) el.setBoolean("enableSouth", false);
 		if (!enableWest) el.setBoolean("enableWest", false);
+		el.setEnum("type", type);
 	}
 	
 	@Override
@@ -902,6 +1233,7 @@ public class ComponentBox extends ComponentMesh
 		enableEast = el.getBoolean("enableEast", true);
 		enableSouth = el.getBoolean("enableSouth", true);
 		enableWest = el.getBoolean("enableWest", true);
+		type = el.getEnum("type", Type.values(), Type.OLD);
 		setVerts();
 		setTexs();
 		setNorms();
